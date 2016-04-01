@@ -1,0 +1,23 @@
+{
+  "name": "svg-detailer",
+  "version": "0.0.0",
+  "homepage": "https://github.com/SpeciesFileGroup/svg-detailer",
+  "authors": [
+    "Rich Flood <jrflood@illinois.edu>"
+  ],
+  "description": "An image annotation tool that with annotations exportable as SVG elements.",
+  "main": "svg-detailer.js",
+  "keywords": [
+    "svg",
+    "image",
+    "annotate"
+  ],
+  "license": "Illinois/NCSA",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
