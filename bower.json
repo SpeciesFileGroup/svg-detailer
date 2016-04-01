@@ -6,7 +6,7 @@
     "Rich Flood <jrflood@illinois.edu>"
   ],
   "description": "An image annotation tool that with annotations exportable as SVG elements.",
-  "main": "svg-detailer.js",
+  "main": "dist/svg-detailer.js",
   "keywords": [
     "svg",
     "image",
