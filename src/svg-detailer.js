@@ -1470,7 +1470,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       //lastMouseY = this.lastMousePoint.y;
       xC = xC - (oldX - lastMouseX);
       yC = yC - (oldY - lastMouseY);
-      zoom_trans(lastMouseX, lastMouseY, zoom);                   // effects the translation to xC, yC
+      zoom_trans(xC, yC, zoom);                   // effects the translation to xC, yC in the transform
     }
   }
   return event.preventDefault() && false;
@@ -1740,18 +1740,6 @@ function lookUpKey(event) {     // sort out the keyboard mess and return the key
       }
       return eventKey.toLowerCase();
     }
-    //if (thisKeyCode < 65) {         // not alpha
-    //  if (Shifted && _SHIFTMAP[eventKey]) {
-    //    eventKey = _SHIFTMAP[eventKey];
-    //  }
-    //  return eventKey;
-    //}
-    //else {
-    //  if (!Shifted) {
-    //    eventKey = eventKey.toLowerCase();
-    //  }
-    //  return eventKey;
-    //}
   }
   return false;               // signal not printable
 }
@@ -1966,7 +1954,7 @@ function zoomIn() {
     }
     xC = lastMouseX - (lastMouseX - xC) * newZoom / zoom;
     yC = lastMouseY - (lastMouseY - yC) * newZoom / zoom;
-    zoom_trans(0, 0, newZoom);
+    zoom_trans(xC, yC, newZoom);
     zoom = newZoom;
     bubbleRadius = (baseBubbleRadius / zoom).toString();
     document.getElementById('zoom').innerHTML = "Zoom:" + zoom.toFixed(3);
@@ -1979,7 +1967,7 @@ function zoomOut() {
     var newZoom = zoom / (1.0 + zoomDelta);
     xC = lastMouseX - (lastMouseX - xC) * newZoom / zoom;
     yC = lastMouseY - (lastMouseY - yC) * newZoom / zoom;
-    zoom_trans(0, 0, newZoom);
+    zoom_trans(xC, yC, newZoom);
     zoom = newZoom;
     bubbleRadius = (baseBubbleRadius / zoom).toString();
     document.getElementById('zoom').innerHTML = "Zoom:" + zoom.toFixed(3);
@@ -1988,7 +1976,7 @@ function zoomOut() {
 
 function zoom_trans(x, y, factor) {
   var xlt = document.getElementById('xlt');         // DOM svg element g xlt
-  var transform = 'translate(' + ((xC)).toString() + ', ' + ((yC)).toString() + ')scale(' + factor.toString() + ')';
+  var transform = 'translate(' + ((x)).toString() + ', ' + ((y)).toString() + ')scale(' + factor.toString() + ')';
   xlt.attributes['transform'].value = transform;
   document.getElementById('zoom').innerHTML = "Zoom:" + zoom.toFixed(3);
 }
@@ -2135,6 +2123,11 @@ function indicateMode(mode) {
   document.getElementById("mode").textContent = coverRect.toUpperCase();
 //            $("#zoom").html("Zoom:" + zoom.toFixed(3));
   document.getElementById('zoom').innerHTML = "Zoom:" + zoom.toFixed(3);
+}
+
+function collectSVG() {
+  var collectedSVG;
+  
 }
 
 function buildSVGmenu() {
