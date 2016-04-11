@@ -76,6 +76,7 @@ var bubbleRadius;  //= (baseBubbleRadius / zoom).toString(); // and transcoded f
 var baseZoom;         ///////////////////////////// should be calculated from svg and image attributes
 var maxZoom = 4;        // this is 4 pixels per source image pixel
 var zoomDelta = 0.02;   // this can be altered to discriminate legacy firefox dommousescroll event
+var svgLayer;
 var svgImage;
 var thisSvg = [];            // collect points as [x,y]
 var svgOffset;              // set on document ready ////////// test against fully packaged code
@@ -208,9 +209,10 @@ function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
     var cAR = cWidth / cHeight;
     var iAR = svgImage.width / svgImage.height;
 
-    var svgLayer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svgLayer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
     svgLayer.setAttributeNS(null, 'id', 'svgLayer');
     svgLayer.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    svgLayer.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
     svgLayer.setAttributeNS(null, 'version', '1.1');
     svgLayer.setAttributeNS(null, 'style', 'position: inherit;');
     svgLayer.setAttributeNS(null, 'width', cWidth);
@@ -2126,8 +2128,7 @@ function indicateMode(mode) {
 }
 
 function collectSVG() {
-  var collectedSVG;
-  
+  return svgLayer.outerHTML;        //  oops, this was too easy
 }
 
 function buildSVGmenu() {
