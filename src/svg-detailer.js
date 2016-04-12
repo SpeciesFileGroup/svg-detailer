@@ -2127,8 +2127,30 @@ function indicateMode(mode) {
   document.getElementById('zoom').innerHTML = "Zoom:" + zoom.toFixed(3);
 }
 
-function collectSVG() {
-  return svgLayer.outerHTML;        //  oops, this was too easy
+function collectSVG(verbatim) {   // verbatim true includes all markup, false means stripped
+  var clonedSVG = svgLayer.cloneNode(true);
+  var thisXLT = clonedSVG.firstChild;
+  var innerElement;
+  var thisG;
+  var terminus = thisXLT.childElementCount;
+  for (i=1; i < terminus; i++) {
+    thisG = thisXLT.childNodes[i];
+    thisG.removeAttribute('onmouseenter');
+    thisG.removeAttribute('onmouseleave');
+    if (!verbatim) {
+      innerElement = thisG.firstChild.cloneNode();
+      thisXLT.children[i].remove();
+      thisXLT.appendChild(innerElement);
+    }
+  }
+  return clonedSVG.outerHTML;        //  oops, this was too easy
+}
+
+function showSVG(verbatim) {
+  var thisTextArea = document.createElement('textarea');
+  // thisTextArea.setAttribute('cols', '80');
+  // thisTextArea.setAttribute('rows', '10');
+  svgMenu.appendChild(thisTextArea.appendChild(document.createTextNode(collectSVG(verbatim))));
 }
 
 function buildSVGmenu() {
@@ -2156,7 +2178,7 @@ function buildSVGmenu() {
   thisButton.setAttribute('innerHTML', ' Zoom:  ----');
   svgMenu.appendChild(thisButton);
 
-  thisButton = document.createElement('input');     // default ZOOM IN button
+  thisButton = document.createElement('input');     // default ZOOM OUT button
   thisButton.setAttribute('type', 'button');
   thisButton.setAttribute('value', 'Zoom OUT');
   thisButton.setAttribute('onclick', "zoomOut();");
@@ -2239,6 +2261,17 @@ function buildSVGmenu() {
   thisButton = document.createElement('input');
   thisButton.setAttribute('id', 'saveSVG');
   thisButton.setAttribute('type', 'button');
+  thisButton.setAttribute('value', 'Extract SVG');
+  thisButton.setAttribute('onclick', 'showSVG(true);');
+  svgMenu.appendChild(thisButton);
+
+  thisButton = document.createElement('input');
+  thisButton.setAttribute('id', 'cleanSVG');
+  thisButton.setAttribute('type', 'button');
+  thisButton.setAttribute('value', 'generic SVG');
+  thisButton.setAttribute('onclick', 'showSVG(false);');
+  svgMenu.appendChild(thisButton);
+  svgMenu.innerHTML += '<br>';
 
 }
 
