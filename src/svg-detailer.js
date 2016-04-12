@@ -1357,10 +1357,10 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         return;
       }
       this.updateMousePosition(event);
-      var thesePoints = thisDraw.attributes['points'].value;
+      var thesePoints = thisElement.attributes['points'].value;
       var thisPoint = ((lastMouseX - xC) / zoom).toFixed(2).toString()
         + ',' + ((lastMouseY - yC) / zoom).toFixed(2).toString() + ' ';
-      thisDraw.attributes['points'].value = thesePoints.concat(thisPoint);
+      thisElement.attributes['points'].value = thesePoints.concat(thisPoint);
     }
     else if ((cursorMode == 'cubic') || (cursorMode == 'quadratic')) {
       lastMouseX = this.lastMousePoint.x;
@@ -2236,6 +2236,9 @@ function buildSVGmenu() {
   //thisSpan = document.createElement('span');    // removed control for cursor position indication
   //thisSpan.setAttribute('id', 'coords');
   //svgMenu.appendChild(thisSpan);
+  thisButton = document.createElement('input');
+  thisButton.setAttribute('id', 'saveSVG');
+  thisButton.setAttribute('type', 'button');
 
 }
 
