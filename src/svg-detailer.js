@@ -671,12 +671,12 @@ function setEditElement(group) {    // add bubble elements to the group containi
 }
 
 function clearEditElement(group) {   // given containing group; invoked by mouseleave, so order of statements reordered
-  if (checkElementConflict(group)) {
-    return;
+  // if (checkElementConflict(group)) {
+  //   return;                                 //  ///////////////  this logic is wrong when switching modes
+  // }
+  if (!group) {
+   return;
   }
-  //if (!svgInProgress) {
-  //  return;
-  //}
   if (group.childNodes.length > 1) {   // do I have bubbles? i.e., is there more than just the golden chile?
     if ((group.lastChild.tagName == 'circle') || (group.lastChild.tagName == 'g')) { // poly- bubbles have a child group
       group.lastChild.remove();         // this is the group of bubbles (and maybe nested ones) if not just a SHIFT bubble
@@ -689,8 +689,11 @@ function clearEditElement(group) {   // given containing group; invoked by mouse
       thisElement = null;
       thisGroup = null;
     }
-    //else {
-    //}
+    else {
+      if (group.firstChild.tagName == 'text') {
+        finishTextGroup();
+      }
+    }
   }
   //group./*firstChild.*/attributes['onmouseenter'].value = "this.firstChild.attributes['stroke-width'].value = '" + 1.5 * strokeWidth + "'; setEditElement(this.firstChild);"    // replant the listener in the real element
   //setElementMouseOverOut(group);
@@ -1837,7 +1840,7 @@ function deleteLastPoint(element) {   // specific to <poly->
 
 function setCursorMode(mode) {      // detect current mode not completed prior to mode switch
   // if (true/*(cursorMode != mode) && (svgInProgress == cursorMode)*/) {        // iff switched mode while in progress
-    svgInProgress = false;                                      // //////// does this ^ matter?
+  //   svgInProgress = false;                                      // //////// does this ^ matter?
     if (thisElement) {
       checkLeftoverElement();     // look for dangling element, most likely off of svg image element ( - Y coord)
       clearEditElement(thisGroup);        //  TODO: make sure all cases complete
@@ -1861,13 +1864,9 @@ function setCursorMode(mode) {      // detect current mode not completed prior t
     waitElement = true;
   }
   indicateMode(mode);
+  svgInProgress = false;
+  
 }
-
-//function setTextMode() {
-//  setCursorMode('text');
-//document.getElementById("text4svg").removeAttribute('disabled');
-//document.getElementById("text4svg").focus();
-//}
 
 function checkLeftoverElement() {       // this function is only called when svgInProgress is false (?)
   switch (cursorMode) {
@@ -2040,18 +2039,22 @@ function updateSvgText(event) {                       // modified to eliminate m
 
 function parseHTML(spaceText) {         // morphs multiple spaces in string to HTML equivalent
   var result = spaceText.replace(/  /g, ' &nbsp;');   // two consecutive spaces become space+nonbreakingspace
+  result = result.replace(/</g, '&lt;').replace(/>/g, '&gt');
   return result;
 
 }
 
-function finishTextGroup() {        // uses global variable thisGroup for <text>.parent
-                                    // line/group is complete except for text cursor
-  removeCursorFromSvgText();
-  if (thisGroup.hasChildNodes()) {
-    setElementMouseOverOut(thisGroup);
+function finishTextGroup() {             // uses global variable thisGroup for <text>.parent
+                                         // line/group is complete except for text cursor
+  removeCursorFromSvgText();             // if thisElement is empty, it will disappear through this call
+  if (!thisGroup) {
+    return;
   }
-  else {
-    thisGroup.remove();
+  if (thisGroup.hasChildNodes()) {       // thisGroup may contain more that one text element, one for each line
+    setElementMouseOverOut(thisGroup);   // if this group is to be persisted, set the mouse listeners for future edit
+  }
+  else {                                 // if no child nodes, it is empty and should be
+    thisGroup.remove();                  // removed
     var BreakHere = true;
   }
   closeSvgText();
@@ -2075,9 +2078,9 @@ function removeCursorFromSvgText() {            //   ///////////  does this do e
           thisElement = null;
           var BreakHere = true;
         }
-        if (thisGroup.childElementCount > 1) {        // this is to detect a leftover bubble
-          // thisElement.lastChild.remove;
-          clearEditElement(group);
+        if ((thisGroup.lastChild.tagName == 'g') || (thisGroup.lastChild.tagName == 'circle')) {        // this is to detect a leftover bubble
+          thisGroup.lastChild.remove;
+          // clearEditElement(group);
           var BreakHere = true;
         }
       }
@@ -2132,15 +2135,20 @@ function collectSVG(verbatim) {   // verbatim true includes all markup, false me
   var thisXLT = clonedSVG.firstChild;
   var innerElement;
   var thisG;
-  var terminus = thisXLT.childElementCount;
-  for (i=1; i < terminus; i++) {
-    thisG = thisXLT.childNodes[i];
+  var terminus = thisXLT.childElementCount;     // this will vary if we replace <g> elements when not "verbatim"
+  var j = 1;                                    // this will be the indexer for <g> elements
+  var k;
+  for (i=1; i < terminus; i++) {                // i will range over the original children count
+    thisG = thisXLT.childNodes[j];              // probably should be firstChild since iteratively
     thisG.removeAttribute('onmouseenter');
     thisG.removeAttribute('onmouseleave');
+    j++;                                        // index the next <g> in case we are verbatim-ish
     if (!verbatim) {
-      innerElement = thisG.firstChild.cloneNode();
-      thisXLT.children[i].remove();
-      thisXLT.appendChild(innerElement);
+      j--;                                              // not verbatim, so back up to index the same <g>
+      k = thisG.childElementCount;                     // save the number of children before it disappears
+      innerElement = thisXLT.children[j].innerHTML;   // make a copy of the primitive SVG <element>(s) inside the <g>
+      thisXLT.children[j].outerHTML = innerElement;  // replace the <g> with its content (e.g., may be multiple <text>s)
+      j += k;                                       // adjust the <g> indexer to take into account the added element(s)
     }
   }
   return clonedSVG.outerHTML;        //  oops, this was too easy
@@ -2266,9 +2274,9 @@ function buildSVGmenu() {
   svgMenu.appendChild(thisButton);
 
   thisButton = document.createElement('input');
-  thisButton.setAttribute('id', 'cleanSVG');
+  thisButton.setAttribute('id', 'plainSVG');
   thisButton.setAttribute('type', 'button');
-  thisButton.setAttribute('value', 'generic SVG');
+  thisButton.setAttribute('value', 'Plain SVG');
   thisButton.setAttribute('onclick', 'showSVG(false);');
   svgMenu.appendChild(thisButton);
   svgMenu.innerHTML += '<br>';
