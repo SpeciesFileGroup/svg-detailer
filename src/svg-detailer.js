@@ -647,20 +647,22 @@ function setEditElement(group) {    // add bubble elements to the group containi
   }
   //if (group.firstChild.tagName != cursorMode) {    // start editing an element not in the current mode
   savedCursorMode = cursorMode;   // don't wait for actual action on bubble
-  if (group.firstChild.tagName != 'path') {
-    cursorMode = group.firstChild.tagName;
-  }
-  else {                  // now that there are both cubic and quadratic curves, we must detect this one's type
-    cursorMode = 'cubic';   // ///////// finesse path
-    if (group.firstChild.attributes.d.value.indexOf('C ') == -1) {   // is the path quadratic because it's not cubic?
-      cursorMode = 'quadratic';
+  if (group.firstChild) {
+    if (group.firstChild.tagName != 'path') {
+      cursorMode = group.firstChild.tagName;
+    }
+    else {                  // now that there are both cubic and quadratic curves, we must detect this one's type
+      cursorMode = 'cubic';   // ///////// finesse path
+      if (group.firstChild.attributes.d.value.indexOf('C ') == -1) {   // is the path quadratic because it's not cubic?
+        cursorMode = 'quadratic';
+      }
     }
   }
-  svgInProgress = false;      //  ////////// we have set bubbles but no action taken yet
+   svgInProgress = false;      //  ////////// we have set bubbles but no action taken yet
   indicateMode(cursorMode);
   //}
-  if (group.childNodes.length > 1) {   // do I have bubbles?
-    if (group.lastChild.tagName == 'circle') {
+  if (group.childNodes.length > 1) {   // do I have bubbles? possibly? (might be text)
+    if (group.lastChild.tagName == 'g') {
       // group.lastChild.remove();         // this is the group of bubbles
       clearEditElement(group);
     }
@@ -1629,6 +1631,15 @@ SVGDraw.prototype.keyHandler = function () {
       case 0x52:              // looking to pick off ctrl-shift-R or shift-Apple-R
         if ((event.shiftKey) && ((event.ctrlKey) || (event.metaKey))) {
           location.reload(true);
+        }
+      case 0x42:              // looking for control-B to move mouseovered group to "bottom"
+        if (event.ctrlKey) {  // which is first in the SVG list
+          if (thisGroup) {
+            var cloneGroup = thisGroup.cloneNode(true);
+            thisGroup.remove();
+            clearEditElement(cloneGroup);
+            svgLayer.firstChild.insertBefore(cloneGroup, svgLayer.firstChild.childNodes[1]);
+          }
         }
       default:
     secondKey = null;
