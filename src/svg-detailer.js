@@ -676,7 +676,10 @@ function clearEditElement(group) {   // given containing group; invoked by mouse
   // if (checkElementConflict(group)) {
   //   return;                                 //  ///////////////  this logic is wrong when switching modes
   // }
-  if (!group) {
+  if (svgInProgress == 'SHIFT') {       // if we are shifting an element, do nothing
+    return;
+  }
+  if (!group) {                         // if we are misassociated just back away . . .
    return;
   }
   if (group.childNodes.length > 1) {   // do I have bubbles? i.e., is there more than just the golden chile?
@@ -1641,6 +1644,15 @@ SVGDraw.prototype.keyHandler = function () {
             svgLayer.firstChild.insertBefore(cloneGroup, svgLayer.firstChild.childNodes[1]);
           }
         }
+      case 0x54:              // looking for control-T to move mouseovered group to "top"
+        if (event.ctrlKey) {  // which is last in the SVG element list
+          if (thisGroup) {
+            var cloneGroup = thisGroup.cloneNode(true);
+            thisGroup.remove();
+            clearEditElement(cloneGroup);
+            svgLayer.firstChild.appendChild(cloneGroup);
+          }
+        }
       default:
     secondKey = null;
     firstKey = thisKey;
@@ -2166,7 +2178,11 @@ function collectSVG(verbatim) {   // verbatim true includes all markup, false me
 }
 
 function showSVG(verbatim) {
+  // if(svgMenu.getElementById('extractedSVG')) {
+  //   svgMenu.getElementById('extractedSVG').remove();
+  // }
   var thisTextArea = document.createElement('textarea');
+  // thisTextArea.setAttribute('id', 'extractedSVG');
   // thisTextArea.setAttribute('cols', '80');
   // thisTextArea.setAttribute('rows', '10');
   svgMenu.appendChild(thisTextArea.appendChild(document.createTextNode(collectSVG(verbatim))));
