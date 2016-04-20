@@ -2174,7 +2174,7 @@ function collectSVG(verbatim) {   // verbatim true includes all markup, false me
       j += k;                                       // adjust the <g> indexer to take into account the added element(s)
     }
   }
-  return clonedSVG.outerHTML;        //  oops, this was too easy
+  return clonedSVG;        //  oops, this was too easy
 }
 
 function showSVG(verbatim) {
@@ -2185,7 +2185,21 @@ function showSVG(verbatim) {
   // thisTextArea.setAttribute('id', 'extractedSVG');
   // thisTextArea.setAttribute('cols', '80');
   // thisTextArea.setAttribute('rows', '10');
-  svgMenu.appendChild(thisTextArea.appendChild(document.createTextNode(collectSVG(verbatim))));
+  svgMenu.appendChild(thisTextArea.appendChild(document.createTextNode(collectSVG(verbatim).outerHTML)));
+}
+
+function jsonSVG() {      // package SVG into JSON object
+// specification is to return elements within a single group as text
+// { "data": {
+//      "type":  "svg",
+//      "attributes": "<svg . . . the svg text . . . </svg>"
+  var clonedSVG = collectSVG(false);
+  var JSONsvg = {};
+
+}
+
+function pushChild() {
+  
 }
 
 function buildSVGmenu() {
@@ -2305,6 +2319,13 @@ function buildSVGmenu() {
   thisButton.setAttribute('type', 'button');
   thisButton.setAttribute('value', 'Plain SVG');
   thisButton.setAttribute('onclick', 'showSVG(false);');
+  svgMenu.appendChild(thisButton);
+
+  thisButton = document.createElement('input');
+  thisButton.setAttribute('id', 'svgJSON');
+  thisButton.setAttribute('type', 'button');
+  thisButton.setAttribute('value', 'JSON SVG');
+  thisButton.setAttribute('onclick', 'jsonSVG(false);');
   svgMenu.appendChild(thisButton);
   svgMenu.innerHTML += '<br>';
 
