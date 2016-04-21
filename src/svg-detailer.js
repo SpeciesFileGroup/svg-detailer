@@ -2181,21 +2181,27 @@ function showSVG(verbatim) {
   // if(svgMenu.getElementById('extractedSVG')) {
   //   svgMenu.getElementById('extractedSVG').remove();
   // }
-  var thisTextArea = document.createElement('textarea');
+  // var thisTextArea = document.createElement('textarea');
   // thisTextArea.setAttribute('id', 'extractedSVG');
   // thisTextArea.setAttribute('cols', '80');
   // thisTextArea.setAttribute('rows', '10');
-  svgMenu.appendChild(thisTextArea.appendChild(document.createTextNode(collectSVG(verbatim).outerHTML)));
+  svgMenu.children['textSVGorJSON'].textContent = collectSVG(verbatim).outerHTML;
 }
 
-function jsonSVG() {      // package SVG into JSON object
+function jsonSVG(verbatim) {      // package SVG into JSON object
 // specification is to return elements within a single group as text
 // { "data": {
 //      "type":  "svg",
 //      "attributes": "<svg . . . the svg text . . . </svg>"
   var clonedSVG = collectSVG(false);
-  var JSONsvg = {};
-
+  var JSONsvg = {
+    "data": {
+      "type": "svg",
+      "attributes": collectSVG(verbatim).outerHTML
+    }
+  };
+  svgMenu.children['textSVGorJSON'].textContent = JSON.stringify(JSONsvg);
+  return JSONsvg;
 }
 
 function pushChild() {
@@ -2328,6 +2334,10 @@ function buildSVGmenu() {
   thisButton.setAttribute('onclick', 'jsonSVG(false);');
   svgMenu.appendChild(thisButton);
   svgMenu.innerHTML += '<br>';
+
+  var thisTextArea = document.createElement('textarea');
+  thisTextArea.setAttribute('id', 'textSVGorJSON')
+  svgMenu.appendChild(thisTextArea);
 
 }
 
