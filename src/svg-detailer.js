@@ -320,7 +320,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
       }
     }
     if (thisGroup) {
-      if (thisGroup.childElementCount > 1) {   // this is the case where there is a click on a mouseovered
+      if (thisGroup.childElementCount > 1 && cursorMode != 'text') {   // this is the case where there is a click on a mouseovered
         // thisGroup.lastChild.remove();
         clearEditElement(thisGroup);
         // setCursorMode(savedCursorMode);       // because we know specifically that we mouseentered an element
@@ -682,6 +682,9 @@ function clearEditElement(group) {   // given containing group; invoked by mouse
   if (!group) {                         // if we are misassociated just back away . . .
    return;
   }
+  if (waitElement) {
+    return;
+  }
   if (group.childNodes.length > 1) {   // do I have bubbles? i.e., is there more than just the golden chile?
     if ((group.lastChild.tagName == 'circle') || (group.lastChild.tagName == 'g')) { // poly- bubbles have a child group
       group.lastChild.remove();         // this is the group of bubbles (and maybe nested ones) if not just a SHIFT bubble
@@ -696,7 +699,9 @@ function clearEditElement(group) {   // given containing group; invoked by mouse
     }
     else {
       if (group.firstChild.tagName == 'text') {
-        finishTextGroup();
+        if(svgInProgress == 'text') {
+          finishTextGroup();
+        }
       }
     }
   }
@@ -710,7 +715,7 @@ function clearEditElement(group) {   // given containing group; invoked by mouse
 //  eliminated savedCursorMode = 'MOVE';
 }
 
-function checkElementConflict(group) {  // only invoked by mouseenter/leave listeners
+function checkElementConflict(group) {  // only invoked by mouseenter listeners
   /* consider potential values of:
    svgInProgress, one of the svg modes, plus move, shift, and size
    cursorMode, the selected (if not always indicated) creation / editing mode
@@ -1703,11 +1708,13 @@ SVGDraw.prototype.keyHandler = function () {
           return;
       }
     }
-    if ((event.key == 'Escape') || (thisKeyCode == 27) && event.shiftKey /*(firstKey == 'Shift')*/) {
+    if (((event.key == 'Delete') || event.key == 'Backspace') || (thisKeyCode == 0x2E) || (thisKeyCode == 0x08)) {
+      if (event.shiftKey) {                     //                       Delete                  Backspage
       clearThisGroup(thisGroup);
       svgInProgress = false;
       setCursorMode('MOVE');
       return;
+    }
     }
     if ((event.key == 'Escape')|| (thisKeyCode == 27)) {
       switch (cursorMode) {
@@ -2094,14 +2101,14 @@ function removeCursorFromSvgText() {            //   ///////////  does this do e
       thisElement = null;                             // kill the element
     }
     else {
-      if (svgInProgress) {
+      if (svgInProgress == 'text') {      //   ///////////////  newly added stronger condition
       thisElement.innerHTML = text4svg.slice(0, text4svg.length - 1);   // remove cursor at end of line
         if(thisElement.innerHTML == '') {
           thisElement.remove();
           thisElement = null;
           var BreakHere = true;
         }
-        if ((thisGroup.lastChild.tagName == 'g') || (thisGroup.lastChild.tagName == 'circle')) {        // this is to detect a leftover bubble
+        if (thisGroup.lastChild.tagName == 'g') {        // this is to detect a leftover bubble
           thisGroup.lastChild.remove;
           // clearEditElement(group);
           var BreakHere = true;
@@ -2156,6 +2163,11 @@ function indicateMode(mode) {
 function collectSVG(verbatim) {   // verbatim true includes all markup, false means stripped
   var clonedSVG = svgLayer.cloneNode(true);
   var thisXLT = clonedSVG.firstChild;
+  if( !verbatim) {
+    clonedSVG.removeAttribute('height');
+    clonedSVG.removeAttribute('width');
+    clonedSVG.firstChild.attributes['transform'].value = 'translate(0, 0)scale(1)';
+  }
   var innerElement;
   var thisG;
   var terminus = thisXLT.childElementCount;     // this will vary if we replace <g> elements when not "verbatim"
@@ -2174,17 +2186,14 @@ function collectSVG(verbatim) {   // verbatim true includes all markup, false me
       j += k;                                       // adjust the <g> indexer to take into account the added element(s)
     }
   }
-  return clonedSVG;        //  oops, this was too easy
+  if (!verbatim) {                               // disable the image if not verbatim
+    innerElement = thisXLT.firstChild.outerHTML.replace('<image', '<!--image').replace('/image>', '/image-->');
+    thisXLT.firstChild.outerHTML = innerElement;    // this is done AFTER the other depopulation so accounting is easier
+  }
+    return clonedSVG;        //  oops, this was too easy
 }
 
 function showSVG(verbatim) {
-  // if(svgMenu.getElementById('extractedSVG')) {
-  //   svgMenu.getElementById('extractedSVG').remove();
-  // }
-  // var thisTextArea = document.createElement('textarea');
-  // thisTextArea.setAttribute('id', 'extractedSVG');
-  // thisTextArea.setAttribute('cols', '80');
-  // thisTextArea.setAttribute('rows', '10');
   svgMenu.children['textSVGorJSON'].textContent = collectSVG(verbatim).outerHTML;
 }
 
@@ -2194,18 +2203,16 @@ function jsonSVG(verbatim) {      // package SVG into JSON object
 //      "type":  "svg",
 //      "attributes": "<svg . . . the svg text . . . </svg>"
   var clonedSVG = collectSVG(false);
+  // clonedSVG.outerHTML = clonedSVG.outerHTML;
+  // clonedSVG.outerHTML = clonedSVG.outerHTML.;
   var JSONsvg = {
     "data": {
       "type": "svg",
-      "attributes": collectSVG(verbatim).outerHTML
+      "attributes": clonedSVG.outerHTML
     }
   };
   svgMenu.children['textSVGorJSON'].textContent = JSON.stringify(JSONsvg);
   return JSONsvg;
-}
-
-function pushChild() {
-  
 }
 
 function buildSVGmenu() {
@@ -2336,7 +2343,7 @@ function buildSVGmenu() {
   svgMenu.innerHTML += '<br>';
 
   var thisTextArea = document.createElement('textarea');
-  thisTextArea.setAttribute('id', 'textSVGorJSON')
+  thisTextArea.setAttribute('id', 'textSVGorJSON');
   svgMenu.appendChild(thisTextArea);
 
 }
