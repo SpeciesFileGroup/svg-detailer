@@ -138,11 +138,13 @@ var _MAP = {
  * mapping for special characters
  */
 var _KEYCODE_MAP = {
+   61: '=',
   106: '*',
   107: '+',
   109: '-',
   110: '.',
-  111 : '/',
+  111: '/',
+  173: '-',
   186: ';',
   187: '=',
   188: ',',
@@ -2102,7 +2104,7 @@ function removeCursorFromSvgText() {            //   ///////////  does this do e
     }
     else {
       if (svgInProgress == 'text') {      //   ///////////////  newly added stronger condition
-      thisElement.innerHTML = text4svg.slice(0, text4svg.length - 1);   // remove cursor at end of line
+      thisElement.innerHTML = parseHTML(text4svg.slice(0, text4svg.length - 1));   // remove cursor at end of line
         if(thisElement.innerHTML == '') {
           thisElement.remove();
           thisElement = null;
