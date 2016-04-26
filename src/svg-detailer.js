@@ -1,4 +1,4 @@
-// contruct svgLayer from container's attributes and data-attributes
+// construct svgLayer from container's attributes and data-attributes
 //////////
 //  Previous version passed svgLayer as argument, not container
 //  therefore we must "step in" one level to bind handlers to the correct object
@@ -7,7 +7,7 @@
  Discussion/tradeoff issues with SVGDraw as of 03MAR2016 \\ was 17FEB2016:
 
  Priorities (JRF):
- 0. BUG New text element eats last line of prior text element (?!?!?!?)!
+ 0. FIXED BUG New text element eats last line of prior text element (?!?!?!?)!
  0.5 incorrect action on mouseleave: always reverts to MOVE through exitEditGroup
  0.7 repurpose ESC to remove last point vs whole element.
  1. FIXED BUG: polyline end point sometimes glitches to create new point.
@@ -36,11 +36,11 @@
  (use same mechanism?  i.e., stash reversion point on creation - no, this is a sequenced element)
  iv. abort last/current element (e.g., delete)
  v. finish current element (e.g., enter)
- vi. ^B to move current element to bottom
+ vi. DONE: ^B to move current element to "bottom"; ^T to move current element to "top"
  (or Move [element] to the top function - harder to make sure it works)
  vii. enter/inhibit mouse"over" editing
  viii. SPACE held down to drag-pan
- g. Export svg markup (currently elements are partially corrupted - i.e., incomplete end tag)
+ g. DONE: Export svg markup (currently elements are partially corrupted - i.e., incomplete end tag)
  Packaging:
  verbatim
  style vs element segregation
@@ -50,8 +50,8 @@
  k. Color picker
  l. Measurement specifier and tool (caliper)
  m. +/- 90 degree text orientation
- n. ARROW super-element
- o. more graceful handling of text to screen input; e.g., hidden textbox
+ n. DONE: ARROW super-element
+ o. DONE: more graceful handling of text to screen input; e.g., hidden textbox
 
  Library-ization:  data- elements to define configuration
  DONE auto-generate html
@@ -80,6 +80,7 @@ var svgLayer;
 var svgImage;
 var thisSvg = [];            // collect points as [x,y]
 var svgOffset;              // set on document ready ////////// test against fully packaged code
+var svgMenu;                // object built to be the element type selection and control menu
 
 
 var isMac = /Mac/.test(navigator.platform);             // store whether we are running on a Mac
@@ -91,6 +92,7 @@ var secondKey;
 var text4svg = '_';         // buffer replacing HTML input control previously used for text, prime with underscore cursor
 var textHeight = 75;
 var textFont = 'Verdana';
+var arrowSize = 10;         // defalt arrow head size
 
 var waitElement = false;   // interlock flag to prevent mouseenter mode change after selecting a create mode
 
@@ -138,7 +140,7 @@ var _MAP = {
  * mapping for special characters
  */
 var _KEYCODE_MAP = {
-   61: '=',
+  61: '=',
   106: '*',
   107: '+',
   109: '-',
@@ -251,7 +253,7 @@ function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
     xltImage.setAttributeNS('http://www.w3.org/1999/xlink', 'href', svgImage.src);
     xlt.appendChild(xltImage);
 
-    var svgMenu = document.createElement('div');        // this lengthy, tedious section generates the controls needed
+    svgMenu = document.createElement('div');        // this lengthy, tedious section generates the controls needed
     svgMenu.setAttribute('id', 'svgMenu');
     containerID.parentElement.appendChild(svgMenu);
     var thisButton;
@@ -271,7 +273,7 @@ function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
     buildSVGmenu();       // populate the button-ology from the data element description (mostly)
 
     document.onkeydown = self.keyHandler();   /////////////// This is probably tooo broad   /////////////////
-    document.onkeyup  = self.keyUpHandler();
+    document.onkeyup = self.keyUpHandler();
     //Mousetrap.bind('enter', self.doubleClickHandler());     // invokes handler vs handler's returned function
 
     zoom_trans(0, 0, zoom);             //////////// IMPORTANT !!!!!!!!!!!
@@ -430,6 +432,32 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         unbindMouseHandlers(self);
       }
     }
+    if (cursorMode == 'arrow') {     //  mouseDown starts creation, after, drag mouseUp ends
+      if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
+        savedCursorMode = cursorMode;     // plant this to prevent immediate post-creation clearing
+        thisSvg[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
+        var group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        thisGroup = group;
+        var newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
+        group.setAttributeNS(null, 'id', newGroupID);
+        group.setAttributeNS(null, 'type', cursorMode);
+        document.getElementById("xlt").appendChild(group);
+        var element = createElement('line');
+
+        group.appendChild(element);
+        thisElement = group.children[0];
+        element.setAttributeNS(null, 'x1', thisSvg[0][0]);      // start x
+        element.setAttributeNS(null, 'y1', thisSvg[0][1]);      // start y
+        element.setAttributeNS(null, 'x2', thisSvg[0][0]);      // end x
+        element.setAttributeNS(null, 'y2', thisSvg[0][1]);      // end y
+        svgInProgress = cursorMode;     // mark in progress
+      }
+      else {      // this is the terminus of this instance, so dissociate mouse move handler
+        svgInProgress = false;
+        setElementMouseoverOut(thisElement);
+        unbindMouseHandlers(self);
+      }
+    }
     if (cursorMode == 'circle') {     // mouseDown    // modified to use common element for handlers
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
         if (thisGroup != null) {      //  ////////////// ???
@@ -504,11 +532,11 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
       }
     }
     if ((cursorMode == 'cubic') || (cursorMode == 'quadratic')) {     // mouseDown
-                                                                      // The cubic Bezier curve requires non-symbolic integer values for its path parameters.
-                                                                      // This will necessitate the dynamic reconstruction of the "d" attribute using parseInt
-                                                                      // on each value.  The edit sister group will have 4 bubbles, ids: p1, c1, c2, p2 to decode
-                                                                      // the control points' mousemove action.  Make control points the same as the endpoints initially,
-                                                                      // then annotate with bubbles to shape the curve.  This is an extra step more than other elements.
+      // The cubic Bezier curve requires non-symbolic integer values for its path parameters.
+      // This will necessitate the dynamic reconstruction of the "d" attribute using parseInt
+      // on each value.  The edit sister group will have 4 bubbles, ids: p1, c1, c2, p2 to decode
+      // the control points' mousemove action.  Make control points the same as the endpoints initially,
+      // then annotate with bubbles to shape the curve.  This is an extra step more than other elements.
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
         savedCursorMode = cursorMode;     // plant this to prevent immediate post-creation clearing
         thisSvg[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
@@ -544,7 +572,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
       //     return false;
       //   }
       // }
-      if (svgInProgress == false)  {
+      if (svgInProgress == false) {
         thisSvg[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
         savedCursorMode = cursorMode;     // plant this to prevent immediate post-creation clearing
         var group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
@@ -651,7 +679,12 @@ function setEditElement(group) {    // add bubble elements to the group containi
   savedCursorMode = cursorMode;   // don't wait for actual action on bubble
   if (group.firstChild) {
     if (group.firstChild.tagName != 'path') {
-      cursorMode = group.firstChild.tagName;
+      if (group.attributes.type) {                   // type atribute existence
+        cursorMode = group.attributes.type.value;
+      }
+      else {
+        cursorMode = group.firstChild.tagName;
+      }
     }
     else {                  // now that there are both cubic and quadratic curves, we must detect this one's type
       cursorMode = 'cubic';   // ///////// finesse path
@@ -660,7 +693,7 @@ function setEditElement(group) {    // add bubble elements to the group containi
       }
     }
   }
-   svgInProgress = false;      //  ////////// we have set bubbles but no action taken yet
+  svgInProgress = false;      //  ////////// we have set bubbles but no action taken yet
   indicateMode(cursorMode);
   //}
   if (group.childNodes.length > 1) {   // do I have bubbles? possibly? (might be text)
@@ -682,7 +715,7 @@ function clearEditElement(group) {   // given containing group; invoked by mouse
     return;
   }
   if (!group) {                         // if we are misassociated just back away . . .
-   return;
+    return;
   }
   if (waitElement) {
     return;
@@ -701,7 +734,7 @@ function clearEditElement(group) {   // given containing group; invoked by mouse
     }
     else {
       if (group.firstChild.tagName == 'text') {
-        if(svgInProgress == 'text') {
+        if (svgInProgress == 'text') {
           finishTextGroup();
         }
       }
@@ -813,7 +846,12 @@ function setPointElement(bubble) {    // this performs the inline substitution o
     thisBubble = bubble;
   }
   bubble.parentNode.lastChild.remove(); // /////////// this is the fight place: remove insert point bubbles
-  cursorMode = thisElement.tagName;
+  if (thisGroup.attributes.type) {
+    cursorMode = thisGroup.attributes.type.value;
+  }
+  else {
+    cursorMode = thisElement.tagName;
+  }
   group.attributes['onmouseenter'].value = ''; // disable mouseover on real element's containing group
   group.attributes['onmouseleave'].value = ''; // disable mouseleave on real element's containing group
   bubble.attributes['onmousedown'].value = '';  // cascade to onSvgMouseDown
@@ -920,7 +958,7 @@ function createBubbleGroup(group) {
       bubbleGroup.appendChild(createPointBubble(x1, y1, 'x1-y1'));     // this is the 1st line coordinate
       bubbleGroup.appendChild(createPointBubble(x2, y2, 'x2-y2'));    // this is the 2nd (terminal) line point
       return bubbleGroup;
-    case 'path':           // this is a major exception to the other cases, used for curve !! articulate for type !!
+    case 'path':           // this is a MAJOR EXCEPTION to the other cases, used for curve !! articulate for type !!
       var theseCurvePoints = element.attributes['d'].value;
       var thisCurveTypeQuadratic = theseCurvePoints.indexOf('Q ') > 0;
       var theseCoords = getCurveCoords(theseCurvePoints);       // stack control points after end points after helpers
@@ -1251,8 +1289,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       var thesePoints = thisElement.attributes['points'].value.trim();
       var splitPoints = thesePoints.split(' ');
       if (thisBubble != null) {       // look for bubble to denote just move THIS point only
-                                      // currently, no distinction is made between existing vertex and new point
-                                      // however, this may change in the future JRF 23NOV15
+        // currently, no distinction is made between existing vertex and new point
+        // however, this may change in the future JRF 23NOV15
         thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom;     // translate the bubble
         thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
         if (isNumeric(thisBubble.id)) {       // presume integer for now
@@ -1310,13 +1348,63 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       if (thisBubble != null) {       // look for bubble to denote just move THIS point only
         thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom;     // translate the bubble
         thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
-        if (!isNumeric(thisBubble.id)) {       // presume either 'x1-y1' or 'x2-y2'
-          linePoints = (thisBubble.id).split('-');
+        if (!isNumeric(thisBubble.id)) {                 // presume either 'x1-y1' or 'x2-y2'
+          linePoints = (thisBubble.id).split('-');      // this will result in ['x1', 'y1'] or  ['x2', 'y2'] used below
         }
       }
       thisElement.attributes[linePoints[0]].value = (lastMouseX - xC) / zoom;
       thisElement.attributes[linePoints[1]].value = (lastMouseY - yC) / zoom;
       //thisElement.attributes['stroke'] = cursorColor;   ///// disabled due to unwanted side effects
+    }
+    else if (cursorMode == 'arrow') {
+      lastMouseX = this.lastMousePoint.x;
+      lastMouseY = this.lastMousePoint.y;
+      if ((event.type == 'mousedown') || (svgInProgress == false)) {    // extra condition for line
+        return;
+      }
+      this.updateMousePosition(event);
+      var linePoints = ['x2', 'y2'];          // preset for normal post-creation mode
+      if (thisBubble != null) {       // look for bubble to denote just move THIS point only
+        thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom;     // translate the bubble
+        thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
+        if (!isNumeric(thisBubble.id)) {       // presume either 'x1-y1' or 'x2-y2'
+          linePoints = (thisBubble.id).split('-');      // this will result in ['x1', 'y1'] or  ['x2', 'y2'] used below
+        }
+      }
+      thisElement.attributes[linePoints[0]].value = (lastMouseX - xC) / zoom;
+      thisElement.attributes[linePoints[1]].value = (lastMouseY - yC) / zoom;
+      while (thisGroup.childElementCount > 1) {
+        thisGroup.lastChild.remove();             // ///////////////////  VERY TEMPORARY METHOD
+      }
+      var thisX1 = thisElement.attributes['x1'].value;    // shorter references to original line's values
+      var thisY1 = thisElement.attributes['y1'].value;
+      var thisX2 = thisElement.attributes['x2'].value;
+      var thisY2 = thisElement.attributes['y2'].value;
+      var deltaX = thisX2 - thisX1;
+      var deltaY = thisY2 - thisY1;
+      var lineLength = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      var dx = deltaX / lineLength;
+      var dy = deltaY / lineLength;
+      var barbLength = lineLength / arrowSize;
+      var pctX = parseFloat(thisX2/* - deltaX / arrowSize*/) - (dx * barbLength);   //  baseline for barb trailing end
+      var pctY = parseFloat(thisY2/* - deltaY / arrowSize*/) - (dy * barbLength);
+      var x3 = pctX + barbLength * dy / 2;
+      var y3 = pctY - barbLength * dx / 2;
+      var x4 = pctX - barbLength * dy / 2;
+      var y4 = pctY + barbLength * dx / 2;
+
+      var leftBarb = createElement('line');
+      thisGroup.appendChild(leftBarb);
+      leftBarb.setAttributeNS(null, 'x1', thisX2);       // start x of barbs
+      leftBarb.setAttributeNS(null, 'y1', thisY2);      // start y of barbs
+      leftBarb.setAttributeNS(null, 'x2', x3);      // end x
+      leftBarb.setAttributeNS(null, 'y2', y3);      // end y
+      var rightBarb = createElement('line');
+      thisGroup.appendChild(rightBarb);
+      rightBarb.setAttributeNS(null, 'x1', thisX2);       // start x of barbs
+      rightBarb.setAttributeNS(null, 'y1', thisY2);      // start y of barbs
+      rightBarb.setAttributeNS(null, 'x2', x4);      // end x
+      rightBarb.setAttributeNS(null, 'y2', y4);      // end y
     }
     else if ((cursorMode == "circle") /*|| (cursorMode == 'bubble')*/) {
       //thisCircle = thisElement;             // first step toward generalizing SHIFT/SIZE handlers
@@ -1387,8 +1475,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       var thisDvalue = thisElement.attributes['d'].value;
       var thisCurveQuadratic = thisDvalue.indexOf('Q ') > 0;
       if (thisBubble != null) {       // look for bubble to denote just move THIS point only
-        // currently, no distinction is made between existing vertex and new point
-        // however, this may change in the future JRF 23NOV15
+                                      // currently, no distinction is made between existing vertex and new point
+                                      // however, this may change in the future JRF 23NOV15
         var thisX = (lastMouseX - xC) / zoom;
         var thisY = (lastMouseY - yC) / zoom;
         thisBubble.attributes['cx'].value = thisX;     // translate the bubble
@@ -1450,6 +1538,12 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           theseControlPoints[0] = ((parseInt(thisP1[0]) + thisX2) / 2).toFixed();
           theseControlPoints[1] = ((parseInt(thisP1[1]) + thisY2) / 2).toFixed();
         }
+        // else {
+        //   theseControlPoints[0] = ((parseInt(thisP1[0]) + thisX2) / 3).toFixed();
+        //   theseControlPoints[1] = ((parseInt(thisP1[1]) + thisY2) / 3).toFixed();
+        //   theseControlPoints[2] = ((parseInt(thisP1[2]) + thisX2) / 1.5).toFixed();
+        //   theseControlPoints[3] = ((parseInt(thisP1[3]) + thisY2) / 1.5).toFixed();
+        // }
         var thisD = theseCurvePoints[0] + thisPathType + curvePoint(theseControlPoints[0], theseControlPoints[1]);
         if (cursorMode == 'cubic') {
           thisD += curvePoint(thisX2, thisY2);
@@ -1535,6 +1629,14 @@ SVGDraw.prototype.onSvgMouseUp = function (event) {
       thisGroup = null;
     }
     else if (cursorMode == 'line') {
+      svgInProgress = false;
+      setElementMouseOverOut(thisGroup);
+      unbindMouseHandlers(self);
+      thisBubble = null;
+      thisElement = null;
+      thisGroup = null;
+    }
+    else if (cursorMode == 'arrow') {
       svgInProgress = false;
       setElementMouseOverOut(thisGroup);
       unbindMouseHandlers(self);
@@ -1661,13 +1763,13 @@ SVGDraw.prototype.keyHandler = function () {
           }
         }
       default:
-    secondKey = null;
-    firstKey = thisKey;
-    //thisKey = event.key;
-    //if (thisKey == 'Shift' || thisKey == 'Meta') {
-    //  secondKey = firstKey;
-    //  firstKey = thisKey;
-    //  return;
+        secondKey = null;
+        firstKey = thisKey;
+      //thisKey = event.key;
+      //if (thisKey == 'Shift' || thisKey == 'Meta') {
+      //  secondKey = firstKey;
+      //  firstKey = thisKey;
+      //  return;
     }
     if (cursorMode == 'text') {
       updateSvgText(event);             // pass event or key
@@ -1675,8 +1777,8 @@ SVGDraw.prototype.keyHandler = function () {
     }
     //thisKey = event.key;
     //if (thisKey == 'Shift' || thisKey == 'Meta') {
-      //secondKey = firstKey;
-      //firstKey = thisKey;
+    //secondKey = firstKey;
+    //firstKey = thisKey;
     //}
 
     if ((event.key == 'Enter') || thisKeyCode == 13) {    // added literal decimal value for chrome/safari
@@ -1712,13 +1814,13 @@ SVGDraw.prototype.keyHandler = function () {
     }
     if (((event.key == 'Delete') || event.key == 'Backspace') || (thisKeyCode == 0x2E) || (thisKeyCode == 0x08)) {
       if (event.shiftKey) {                     //                       Delete                  Backspage
-      clearThisGroup(thisGroup);
-      svgInProgress = false;
-      setCursorMode('MOVE');
-      return;
+        clearThisGroup(thisGroup);
+        svgInProgress = false;
+        setCursorMode('MOVE');
+        return;
+      }
     }
-    }
-    if ((event.key == 'Escape')|| (thisKeyCode == 27)) {
+    if ((event.key == 'Escape') || (thisKeyCode == 27)) {
       switch (cursorMode) {
         case 'polygon', 'polyline':
           if (svgInProgress == cursorMode) {    // remove last point and reset previous point to dynamic
@@ -1873,10 +1975,10 @@ function deleteLastPoint(element) {   // specific to <poly->
 function setCursorMode(mode) {      // detect current mode not completed prior to mode switch
   // if (true/*(cursorMode != mode) && (svgInProgress == cursorMode)*/) {        // iff switched mode while in progress
   //   svgInProgress = false;                                      // //////// does this ^ matter?
-    if (thisElement) {
-      checkLeftoverElement();     // look for dangling element, most likely off of svg image element ( - Y coord)
-      clearEditElement(thisGroup);        //  TODO: make sure all cases complete
-    }
+  if (thisElement) {
+    checkLeftoverElement();     // look for dangling element, most likely off of svg image element ( - Y coord)
+    clearEditElement(thisGroup);        //  TODO: make sure all cases complete
+  }
   // }
   if (mode.toUpperCase() == 'MOVE') {
     cursorMode = mode;
@@ -1897,7 +1999,7 @@ function setCursorMode(mode) {      // detect current mode not completed prior t
   }
   indicateMode(mode);
   svgInProgress = false;
-  
+
 }
 
 function checkLeftoverElement() {       // this function is only called when svgInProgress is false (?)
@@ -2018,7 +2120,7 @@ function updateSvgText(event) {                       // modified to eliminate m
   thisKey = event.key;                            // this attribute only works for FireFox
   var thisKeyCode = event.keyCode;
   //if (thisKey == undefined) {                   // undefined if not FireFox
-    thisKey = lookUpKey(event);     // consolidate
+  thisKey = lookUpKey(event);     // consolidate
   if (cursorMode != 'text') {     // redundant, since we only get here from keyDown handler
     switch (event.keyCode) {
       case 13:                    // Enter
@@ -2048,7 +2150,9 @@ function updateSvgText(event) {                       // modified to eliminate m
   if (thisKeyCode == 8) {
     text4svg = text4svgValue.slice(0, text4svgValue.length - 1) + '_';
   }
-  if (!thisKey && (thisKeyCode != 13) && (thisKeyCode != 8)) { return;}   // only pass printing keys, Delete, and Return/Enter
+  if (!thisKey && (thisKeyCode != 13) && (thisKeyCode != 8)) {
+    return;
+  }   // only pass printing keys, Delete, and Return/Enter
   thisElement.innerHTML = parseHTML(text4svg);           // this needs to be pair-parsed into ' '&nbsp;
   thisElement.attributes['stroke'].value = cursorColor;       // allow in-line whole line color/font/size over-ride
   thisElement.attributes['style'].value = 'font-family: ' + textFont + '; fill: ' + cursorColor + ';';    //  including fill
@@ -2077,7 +2181,7 @@ function parseHTML(spaceText) {         // morphs multiple spaces in string to H
 }
 
 function finishTextGroup() {             // uses global variable thisGroup for <text>.parent
-                                         // line/group is complete except for text cursor
+  // line/group is complete except for text cursor
   removeCursorFromSvgText();             // if thisElement is empty, it will disappear through this call
   if (!thisGroup) {
     return;
@@ -2095,8 +2199,10 @@ function finishTextGroup() {             // uses global variable thisGroup for <
 }
 
 function removeCursorFromSvgText() {            //   ///////////  does this do enough?
-  if (!thisElement) {return;}           // in case called again after end condition
-  if(thisElement.parentElement) {               // check valid element
+  if (!thisElement) {
+    return;
+  }           // in case called again after end condition
+  if (thisElement.parentElement) {               // check valid element
     if (thisElement.parentElement.lastChild.innerHTML == '_') {    // if ONLY underscore cursor
       thisElement.parentElement.lastChild.remove();                // remove the <text> element
       text4svg = '_';                                 // initialize for later
@@ -2104,8 +2210,8 @@ function removeCursorFromSvgText() {            //   ///////////  does this do e
     }
     else {
       if (svgInProgress == 'text') {      //   ///////////////  newly added stronger condition
-      thisElement.innerHTML = parseHTML(text4svg.slice(0, text4svg.length - 1));   // remove cursor at end of line
-        if(thisElement.innerHTML == '') {
+        thisElement.innerHTML = parseHTML(text4svg.slice(0, text4svg.length - 1));   // remove cursor at end of line
+        if (thisElement.innerHTML == '') {
           thisElement.remove();
           thisElement = null;
           var BreakHere = true;
@@ -2165,7 +2271,7 @@ function indicateMode(mode) {
 function collectSVG(verbatim) {   // verbatim true includes all markup, false means stripped
   var clonedSVG = svgLayer.cloneNode(true);
   var thisXLT = clonedSVG.firstChild;
-  if( !verbatim) {
+  if (!verbatim) {
     clonedSVG.removeAttribute('height');
     clonedSVG.removeAttribute('width');
     clonedSVG.firstChild.attributes['transform'].value = 'translate(0, 0)scale(1)';
@@ -2175,24 +2281,29 @@ function collectSVG(verbatim) {   // verbatim true includes all markup, false me
   var terminus = thisXLT.childElementCount;     // this will vary if we replace <g> elements when not "verbatim"
   var j = 1;                                    // this will be the indexer for <g> elements
   var k;
-  for (i=1; i < terminus; i++) {                // i will range over the original children count
+  for (i = 1; i < terminus; i++) {                // i will range over the original children count
     thisG = thisXLT.childNodes[j];              // probably should be firstChild since iteratively
     thisG.removeAttribute('onmouseenter');
     thisG.removeAttribute('onmouseleave');
     j++;                                        // index the next <g> in case we are verbatim-ish
-    if (!verbatim) {
-      j--;                                              // not verbatim, so back up to index the same <g>
-      k = thisG.childElementCount;                     // save the number of children before it disappears
-      innerElement = thisXLT.children[j].innerHTML;   // make a copy of the primitive SVG <element>(s) inside the <g>
-      thisXLT.children[j].outerHTML = innerElement;  // replace the <g> with its content (e.g., may be multiple <text>s)
-      j += k;                                       // adjust the <g> indexer to take into account the added element(s)
+    if (!verbatim) {    // new wrinkle for arrow and similar groups
+      if (thisG.attributes.type) {
+        thisG.removeAttribute('id');
+      }
+      else {
+        j--;                                              // not verbatim, so back up to index the same <g>
+        k = thisG.childElementCount;                     // save the number of children before it disappears
+        innerElement = thisXLT.children[j].innerHTML;   // make a copy of the primitive SVG <element>(s) inside the <g>
+        thisXLT.children[j].outerHTML = innerElement;  // replace the <g> with its content (e.g., may be multiple <text>s)
+        j += k;                                       // adjust the <g> indexer to take into account the added element(s)
+      }
     }
   }
   if (!verbatim) {                               // disable the image if not verbatim
     innerElement = thisXLT.firstChild.outerHTML.replace('<image', '<!--image').replace('/image>', '/image-->');
     thisXLT.firstChild.outerHTML = innerElement;    // this is done AFTER the other depopulation so accounting is easier
   }
-    return clonedSVG;        //  oops, this was too easy
+  return clonedSVG;        //  oops, this was too easy
 }
 
 function showSVG(verbatim) {
@@ -2204,9 +2315,10 @@ function jsonSVG(verbatim) {      // package SVG into JSON object
 // { "data": {
 //      "type":  "svg",
 //      "attributes": "<svg . . . the svg text . . . </svg>"
-  var clonedSVG = collectSVG(false);
-  // clonedSVG.outerHTML = clonedSVG.outerHTML;
-  // clonedSVG.outerHTML = clonedSVG.outerHTML.;
+  var clonedSVG = collectSVG(false).firstChild;     // strip off <svg...> </svg>
+  clonedSVG.removeAttribute('id');
+  clonedSVG.removeAttribute('transform');
+  clonedSVG.childNodes[0].remove();
   var JSONsvg = {
     "data": {
       "type": "svg",
@@ -2322,6 +2434,28 @@ function buildSVGmenu() {
   //thisSpan = document.createElement('span');    // removed control for cursor position indication
   //thisSpan.setAttribute('id', 'coords');
   //svgMenu.appendChild(thisSpan);
+
+  thisButton = document.createElement('input');
+  thisButton.setAttribute('id', 'svgArrow');
+  thisButton.setAttribute('type', 'button');
+  thisButton.setAttribute('value', 'Arrow line');
+  thisButton.setAttribute('onclick', "setCursorMode('arrow');");
+  svgMenu.appendChild(thisButton);
+
+  thisSpan = document.createElement('span');      // arrow display area
+  thisSpan.setAttribute('id', 'arrowBlock');
+  thisButton = document.createElement('input');     // default TEXT SIZE input
+  thisButton.setAttribute('id', 'arrowHeadSize');
+  thisButton.setAttribute('type', 'number');
+  thisButton.setAttribute('min', '5');
+  thisButton.setAttribute('step', '1');
+  thisButton.setAttribute('max', '30');
+  thisButton.setAttribute('style', 'width: 4em');
+  thisButton.setAttribute('value', '10');
+  thisButton.setAttribute('onchange', 'arrowSize=this.value;');
+  thisSpan.appendChild(thisButton);
+  svgMenu.appendChild(thisSpan);
+
   thisButton = document.createElement('input');
   thisButton.setAttribute('id', 'saveSVG');
   thisButton.setAttribute('type', 'button');
@@ -2342,6 +2476,8 @@ function buildSVGmenu() {
   thisButton.setAttribute('value', 'JSON SVG');
   thisButton.setAttribute('onclick', 'jsonSVG(false);');
   svgMenu.appendChild(thisButton);
+
+
   svgMenu.innerHTML += '<br>';
 
   var thisTextArea = document.createElement('textarea');
