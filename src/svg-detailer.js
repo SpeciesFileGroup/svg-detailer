@@ -2080,7 +2080,9 @@ function clearLastGroup() {
 }
 
 function clearThisGroup(group) {
-  group.remove();
+  if (group) {
+    group.remove();
+  }
 }
 
 function inverseColor(color) {          // color is required to be string as #RRGGBB hexadecimal
