@@ -782,7 +782,7 @@ function exitEditPoint(group) {    // services mouseUp from SIZE/point bubble
   //  group.lastChild.remove();                        // eliminates all bubbles
   //  //group.appendChild(createBubbleGroup(group));    // reconstitutes new bubbles (clearly, this is done elswhere)
   //}
-  while (group.childElementCount > 1) {
+  while (group.lastChild.tagName = 'g') {             // changed from group.childElementCount > 1
     group.lastChild.remove();                        // eliminates all bubbles
   }
   svgInProgress = false;  ///////////////
@@ -1380,12 +1380,18 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       var thisY1 = thisElement.attributes['y1'].value;
       var thisX2 = thisElement.attributes['x2'].value;
       var thisY2 = thisElement.attributes['y2'].value;
+      var thisColor = thisElement.attributes['stroke'].value;
       var deltaX = thisX2 - thisX1;
       var deltaY = thisY2 - thisY1;
       var lineLength = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
       var dx = deltaX / lineLength;
       var dy = deltaY / lineLength;
-      var barbLength = lineLength / arrowSize;
+      if (document.getElementById('arrowHeadPixels').checked) {
+        barbLength = document.getElementById('arrowHeadLength').value;
+      }
+      else {
+        var barbLength = lineLength * arrowSize/ 100;
+      }
       var pctX = parseFloat(thisX2/* - deltaX / arrowSize*/) - (dx * barbLength);   //  baseline for barb trailing end
       var pctY = parseFloat(thisY2/* - deltaY / arrowSize*/) - (dy * barbLength);
       var x3 = pctX + barbLength * dy / 2;
@@ -1399,12 +1405,24 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       leftBarb.setAttributeNS(null, 'y1', thisY2);      // start y of barbs
       leftBarb.setAttributeNS(null, 'x2', x3);      // end x
       leftBarb.setAttributeNS(null, 'y2', y3);      // end y
+      leftBarb.setAttributeNS(null, 'stroke', thisColor);
       var rightBarb = createElement('line');
       thisGroup.appendChild(rightBarb);
       rightBarb.setAttributeNS(null, 'x1', thisX2);       // start x of barbs
       rightBarb.setAttributeNS(null, 'y1', thisY2);      // start y of barbs
       rightBarb.setAttributeNS(null, 'x2', x4);      // end x
       rightBarb.setAttributeNS(null, 'y2', y4);      // end y
+      rightBarb.setAttributeNS(null, 'stroke', thisColor);
+      var baseBarb;
+      if(document.getElementById('arrowHeadClosed').checked) {
+        baseBarb = createElement('line');
+        thisGroup.appendChild(baseBarb);
+        baseBarb.setAttributeNS(null, 'x1', x3);       // start x of barbs base
+        baseBarb.setAttributeNS(null, 'y1', y3);      // start y of barbs base
+        baseBarb.setAttributeNS(null, 'x2', x4);      // end x
+        baseBarb.setAttributeNS(null, 'y2', y4);      // end y
+        baseBarb.setAttributeNS(null, 'stroke', thisColor);
+      }
     }
     else if ((cursorMode == "circle") /*|| (cursorMode == 'bubble')*/) {
       //thisCircle = thisElement;             // first step toward generalizing SHIFT/SIZE handlers
@@ -2444,8 +2462,34 @@ function buildSVGmenu() {
 
   thisSpan = document.createElement('span');      // arrow display area
   thisSpan.setAttribute('id', 'arrowBlock');
+
+  thisSpan.innerHTML += 'Fixed:';
+  thisButton = document.createElement('input');
+  thisButton.setAttribute('id', 'arrowHeadPixels');
+  thisButton.setAttribute('type', 'checkbox');
+  thisButton.setAttribute('textContent', 'Fixed   ');
+  thisSpan.appendChild(thisButton);
+
+  thisSpan.innerHTML += 'Closed:';
+  thisButton = document.createElement('input');
+  thisButton.setAttribute('id', 'arrowHeadClosed');
+  thisButton.setAttribute('type', 'checkbox');
+  thisButton.setAttribute('textContent', 'Closed   ');
+  thisSpan.appendChild(thisButton);
+
+  thisSpan.innerHTML += 'Length:';
+  thisButton = document.createElement('input');
+  thisButton.setAttribute('id', 'arrowHeadLength');
+  thisButton.setAttribute('type', 'number');
+  thisButton.setAttribute('value', '50');
+  thisButton.setAttribute('min', '5');
+  thisButton.setAttribute('step', '10');
+  thisButton.setAttribute('max', '150');
+  thisButton.setAttribute('style', 'width: 4em');
+  thisSpan.appendChild(thisButton);
+
   thisButton = document.createElement('input');     // default TEXT SIZE input
-  thisButton.setAttribute('id', 'arrowHeadSize');
+  thisButton.setAttribute('id', 'arrowHeadPercent');
   thisButton.setAttribute('type', 'number');
   thisButton.setAttribute('min', '5');
   thisButton.setAttribute('step', '1');
