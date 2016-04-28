@@ -782,7 +782,7 @@ function exitEditPoint(group) {    // services mouseUp from SIZE/point bubble
   //  group.lastChild.remove();                        // eliminates all bubbles
   //  //group.appendChild(createBubbleGroup(group));    // reconstitutes new bubbles (clearly, this is done elswhere)
   //}
-  while (group.lastChild.tagName = 'g') {             // changed from group.childElementCount > 1
+  while ((group.childElementCount > 1) && (group.lastChild.tagName = 'g')) {             // changed from group.childElementCount > 1
     group.lastChild.remove();                        // eliminates all bubbles
   }
   svgInProgress = false;  ///////////////
@@ -1741,7 +1741,7 @@ SVGDraw.prototype.keyUpHandler = function () {
 SVGDraw.prototype.keyHandler = function () {
   var self = this;
   return function (event) {
-    event.preventDefault();
+    // event.preventDefault();
     // Due to browser differences from fireFox, use event.keyCode vs key since key is undefined in Chrome and Safari
     var thisKeyCode = event.keyCode;
     switch (thisKeyCode) {
@@ -2465,31 +2465,32 @@ function buildSVGmenu() {
   thisSpan = document.createElement('span');      // arrow display area
   thisSpan.setAttribute('id', 'arrowBlock');
 
-  thisSpan.innerHTML += 'Fixed:';
+  thisSpan.innerHTML += ' &nbsp; Fixed:';
   thisButton = document.createElement('input');
   thisButton.setAttribute('id', 'arrowHeadPixels');
   thisButton.setAttribute('type', 'checkbox');
-  thisButton.setAttribute('textContent', 'Fixed   ');
+  // thisButton.setAttribute('textContent', 'Fixed &nbsp; &nbsp; ');
   thisSpan.appendChild(thisButton);
 
-  thisSpan.innerHTML += 'Closed:';
+  thisSpan.innerHTML += ' &nbsp; Closed:';
   thisButton = document.createElement('input');
   thisButton.setAttribute('id', 'arrowHeadClosed');
   thisButton.setAttribute('type', 'checkbox');
-  thisButton.setAttribute('textContent', 'Closed   ');
+  // thisButton.setAttribute('textContent', 'Closed &nbsp; &nbsp; ');
   thisSpan.appendChild(thisButton);
 
-  thisSpan.innerHTML += 'Length:';
+  thisSpan.innerHTML += ' &nbsp; Length:';
   thisButton = document.createElement('input');
   thisButton.setAttribute('id', 'arrowHeadLength');
   thisButton.setAttribute('type', 'number');
   thisButton.setAttribute('value', '50');
-  thisButton.setAttribute('min', '5');
-  thisButton.setAttribute('step', '10');
-  thisButton.setAttribute('max', '150');
+  // thisButton.setAttribute('min', '5');
+  // thisButton.setAttribute('step', '10');
+  // thisButton.setAttribute('max', '150');
   thisButton.setAttribute('style', 'width: 4em');
   thisSpan.appendChild(thisButton);
 
+  thisSpan.innerHTML += ' &nbsp; Percent:';
   thisButton = document.createElement('input');     // default TEXT SIZE input
   thisButton.setAttribute('id', 'arrowHeadPercent');
   thisButton.setAttribute('type', 'number');
