@@ -2169,6 +2169,7 @@ function updateSvgText(event) {                       // modified to eliminate m
   }
   if (thisKeyCode == 8) {
     text4svg = text4svgValue.slice(0, text4svgValue.length - 1) + '_';
+    event.preventDefault();
   }
   if (!thisKey && (thisKeyCode != 13) && (thisKeyCode != 8)) {
     return;
