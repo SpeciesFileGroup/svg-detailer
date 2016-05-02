@@ -2450,7 +2450,7 @@ function buildSVGmenu() {
       thisButton = document.createElement('input');
       thisButton.setAttribute('id', 'cursorColor');
       thisButton.setAttribute('type', 'button');
-      thisButton.setAttribute('style', 'background-color: ' + colorSelect.buttons[i].color);
+      thisButton.setAttribute('style', 'this.blur(); background-color: ' + colorSelect.buttons[i].color);
       svgMenu.appendChild(thisButton);
       cursorColor = colorSelect.buttons[i].color;   // set the cursorColor from the nominal button arrangement
     }
