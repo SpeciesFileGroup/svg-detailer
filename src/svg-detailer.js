@@ -194,8 +194,8 @@ function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
 
   savedCursorMode = cursorMode;
 
-  var cWidth = parseInt(containerID.attributes['data-width'].value);
-  var cHeight = parseInt(containerID.attributes['data-height'].value);
+  var cWidth = parseInt(containerID.attributes['data-width'].value);        // this seems too explicit
+  var cHeight = parseInt(containerID.attributes['data-height'].value);      // shouldn't this be inherited from parent?
 
 
   svgImage.src = containerID.attributes['data-image'].value;
@@ -223,7 +223,6 @@ function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
     svgLayer.setAttributeNS(null, 'height', cHeight);
     containerID.appendChild(svgLayer);
 
-    //baseZoom = document.getElementById('svgLayer').width.baseVal.value / svgImage.width;     // in general more complicated than this
 // scale to height if (similar aspect ratios AND image aspect ratio less than container's)
 // OR the image is tall and the container is wide)
     if ((((cAR >= 1 && iAR >= 1) || (cAR <= 1 && iAR <= 1)) && (iAR <= cAR)) || ((iAR <= 1) && (cAR >= 1))) {
@@ -267,13 +266,15 @@ function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
       thisButton = document.createElement('input');
       thisButton.setAttribute('type', 'button');
       thisButton.setAttribute('value', buttons[i].function.charAt(0).toUpperCase() + buttons[i].function.slice(1));
-      thisButton.setAttribute('onclick', "setCursorMode('" + buttons[i].function + "');");
+      thisButton.setAttribute('onclick', "setCursorMode('" + buttons[i].function + "'); this.blur();");
       svgMenu.appendChild(thisButton);
     }
     buildSVGmenu();       // populate the button-ology from the data element description (mostly)
 
     document.onkeydown = self.keyHandler();   /////////////// This is probably tooo broad   /////////////////
+    //svgLayer.onkeydown = self.keyHandler();   /////////////// This is probably tooo broad   /////////////////
     document.onkeyup = self.keyUpHandler();
+    //svgLayer.onkeyup = self.keyUpHandler();
     //Mousetrap.bind('enter', self.doubleClickHandler());     // invokes handler vs handler's returned function
 
     zoom_trans(0, 0, zoom);             //////////// IMPORTANT !!!!!!!!!!!
@@ -320,7 +321,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
       }
       else {
         svgInProgress = cursorMode;       //  ??
-        return;                                                       // TODO: fix this to actualy do something
+        return;
       }
     }
     if (thisGroup) {
@@ -1744,6 +1745,7 @@ SVGDraw.prototype.keyHandler = function () {
     // event.preventDefault();
     // Due to browser differences from fireFox, use event.keyCode vs key since key is undefined in Chrome and Safari
     var thisKeyCode = event.keyCode;
+    var inFocus = document.activeElement;
     switch (thisKeyCode) {
       case 16:                // shift
         thisKey = 'Shift';
@@ -1789,7 +1791,7 @@ SVGDraw.prototype.keyHandler = function () {
       //  firstKey = thisKey;
       //  return;
     }
-    if (cursorMode == 'text') {
+    if ((cursorMode == 'text') && ((inFocus.tagName == 'BODY') || (inFocus.id == svgLayer.parentElement.id))) {
       updateSvgText(event);             // pass event or key
       return;
     }
@@ -2191,6 +2193,7 @@ function updateSvgText(event) {                       // modified to eliminate m
     thisElement = nextLine;
     thisElement.innerHTML = '_';
     text4svg = '_';
+    event.preventDefault();
   }
 }
 
@@ -2266,7 +2269,9 @@ function setCursorColor(color) {
 }
 
 function setUserColor(color) {          // only sets up the color for later selection
-  document.getElementById('setUserColor').attributes['style'].value = 'background-color: ' + color;
+  var userColorTextbox = document.getElementById('setUserColor')
+  userColorTextbox.attributes['style'].value = 'background-color: ' + color;
+  userColorTextbox.blur();
 }
 
 function getUserColor() {
