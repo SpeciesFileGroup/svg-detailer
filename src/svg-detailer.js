@@ -266,15 +266,13 @@ function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
       thisButton = document.createElement('input');
       thisButton.setAttribute('type', 'button');
       thisButton.setAttribute('value', buttons[i].function.charAt(0).toUpperCase() + buttons[i].function.slice(1));
-      thisButton.setAttribute('onclick', "setCursorMode('" + buttons[i].function + "'); this.blur();");
+      thisButton.setAttribute('onclick', "this.blur(); setCursorMode('" + buttons[i].function + "');");
       svgMenu.appendChild(thisButton);
     }
     buildSVGmenu();       // populate the button-ology from the data element description (mostly)
 
     document.onkeydown = self.keyHandler();   /////////////// This is probably tooo broad   /////////////////
-    //svgLayer.onkeydown = self.keyHandler();   /////////////// This is probably tooo broad   /////////////////
     document.onkeyup = self.keyUpHandler();
-    //svgLayer.onkeyup = self.keyUpHandler();
     //Mousetrap.bind('enter', self.doubleClickHandler());     // invokes handler vs handler's returned function
 
     zoom_trans(0, 0, zoom);             //////////// IMPORTANT !!!!!!!!!!!
@@ -2372,7 +2370,7 @@ function buildSVGmenu() {
   thisButton = document.createElement('input');     // default ZOOM IN button
   thisButton.setAttribute('type', 'button');
   thisButton.setAttribute('value', 'Zoom IN');
-  thisButton.setAttribute('onclick', "zoomIn();");
+  thisButton.setAttribute('onclick', "this.blur(); zoomIn();");
   svgMenu.appendChild(thisButton);
 
   thisButton = document.createElement('span');      // ZOOM display area
@@ -2383,7 +2381,7 @@ function buildSVGmenu() {
   thisButton = document.createElement('input');     // default ZOOM OUT button
   thisButton.setAttribute('type', 'button');
   thisButton.setAttribute('value', 'Zoom OUT');
-  thisButton.setAttribute('onclick', "zoomOut();");
+  thisButton.setAttribute('onclick', "this.blur(); zoomOut();");
   svgMenu.appendChild(thisButton);
 
   thisSpan = document.createElement('span');      // TEXT display area
@@ -2401,7 +2399,7 @@ function buildSVGmenu() {
   thisButton.setAttribute('max', '300');
   thisButton.setAttribute('style', 'width: 4em');
   thisButton.setAttribute('value', '75');
-  thisButton.setAttribute('onchange', 'textHeight=this.value;');
+  thisButton.setAttribute('onchange', 'textHeight=this.value; this.blur();');
   thisSpan.appendChild(thisButton);
 
   //thisButton = document.createElement('input');     // default TEXT input
@@ -2429,20 +2427,20 @@ function buildSVGmenu() {
       thisButton.setAttribute('type', 'text');
       thisButton.setAttribute('value', colorSelect.buttons[i].color);
       thisButton.setAttribute('style', 'width: 5em');
-      thisButton.setAttribute('onchange', "setUserColor(this.value);");
+      thisButton.setAttribute('onchange', "setUserColor(this.value); this.blur();");
       svgMenu.appendChild(thisButton);
       thisButton = document.createElement('input');   // add the user-defined color select button
       thisButton.setAttribute('id', 'setUserColor');
       thisButton.setAttribute('type', 'button');
       thisButton.setAttribute('style', 'background-color: ' + colorSelect.buttons[i].color);
-      thisButton.setAttribute('onclick', "setCursorColor(getUserColor());");
+      thisButton.setAttribute('onclick', "setCursorColor(getUserColor()); this.blur();");
       svgMenu.appendChild(thisButton);
     }
     if (i < colorSelect.buttons.length - 2) {       // for the first four color select buttons, just set table color
       thisButton = document.createElement('input');
       thisButton.setAttribute('type', 'button');
       thisButton.setAttribute('style', 'background-color: ' + colorSelect.buttons[i].color);
-      thisButton.setAttribute('onclick', "setCursorColor('" + colorSelect.buttons[i].color + "');");
+      thisButton.setAttribute('onclick', "setCursorColor('" + colorSelect.buttons[i].color + "'); this.blur();");
       svgMenu.appendChild(thisButton);
     }
     if (i > colorSelect.buttons.length - 2) {   // insert the selected color block (indicator only) as last
@@ -2465,7 +2463,7 @@ function buildSVGmenu() {
   thisButton.setAttribute('id', 'svgArrow');
   thisButton.setAttribute('type', 'button');
   thisButton.setAttribute('value', 'Arrow line');
-  thisButton.setAttribute('onclick', "setCursorMode('arrow');");
+  thisButton.setAttribute('onclick', "setCursorMode('arrow'); this.blur();");
   svgMenu.appendChild(thisButton);
 
   thisSpan = document.createElement('span');      // arrow display area
@@ -2475,14 +2473,14 @@ function buildSVGmenu() {
   thisButton = document.createElement('input');
   thisButton.setAttribute('id', 'arrowHeadPixels');
   thisButton.setAttribute('type', 'checkbox');
-  // thisButton.setAttribute('textContent', 'Fixed &nbsp; &nbsp; ');
+  thisButton.setAttribute('onclick', "this.blur();");
   thisSpan.appendChild(thisButton);
 
   thisSpan.innerHTML += ' &nbsp; Closed:';
   thisButton = document.createElement('input');
   thisButton.setAttribute('id', 'arrowHeadClosed');
   thisButton.setAttribute('type', 'checkbox');
-  // thisButton.setAttribute('textContent', 'Closed &nbsp; &nbsp; ');
+  thisButton.setAttribute('onclick', "this.blur();");
   thisSpan.appendChild(thisButton);
 
   thisSpan.innerHTML += ' &nbsp; Length:';
@@ -2494,6 +2492,7 @@ function buildSVGmenu() {
   // thisButton.setAttribute('step', '10');
   // thisButton.setAttribute('max', '150');
   thisButton.setAttribute('style', 'width: 4em');
+  thisButton.setAttribute('onchange', 'this.blur();');
   thisSpan.appendChild(thisButton);
 
   thisSpan.innerHTML += ' &nbsp; Percent:';
@@ -2505,7 +2504,7 @@ function buildSVGmenu() {
   thisButton.setAttribute('max', '30');
   thisButton.setAttribute('style', 'width: 4em');
   thisButton.setAttribute('value', '10');
-  thisButton.setAttribute('onchange', 'arrowSize=this.value;');
+  thisButton.setAttribute('onchange', 'this.blur(); arrowSize=this.value;');
   thisSpan.appendChild(thisButton);
   svgMenu.appendChild(thisSpan);
 
@@ -2513,21 +2512,21 @@ function buildSVGmenu() {
   thisButton.setAttribute('id', 'saveSVG');
   thisButton.setAttribute('type', 'button');
   thisButton.setAttribute('value', 'Extract SVG');
-  thisButton.setAttribute('onclick', 'showSVG(true);');
+  thisButton.setAttribute('onclick', 'this.blur(); showSVG(true);');
   svgMenu.appendChild(thisButton);
 
   thisButton = document.createElement('input');
   thisButton.setAttribute('id', 'plainSVG');
   thisButton.setAttribute('type', 'button');
   thisButton.setAttribute('value', 'Plain SVG');
-  thisButton.setAttribute('onclick', 'showSVG(false);');
+  thisButton.setAttribute('onclick', 'this.blur(); showSVG(false);');
   svgMenu.appendChild(thisButton);
 
   thisButton = document.createElement('input');
   thisButton.setAttribute('id', 'svgJSON');
   thisButton.setAttribute('type', 'button');
   thisButton.setAttribute('value', 'JSON SVG');
-  thisButton.setAttribute('onclick', 'jsonSVG(false);');
+  thisButton.setAttribute('onclick', 'this.blur(); jsonSVG(false);');
   svgMenu.appendChild(thisButton);
 
 
