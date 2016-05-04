@@ -4,14 +4,14 @@ A native javascript library for annotating images, with results exportable as SV
 ## General description
 
 This library provides a basic ability to annotate a base image with SVG elements, using an editing paradigm
-similar to that of Google Maps Drawing Manager.  The working area and background image for a browser window
-are specified through data- elements of a containing &lt;div&gt;.  Invocation of the library causes DOM elements to
-be created in two parts: the &lt;svg&gt; itself within the container &lt;div&gt;, and the menu &lt;div&gt; populated by default
-elements as well as data- elements specifying what shape types are to be available.  The image is initially
-presented at its minimal full extent within the containing &lt;div&gt;, scaled according to aspect ratio and pixel
-extent to fit the working area description.  Dynamic zooming through mouse gestures is continuously available
-when the mouse is within the working area.  When the drawing mode is effectively idle in "MOVE", dragging any
-point repositions the base image within the working area.
+similar to that of Google Maps Drawing Manager.  This library has no dependencies.  The working area and background
+image for a browser window are specified through data- elements of a containing &lt;div&gt;.  Invocation of the library
+causes DOM elements to be created in two parts: the &lt;svg&gt; itself within the container &lt;div&gt;, and the menu
+&lt;div&gt; populated by default elements as well as data- elements specifying what shape types are to be available.
+The image is initially presented at its minimal full extent within the containing &lt;div&gt;, scaled according to
+aspect ratio and pixel extent to fit the working area description.  Dynamic zooming through mouse gestures is
+continuously available when the mouse is within the working area.  When the drawing mode is effectively idle in "MOVE",
+dragging any point repositions the base image within the working area.
 
 Currently, the SVG element types supported are: text, polyline, polygon, line, rectangle, circle, and ellipse, as
 well as pseudo-functions "arrow", quadratic and cubic Bezier curves, and "draw" freehand sketch.  "Draw" is actually
