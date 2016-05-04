@@ -49,28 +49,18 @@
  m. +/- 90 degree text orientation
  n. DONE: ARROW super-element
  o. DONE: more graceful handling of text to screen input; e.g., hidden textbox
-
- Library-ization:  data- elements to define configuration
- DONE auto-generate html
- DONE only require a div with data- elements
- JSON configuration? Is grabtag JSON? review again!
-
- // bounds check on move (in svgDraw.js) ?
- // capture svg data - DONE, then removed due to closing tag artifact in DOM
- // source image from http:// DONE
-
  */
 var xC = 0;
 var yC = 0;
 var cursorMode = "MOVE";
-var cursorColor; // = '#ff0000';
-var zoom;         ///////////////////////////  = 0.2 should be set on initialization from baseZoom @ full image
+var cursorColor;
+var zoom;                 // set on initialization from baseZoom @ full image
 var baseStrokeWidth = 1;
 var baseBubbleRadius = 6;
 // transform below to functions?
 var strokeWidth;   //= (baseStrokeWidth / zoom).toString();    // dynamically recomputed with zoom (not this one)
 var bubbleRadius;  //= (baseBubbleRadius / zoom).toString(); // and transcoded from/to string (may not be required)
-var baseZoom;         ///////////////////////////// should be calculated from svg and image attributes
+var baseZoom;           // calculated from svg and image attributes
 var maxZoom = 4;        // this is 4 pixels per source image pixel
 var zoomDelta = 0.02;   // this can be altered to discriminate legacy firefox dommousescroll event
 var svgLayer;
@@ -274,10 +264,11 @@ function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
 
     zoom_trans(0, 0, zoom);             //////////// IMPORTANT !!!!!!!!!!!
 
-    setMove();
+    setCursorMode('MOVE');
 
     self.renderFunction = self.updateSvgByElement;
-    self.touchSupported = Modernizr.touch;
+    //self.touchSupported = Modernizr.touch;
+    self.touchSupported = 'ontouchstart' in document.documentElement;   // thanks, Edd Turtle !
     self.containerID = containerID;
     self.lastMousePoint = {x: 0, y: 0};
 
@@ -2129,6 +2120,9 @@ function zoomOut() {
 function zoom_trans(x, y, factor) {
   var xlt = document.getElementById('xlt');         // DOM svg element g xlt
   var transform = 'translate(' + ((x)).toString() + ', ' + ((y)).toString() + ')scale(' + factor.toString() + ')';
+  zoom = factor;
+  xC = x;
+  yC = y;
   xlt.attributes['transform'].value = transform;
   document.getElementById('zoom').innerHTML = "Zoom:" + zoom.toFixed(3);
 }
@@ -2274,11 +2268,6 @@ function getUserColor() {
 
 }
 
-function setMove() {
-  cursorMode = "MOVE";
-  indicateMode(cursorMode);
-}
-
 function indicateMode(mode) {
   var coverRect = mode;
   if (mode == 'rect') {
@@ -2379,6 +2368,12 @@ function buildSVGmenu() {
   thisButton.setAttribute('type', 'button');
   thisButton.setAttribute('value', 'Zoom OUT');
   thisButton.setAttribute('onclick', "this.blur(); zoomOut();");
+  svgMenu.appendChild(thisButton);
+
+  thisButton = document.createElement('input');     // default ZOOM OUT button
+  thisButton.setAttribute('type', 'button');
+  thisButton.setAttribute('value', 'Reset');
+  thisButton.setAttribute('onclick', "this.blur(); zoom_trans(0, 0, baseZoom);");
   svgMenu.appendChild(thisButton);
 
   thisSpan = document.createElement('span');      // TEXT display area
