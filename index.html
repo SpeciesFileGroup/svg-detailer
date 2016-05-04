@@ -1,96 +1,13 @@
-<!DOCTYPE html>
-<html lang="en-us">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
   <head>
-    <meta charset="UTF-8">
-    <title>Svg-detailer by SpeciesFileGroup</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
-    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
-    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
-    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <title>svg-detailer demo</title>
+    <script src="../src/modernizr.custom.34982.js"></script>
+    <script src="../src/svg-detailer.js"></script>
   </head>
   <body>
-    <section class="page-header">
-      <h1 class="project-name">Svg-detailer</h1>
-      <h2 class="project-tagline">A native javascript library for annotating images, with results exportable as SVG elements.</h2>
-      <a href="https://github.com/SpeciesFileGroup/svg-detailer" class="btn">View on GitHub</a>
-      <a href="https://github.com/SpeciesFileGroup/svg-detailer/zipball/master" class="btn">Download .zip</a>
-      <a href="https://github.com/SpeciesFileGroup/svg-detailer/tarball/master" class="btn">Download .tar.gz</a>
-    </section>
-
-    <section class="main-content">
-      <h1>
-<a id="svg-detailer" class="anchor" href="#svg-detailer" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>svg-detailer</h1>
-
-<p>A native javascript library for annotating images, with results exportable as SVG elements.</p>
-
-<h2>
-<a id="general-description" class="anchor" href="#general-description" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>General description</h2>
-
-<p>This library provides a basic ability to annotate a base image with SVG elements, using an editing paradigm
-similar to that of Google Maps Drawing Manager.  The working area and background image for a browser window
-are specified through data- elements of a containing &lt;div&gt;.  Invocation of the library causes DOM elements to
-be created in two parts: the &lt;svg&gt; itself within the container &lt;div&gt;, and the menu &lt;div&gt; populated by default
-elements as well as data- elements specifying what shape types are to be available.  The image is initially
-presented at its minimal full extent within the containing &lt;div&gt;, scaled according to aspect ratio and pixel
-extent to fit the working area description.  Dynamic zooming through mouse gestures is continuously available
-when the mouse is within the working area.  When the drawing mode is effectively idle in "MOVE", dragging any
-point repositions the base image within the working area.</p>
-
-<p>Currently, the SVG element types supported are: text, polyline, polygon, line, rectangle, circle, and ellipse, as
-well as pseudo-functions "arrow", quadratic and cubic Bezier curves, and "draw" freehand sketch.  "Draw" is actually
-realized as a polyline, rather than the SVG element &lt;path&gt;.  Additionally, the quadratic and cubic curves are
-realized as degenerate cases of &lt;path&gt;.  For purposes of element organization and editing convenience, group, &lt;g&gt;,
-elements are used to contain graphic elements</p>
-
-<p>Present limitations exist for element details, where only the "stroke" color attribute is controllable.  Other
-styling attributes such as "fill", "stroke-opacity", "fill-opacity", and "stroke-width" are fixed at this time.
-When a suitable editing framework is developed, these attributes will be changeable within the library's context.</p>
-
-<p>Element editing is currently continuously active, effected through mouse events.</p>
-
-<h2>
-<a id="user-interface-description" class="anchor" href="#user-interface-description" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>User interface description</h2>
-
-<p>SVG elements are created by selecting an element type from the button menu and clicking on the working image area.
-Some variation in mouse down vs click and double-click exists on an element-type basis:</p>
-
-<ul>
-<li>A &lt;line&gt; is created by clicking the first point, and dragging to the end point, terminating on mouse up.  This
- paradigm is shared by &lt;rect&gt;angle, &lt;circle&gt;, &lt;ellipse&gt;, "draw", and "arrow".</li>
-<li>&lt;polyline&gt; and &lt;polygon&gt; use a "tethered" paradigm where each mouse click registers a new point,
- terminated by double-click or "Enter"/"Return".</li>
-<li>&lt;text&gt; elements are created by clicking to specify the baseline point and then typing on the keyboard.  Either
- the native key input handler can be used, or the Mousetrap library can be used, although the latter has not had
- any testing since the dependency was removed.  Text input is terminated by shift-Enter.</li>
-</ul>
-
-<p>Editing is enabled through mouseover events on the &lt;g&gt; groups containing elements. Similarly to map drawing element
-editing, "bubbles" appear at control points appropriate to the given element. On mouse down on these bubbles,
-dragging the point relocates it for the element.  Due to the definition of rectangle, circle, ellipse, and text,
-moving their base-point effectively relocates the element.  The other line-  or poly- based elements have only
-individually controllable points currently, although functions to move the element as a whole are in the works.
-Polyline, polygon, and "draw" elements have "insertion" points depicted at the midpoint of each segment to allow
-refinement of the shape.  Each such insertion offers new insertion points, none of which persist unless used.</p>
-
-<h3>
-<a id="hot-keys" class="anchor" href="#hot-keys" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Hot keys:</h3>
-
-<p>As mentioned earlier, the "Return" or "Enter" key functions as a double-click (except fot text, where it is CR/LF,
-and shift-Enter is used for element completion).  "Escape" is used to undo the current point being created.
-Polylines and polygons benefit most from this feature, in that the entire element can be backtracked to nothing. The
-intention is to extend this to points being edited as well.  Shift-Delete is used to remove the highlighted element
-completely.  Control-B and control-T are used to change the layer position of the highlighted element to the
-"bottom" or "top" of the element stack, respectively.  These functions are useful since "later" elements can
-eclipse previous elements, making them inaccessible to editing.</p>
-
-      <footer class="site-footer">
-        <span class="site-footer-owner"><a href="https://github.com/SpeciesFileGroup/svg-detailer">Svg-detailer</a> is maintained by <a href="https://github.com/SpeciesFileGroup">SpeciesFileGroup</a>.</span>
-
-        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
-      </footer>
-
-    </section>
     <div id="container" style="overflow: hidden; left: 50px; top: 175px; position: inherit;" tabindex="0"
                         data-height="600" 
                         data-width="600"
@@ -111,7 +28,7 @@ eclipse previous elements, making them inaccessible to editing.</p>
     <script>
 var svgDraw = new SVGDraw(document.getElementById("container"));
     </script>
-
-  
   </body>
 </html>
+
+
