@@ -49,4 +49,4 @@ refinement of the shape.  Each such insertion offers new insertion points, none 
 
 ## Demo
 
-[See here.][http://speciesfilegroup.github.io/svg-detailer]
+[Here.](http://speciesfilegroup.github.io/svg-detailer)
