@@ -1825,6 +1825,10 @@ SVGDraw.prototype.keyHandler = function () {
         setCursorMode('MOVE');
         return;
       }
+      if ((inFocus.tagName == 'BODY') || (inFocus.id == svgLayer.parentElement.id)) {
+        event.preventDefault();
+        return;
+      }
     }
     if ((event.key == 'Escape') || (thisKeyCode == 27)) {
       switch (cursorMode) {
@@ -2132,16 +2136,22 @@ function updateSvgText(event) {                       // modified to eliminate m
   var thisKeyCode = event.keyCode;
   //if (thisKey == undefined) {                   // undefined if not FireFox
   thisKey = lookUpKey(event);     // consolidate
-  if (cursorMode != 'text') {     // redundant, since we only get here from keyDown handler
-    switch (event.keyCode) {
-      case 13:                    // Enter
-        dblClick();
-        break;
-    }
-    return false;
-  }
+  //if (cursorMode != 'text') {     // redundant, since we only get here from keyDown handler
+  //  switch (event.keyCode) {
+  //    case 13:                    // Enter
+  //      dblClick();
+  //      break;
+  //  }
+  //  if (thisKeyCode == 8) {       // prevent Backspace from invoking BACK browser function
+  //    event.preventDefault();
+  //  }
+  //  return false;
+  //}
   //var text4svg = document.getElementById("text4svg");   // this control eliminated
-  if (thisElement == null) {
+  if (thisElement == null) {      // this can occur if <text> element just completed and no new one started
+    if (thisKeyCode == 8) {       // prevent Backspace from invoking BACK browser function
+      event.preventDefault();
+    }
     return false
   }
   if ((event.keyCode == 13) && (event.shiftKey)) {      // terminate this text block chain on Shift-Enter
@@ -2160,7 +2170,7 @@ function updateSvgText(event) {                       // modified to eliminate m
   }
   if (thisKeyCode == 8) {
     text4svg = text4svgValue.slice(0, text4svgValue.length - 1) + '_';
-    event.preventDefault();
+    event.preventDefault();       // prevent Backspace from invoking BACK browser function
   }
   if (!thisKey && (thisKeyCode != 13) && (thisKeyCode != 8)) {
     return;
