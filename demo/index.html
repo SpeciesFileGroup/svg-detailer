@@ -4,11 +4,11 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>svg-detailer demo</title>
-    <script src="file:///Users/jrichardflood/RubymineProjects/svg-detailer/src/svg-detailer.js"></script>
+    <script src="../src/svg-detailer.js"></script>
   </head>
   <body>
   <div>
-    <input id="image_file" type="file" onchange="getImage()">
+    <input id="image_file" type="file" onchange="getImage(event)">
   </div>
     <div id="container" style="overflow: hidden; left: 50px; top: 175px; position: inherit;" tabindex="0"
                         data-height="600"
@@ -29,12 +29,19 @@
     </div>
     <script>
       var svgDraw;
-      function getImage() {
+      function getImage(files) {
+        var files = event.target.files
         var file_name = document.getElementById(("image_file"));
         var svg_container = document.getElementById("container");
-        var realFileName = file_name.value.replace("C:\\fakepath\\", "file:///Users/jrichardflood/Downloads/CockroachImages/");
-        svg_container.attributes["data-image"].value = realFileName;
-        svgDraw = new SVGDraw(svg_container);
+
+        if (FileReader && files && files.length) {
+          var fileReader = new FileReader()
+          fileReader.onload = (image) => {
+            svg_container.attributes["data-image"].value = fileReader.result;
+            svgDraw = new SVGDraw(svg_container);
+          }
+          fileReader.readAsDataURL(files[0])
+        }
       }
     </script>
   </body>
