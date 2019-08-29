@@ -30,18 +30,20 @@
     </div>
     <script>
       var svgDraw;
-      function getImage(files) {
-        svgDraw = undefined;
-        var files = event.target.files
-        var file_name = document.getElementById(("image_file"));
-        var svg_container = document.getElementById("container");
+      function getImage(event) {
+        let files = event.target.files;
+        let svg_container = document.getElementById("container");
+        let svg_element = svg_container.children[0];
+        if(svg_element) {svg_element.parentNode.removeChild(svg_element)}  // remove any previously created svg element
+        let svg_menu = document.getElementById("svgMenu");
+        if(svg_menu) {svg_menu.parentNode.removeChild(svg_menu)}      // force removal of any created peer menu element
 
         if (FileReader && files && files.length) {
-          var fileReader = new FileReader()
+          var fileReader = new FileReader();
           fileReader.onload = (image) => {
             svg_container.attributes["data-image"].value = fileReader.result;
             svgDraw = new SVGDraw(svg_container);
-          }
+          };
           fileReader.readAsDataURL(files[0])
         }
       }
