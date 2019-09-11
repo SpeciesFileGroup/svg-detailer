@@ -249,6 +249,7 @@ function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
     thisButton.setAttribute('onclick', "clearLastGroup()");
     svgMenu.appendChild(thisButton);
     var buttons = JSON.parse(containerID.attributes['data-buttons'].value).buttons;
+    var i;
     for (i = 0; i < buttons.length; i++) {                // these buttons explicitly enumerated in data-buttons
       thisButton = document.createElement('input');
       thisButton.setAttribute('type', 'button');
@@ -2421,7 +2422,7 @@ function buildSVGmenu() {
       {"color": "#FF0000"}
     ]
   };
-
+  let i;
   for (i = 0; i < colorSelect.buttons.length; i++) {                // buttons explicitly enumerated in data-buttons
     if (i == 4) {                                  // insert the text area input after the first 4 color select buttons
       thisButton = document.createElement('input');
