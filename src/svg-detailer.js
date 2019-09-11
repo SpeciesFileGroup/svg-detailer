@@ -2539,7 +2539,4 @@ function buildSVGmenu() {
   svgMenu.appendChild(thisTextArea);
 
 }
-export {
-  SVGDraw
-};
-
+export default SVGDraw;
