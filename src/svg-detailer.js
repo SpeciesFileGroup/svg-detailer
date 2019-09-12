@@ -255,8 +255,12 @@ function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
       thisButton.setAttribute('type', 'button');
       thisButton.setAttribute('value', buttons[i].function.charAt(0).toUpperCase() + buttons[i].function.slice(1));
       // thisButton.setAttribute('onclick', "this.blur(); setCursorMode('" + buttons[i].function + "');");
-      svgMenu.appendChild(thisButton);
-      svgMenu.lastChild.addEventListener('click', (event) => {this.blur; setCursorMode(buttons[i].function )})
+      svgMenu.appendChild(thisButton)
+
+      let figureType = buttons[i].function
+      thisButton.addEventListener('click', (event) => {
+        setCursorMode(figureType)
+      })
     }
     buildSVGmenu();       // populate the button-ology from the data element description (mostly)
 
@@ -2534,7 +2538,8 @@ function buildSVGmenu() {
   svgMenu.appendChild(thisButton);
 
 
-  svgMenu.innerHTML += '<br>';
+  //svgMenu.innerHTML += '<br>'; <--- This breaks EVERYTHING and it will destroy DOM objects converting it in string.
+  svgMenu.appendChild(document.createElement('br'))
 
   var thisTextArea = document.createElement('textarea');
   thisTextArea.setAttribute('id', 'textSVGorJSON');
