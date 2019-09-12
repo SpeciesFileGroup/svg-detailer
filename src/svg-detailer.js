@@ -250,7 +250,7 @@ function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
     svgMenu.appendChild(thisButton);
     thisButton.addEventListener('click', (event) => { clearLastGroup() })
     var buttons = JSON.parse(containerID.attributes['data-buttons'].value).buttons;
-    var i;
+    let i;
     for (i = 0; i < buttons.length; i++) {                // these buttons explicitly enumerated in data-buttons
       thisButton = document.createElement('input');
       thisButton.setAttribute('type', 'button');
@@ -2272,7 +2272,7 @@ function setCursorColor(color) {
 }
 
 function setUserColor(color) {          // only sets up the color for later selection
-  var userColorTextbox = document.getElementById('setUserColor')
+  var userColorTextbox = document.getElementById('setUserColor');
   userColorTextbox.attributes['style'].value = 'background-color: ' + color;
   userColorTextbox.blur();
 }
@@ -2440,25 +2440,26 @@ function buildSVGmenu() {
       thisButton.setAttribute('style', 'width: 5em');
       // thisButton.setAttribute('onchange', "setUserColor(this.value); this.blur();");
       svgMenu.appendChild(thisButton);
-      thisButton.addEventListener('change', (event) => { setUserColor(this.value); this.blur(); })
+      thisButton.addEventListener('change', (event) => { setUserColor(thisButton.value); thisButton.blur(); });
+
       thisButton = document.createElement('input');   // add the user-defined color select button
       thisButton.setAttribute('id', 'setUserColor');
       thisButton.setAttribute('type', 'button');
       thisButton.setAttribute('style', 'background-color: ' + colorSelect.buttons[i].color);
       // thisButton.setAttribute('onclick', "setCursorColor(getUserColor()); this.blur();");
       svgMenu.appendChild(thisButton);
-      thisButton.addEventListener('click', (event) => { setUserColor(getUserColor()); this.blur(); })
+      thisButton.addEventListener('click', (event) => { setCursorColor(getUserColor()); thisButton.blur(); })
     }
-    if (i < colorSelect.buttons.length - 2) {       // for the first four color select buttons, just set table color
+    if (i < colorSelect.buttons.length - 2) {       // for the first four (0:3) color select buttons, just set table color
       thisButton = document.createElement('input');
       thisButton.setAttribute('type', 'button');
       thisButton.setAttribute('style', 'background-color: ' + colorSelect.buttons[i].color);
       // thisButton.setAttribute('onclick', "setCursorColor('" + colorSelect.buttons[i].color + "'); this.blur();");
       svgMenu.appendChild(thisButton);
       let thisColor = colorSelect.buttons[i].color;
-      thisButton.addEventListener('click', (event) => { setUserColor(thisColor); this.blur(); })
+      thisButton.addEventListener('click', (event) => { setCursorColor(thisColor); thisButton.blur(); })
     }
-    if (i > colorSelect.buttons.length - 2) {   // insert the selected color block (indicator only) as last
+    if (i > colorSelect.buttons.length - 2) {   // insert the selected color block (5) (indicator only) as last
       var thisColorTitle = document.createElement('span');
       thisColorTitle.innerHTML = ' Selected Color >';
       svgMenu.appendChild(thisColorTitle);
@@ -2467,8 +2468,8 @@ function buildSVGmenu() {
       thisButton.setAttribute('type', 'button');
       thisButton.setAttribute('style', 'this.blur(); background-color: ' + colorSelect.buttons[i].color);
       svgMenu.appendChild(thisButton);
-      let thisColor = colorSelect.buttons[i].color;
-      thisButton.addEventListener('click', (event) => { setUserColor(thisColor); this.blur(); });
+      // let thisColor = colorSelect.buttons[i].color;
+      // thisButton.addEventListener('click', (event) => { setUserColor(thisColor); this.blur(); });
       cursorColor = colorSelect.buttons[i].color;   // set the cursorColor from the nominal button arrangement
     }
   }
