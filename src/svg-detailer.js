@@ -885,7 +885,7 @@ function insertNewPoint(element, bubble) {     //this bubble's ID truncated is t
   var thesePoints = '';
   var insertionPoint = parseInt(bubble.id);
   var thisPoint = bubble.attributes['cx'].value + ',' + bubble.attributes['cy'].value;
-  for (var k = 0; k < splitPoints.length; k++) {
+  for (let k = 0; k < splitPoints.length; k++) {
     thesePoints += splitPoints[k] + ' ';
     if (k == insertionPoint) {
       thesePoints += thisPoint + ' ';
@@ -1262,7 +1262,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       }
       else {        // svgInProgress = 'polygon', so normal creation of element adding new point to end
         thesePoints = '';                               // clear thecollector
-        for (k = 0; k < splitPoints.length - 1; k++) {  // reconstruct except for the last point
+        for (let k = 0; k < splitPoints.length - 1; k++) {  // reconstruct except for the last point
           thesePoints += splitPoints[k] + ' ';          // space delimiter at the end of each coordinate
         }
         thisPoint += ' ';
@@ -1295,7 +1295,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       }
       else {
         thesePoints = '';                               // clear the collector
-        for (k = 0; k < splitPoints.length - 1; k++) {  // reconstruct except for the last point
+        for (let k = 0; k < splitPoints.length - 1; k++) {  // reconstruct except for the last point
           thesePoints += splitPoints[k] + ' ';          // space delimiter at the end of each coordinate
         }
         thisPoint += ' ';
@@ -1966,7 +1966,7 @@ function deleteDuplicatePoints(element) {
   var thesePoints = element.attributes['points'].value.trim();
   var splitPoints = thesePoints.split(' ');
   thesePoints = splitPoints[0] + ' ';
-  for (k = 1; k < splitPoints.length; k++) {
+  for (let k = 1; k < splitPoints.length; k++) {
     if (splitPoints[k] != splitPoints[k - 1]) {   // only keep this point
       thesePoints += splitPoints[k] + ' ';        // if it is "new"
     }
@@ -1978,7 +1978,7 @@ function deleteLastPoint(element) {   // specific to <poly->
   var thesePoints = element.attributes['points'].value.trim();
   var splitPoints = thesePoints.split(' ');
   thesePoints = splitPoints[0] + ' ';
-  for (k = 1; k < splitPoints.length - 1; k++) {
+  for (let k = 1; k < splitPoints.length - 1; k++) {
     if (splitPoints[k] != splitPoints[k - 1]) {   // only keep this point
       thesePoints += splitPoints[k] + ' ';        // if it is "new"
     }
