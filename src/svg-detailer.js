@@ -254,8 +254,9 @@ function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
       thisButton = document.createElement('input');
       thisButton.setAttribute('type', 'button');
       thisButton.setAttribute('value', buttons[i].function.charAt(0).toUpperCase() + buttons[i].function.slice(1));
-      thisButton.setAttribute('onclick', "this.blur(); setCursorMode('" + buttons[i].function + "');");
+      // thisButton.setAttribute('onclick', "this.blur(); setCursorMode('" + buttons[i].function + "');");
       svgMenu.appendChild(thisButton);
+      svgMenu.lastChild.addEventListener('click', (event) => {this.blur; setCursorMode(buttons[i].function )})
     }
     buildSVGmenu();       // populate the button-ology from the data element description (mostly)
 
@@ -2540,4 +2541,4 @@ function buildSVGmenu() {
   svgMenu.appendChild(thisTextArea);
 
 }
-export default SVGDraw;
+export default SVGDraw
