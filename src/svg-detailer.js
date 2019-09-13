@@ -225,11 +225,11 @@ function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
     lastMouseX = baseZoom * svgImage.width / 2;         // center of image
     lastMouseY = baseZoom * svgImage.height / 2;
     // insert the svg base image into the transformable group <g id='xlt'>
-    var xlt = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    let xlt = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     xlt.setAttributeNS(null, 'id', 'xlt');
     xlt.setAttributeNS(null, 'transform', 'translate(0,0)scale(' + parseFloat(zoom) + ')');
     svgLayer.appendChild((xlt));
-    var xltImage = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+    let xltImage = document.createElementNS('http://www.w3.org/2000/svg', 'image');
     xltImage.setAttributeNS(null, 'id', "xltImage");
     xltImage.setAttributeNS(null, 'x', "0");
     xltImage.setAttributeNS(null, 'y', "0");
@@ -242,14 +242,14 @@ function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
     svgMenu = document.createElement('div');        // this lengthy, tedious section generates the controls needed
     svgMenu.setAttribute('id', 'svgMenu');
     containerID.parentElement.appendChild(svgMenu);
-    var thisButton;
+    let thisButton;
     thisButton = document.createElement('input');       // for now, inject the un-listed Delete Last Element button
     thisButton.setAttribute('type', 'button');
     thisButton.setAttribute('value', 'Clear Last Element');
     // thisButton.setAttribute('onclick', "clearLastGroup()");
     svgMenu.appendChild(thisButton);
     thisButton.addEventListener('click', (event) => { clearLastGroup() })
-    var buttons = JSON.parse(containerID.attributes['data-buttons'].value).buttons;
+    let buttons = JSON.parse(containerID.attributes['data-buttons'].value).buttons;
     let i;
     for (i = 0; i < buttons.length; i++) {                // these buttons explicitly enumerated in data-buttons
       thisButton = document.createElement('input');
@@ -302,7 +302,7 @@ function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
 
 SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop element generation on mouseDOWN (true?)
   // BUT for PATH, line and MOVE, stop on mouseUP
-  var self = this;
+  let self = this;
   return function (event) {
     self.updateMousePosition(event);
     if (svgInProgress != false && svgInProgress != cursorMode) {    // terminate in progress svg before continuing
@@ -326,12 +326,12 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
         savedCursorMode = cursorMode;     // plant this to prevent immediate post-creation clearing
         thisSvg[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
-        var group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        var newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
+        let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        let newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
         group.setAttributeNS(null, 'id', newGroupID);
         thisGroup = group;
         document.getElementById("xlt").appendChild(group);
-        var element = createElement('polyline');        //YES, I KNOW... polyline behavior mimics google maps better
+        let element = createElement('polyline');        //YES, I KNOW... polyline behavior mimics google maps better
 
         group.appendChild(element);
         thisElement = group.children[0];
@@ -343,8 +343,8 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
       }
       else {      // this is the fixation of this last point, so DON'T dissociate mouse move handler
         self.updateMousePosition(event);
-        var thesePoints = thisElement.attributes['points'].value;   // to trim or not to trim?  if so, multiple implications here
-        var thisPoint = ((lastMouseX - xC) / zoom).toFixed(2).toString()
+        let thesePoints = thisElement.attributes['points'].value;   // to trim or not to trim?  if so, multiple implications here
+        let thisPoint = ((lastMouseX - xC) / zoom).toFixed(2).toString()
           + ',' + ((lastMouseY - yC) / zoom).toFixed(2).toString() + ' ';
         thisElement.attributes['points'].value = thesePoints.concat(thisPoint);
       }
@@ -353,12 +353,12 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
         savedCursorMode = cursorMode;     // plant this to prevent immediate post-creation clearing
         thisSvg[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
-        var group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         thisGroup = group;
-        var newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
+        let newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
         group.setAttributeNS(null, 'id', newGroupID);
         document.getElementById("xlt").appendChild(group);
-        var element = createElement('polyline');
+        let element = createElement('polyline');
 
         group.appendChild(element);
         thisElement = group.children[0];
@@ -371,8 +371,8 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
       }
       else {      // this is the fixation of this last point, so DON'T dissociate mouse move handler
         self.updateMousePosition(event);
-        var thesePoints = thisElement.attributes['points'].value;
-        var thisPoint = ((lastMouseX - xC) / zoom).toFixed(2).toString()
+        let thesePoints = thisElement.attributes['points'].value;
+        let thisPoint = ((lastMouseX - xC) / zoom).toFixed(2).toString()
           + ',' + ((lastMouseY - yC) / zoom).toFixed(2).toString() + ' ';
         thisElement.attributes['points'].value = thesePoints.concat(thisPoint);
       }
@@ -381,11 +381,11 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
         savedCursorMode = cursorMode;     // plant this to prevent immediate post-creation clearing
         thisSvg[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
-        var group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        var newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
+        let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        let newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
         group.setAttributeNS(null, 'id', newGroupID);
         document.getElementById("xlt").appendChild(group);
-        var element = createElement('rect');
+        let element = createElement('rect');
 
         group.appendChild(element);
         thisGroup = group;
@@ -402,12 +402,12 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
         savedCursorMode = cursorMode;     // plant this to prevent immediate post-creation clearing
         thisSvg[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
-        var group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         thisGroup = group;
-        var newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
+        let newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
         group.setAttributeNS(null, 'id', newGroupID);
         document.getElementById("xlt").appendChild(group);
-        var element = createElement('line');
+        let element = createElement('line');
 
         group.appendChild(element);
         thisElement = group.children[0];
@@ -427,13 +427,13 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
         savedCursorMode = cursorMode;     // plant this to prevent immediate post-creation clearing
         thisSvg[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
-        var group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         thisGroup = group;
-        var newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
+        let newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
         group.setAttributeNS(null, 'id', newGroupID);
         group.setAttributeNS(null, 'type', cursorMode);
         document.getElementById("xlt").appendChild(group);
-        var element = createElement('line');
+        let element = createElement('line');
 
         group.appendChild(element);
         thisElement = group.children[0];
@@ -456,11 +456,11 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         }
         savedCursorMode = cursorMode;     // plant this to prevent immediate post-creation clearing
         thisSvg[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
-        var group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        var newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
+        let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        let newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
         group.setAttributeNS(null, 'id', newGroupID);
         document.getElementById("xlt").appendChild(group);
-        var element = createElement(cursorMode);      // new generalized method
+        let element = createElement(cursorMode);      // new generalized method
 
         group.appendChild(element);
         thisGroup = group;
@@ -476,12 +476,12 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
         savedCursorMode = cursorMode;     // plant this to prevent immediate post-creation clearing
         thisSvg[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
-        var group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         thisGroup = group;
-        var newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
+        let newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
         group.setAttributeNS(null, 'id', newGroupID);
         document.getElementById("xlt").appendChild(group);
-        var element = createElement('ellipse');
+        let element = createElement('ellipse');
 
         group.appendChild(element);
         thisElement = group.children[0];
@@ -501,13 +501,13 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
         savedCursorMode = cursorMode;     // plant this to prevent immediate post-creation clearing
         thisSvg[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
-        var group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         thisGroup = group;
-        var newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
+        let newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
         group.setAttributeNS(null, 'id', newGroupID);
         document.getElementById("xlt").appendChild(group);
         //for (j = 0; j < thisSvg.length; j++) {              // for text mode there is only one
-        var element = createElement('polyline');
+        let element = createElement('polyline');
 
         group.appendChild(element);
         thisElement = group.children[0];
@@ -531,17 +531,17 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
         savedCursorMode = cursorMode;     // plant this to prevent immediate post-creation clearing
         thisSvg[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
-        var group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         thisGroup = group;
-        var newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
+        let newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
         group.setAttributeNS(null, 'id', newGroupID);
         document.getElementById("xlt").appendChild(group);
-        var element = createElement('path');
+        let element = createElement('path');
 
         group.appendChild(element);
         thisElement = group.children[0];
-        var thisX = thisSvg[0][0];
-        var thisY = thisSvg[0][1];
+        let thisX = thisSvg[0][0];
+        let thisY = thisSvg[0][1];
         element.setAttributeNS(null, 'd', getCurvePath(thisX, thisY, thisX, thisY, thisX, thisY, thisX, thisY));
         svgInProgress = cursorMode;     // mark in progress
       }
@@ -566,13 +566,13 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
       if (svgInProgress == false) {
         thisSvg[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
         savedCursorMode = cursorMode;     // plant this to prevent immediate post-creation clearing
-        var group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         thisGroup = group;
-        var newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
+        let newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
         group.setAttributeNS(null, 'id', newGroupID);
         document.getElementById("xlt").appendChild(group);
         //for (j = 0; j < thisSvg.length; j++) {              // for text mode there is only one
-        var element;
+        let element;
         element = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         //document.getElementById(group.id).appendChild(element);
         group.appendChild(element);
@@ -616,10 +616,10 @@ function getCurvePath(x1, y1, cx1, cy1, cx2, cy2, x2, y2) {
 }
 
 function getCurveCoords(d) {
-  var pieces = d.replace(/,/g, '').split(' ');
-  var j = 0;
-  var coords = [];
-  for (var k = 0; k < pieces.length; k++) {
+  let pieces = d.replace(/,/g, '').split(' ');
+  let j = 0;
+  let coords = [];
+  for (let k = 0; k < pieces.length; k++) {
     if (isNumeric(pieces[k])) {   // bypass the curve type symbol
       coords[j] = pieces[k];
       j++;
@@ -634,7 +634,7 @@ function getCurvePoints(coords) {   // special bounding poly for curve
 }
 
 function createElement(type) {
-  var element = document.createElementNS('http://www.w3.org/2000/svg', type);
+  let element = document.createElementNS('http://www.w3.org/2000/svg', type);
   element.setAttributeNS(null, 'stroke', cursorColor);
   element.setAttributeNS(null, 'stroke-width', strokeWidth);
   element.setAttributeNS(null, 'stroke-opacity', '0.9');
@@ -696,7 +696,7 @@ function setEditElement(group) {    // add bubble elements to the group containi
     }
   }
   // var element = group.firstChild;                  // new method using createBubbleGroup
-  var bubbleGroup = createBubbleGroup(group);      // since bubble groups are heterogeneous in structure
+  let bubbleGroup = createBubbleGroup(group);      // since bubble groups are heterogeneous in structure
   group.appendChild(bubbleGroup);             // make the new bubble group in a no-id <g>
 }
 
@@ -809,7 +809,7 @@ function setSizeElement(bubble) {       // this sets up the single point functio
   //thisElement = group.firstChild;    // this is the real element
   //cursorMode = group.firstChild.tagName;  // extract its tag
   thisBubble = bubble;
-  var group = bubble.parentNode.parentNode;          // set group for mousemove
+  let group = bubble.parentNode.parentNode;          // set group for mousemove
   thisGroup = group;
   thisElement = group.firstChild;    // this is the real element
   if (!((cursorMode == 'cubic') || (cursorMode == 'quadratic'))) {      // tagName will be 'path'
@@ -832,7 +832,7 @@ function setPointElement(bubble) {    // this performs the inline substitution o
 // breakpoint convenience point
   }
   thisBubble = bubble;
-  var group = bubble.parentNode.parentNode;          // set group for mousemove
+  let group = bubble.parentNode.parentNode;          // set group for mousemove
   thisGroup = group;
   thisElement = group.firstChild;    // this is the real element
   if (parseInt(bubble.id) == bubble.parentNode.childElementCount - 1) {   // last point/bubble?
@@ -859,10 +859,10 @@ function setPointElement(bubble) {    // this performs the inline substitution o
 
 function setNewPointElement(bubble) {     // this inserts the new point into the <poly.. element
   if (thisBubble == bubble) {   // this condition implies we mouseDowned on the point we are INSERTING
-    var BreakHere = true;    // /////////  VERY PRELIM
+    let BreakHere = true;    // /////////  VERY PRELIM
   }
   thisBubble = bubble;
-  var group = bubble.parentNode.parentNode.parentNode;          // set group for mousemove handler
+  let group = bubble.parentNode.parentNode.parentNode;          // set group for mousemove handler
   thisGroup = group;
   thisElement = group.firstChild;    // this is the real element
   if (parseInt(bubble.id) == bubble.parentNode.childElementCount - 1) {
@@ -883,10 +883,10 @@ function setNewPointElement(bubble) {     // this inserts the new point into the
 }                                       // use mouseup or mousedown to terminate radius drag
 
 function insertNewPoint(element, bubble) {     //this bubble's ID truncated is the point to insert AFTER
-  var splitPoints = element.attributes['points'].value.trim().split(' ');
-  var thesePoints = '';
-  var insertionPoint = parseInt(bubble.id);
-  var thisPoint = bubble.attributes['cx'].value + ',' + bubble.attributes['cy'].value;
+  let splitPoints = element.attributes['points'].value.trim().split(' ');
+  let thesePoints = '';
+  let insertionPoint = parseInt(bubble.id);
+  let thisPoint = bubble.attributes['cx'].value + ',' + bubble.attributes['cy'].value;
   for (let k = 0; k < splitPoints.length; k++) {
     thesePoints += splitPoints[k] + ' ';
     if (k == insertionPoint) {
@@ -897,27 +897,27 @@ function insertNewPoint(element, bubble) {     //this bubble's ID truncated is t
 }
 
 function createBubbleGroup(group) {
-  var svgAttrs = {};
-  var thisX;
-  var thisY;
-  var splitPoints;
-  var nextX;
-  var nextY;
-  var element = group.firstChild;
+  let svgAttrs = {};
+  let thisX;
+  let thisY;
+  let splitPoints;
+  let nextX;
+  let nextY;
+  let element = group.firstChild;
   svgAttrs = getModel(element.tagName);
   if (element.tagName != 'path') {    // /////// skip this step for path exception
-    for (var key in svgAttrs) {     // collect basic (numeric) attributes for positioning and extent
+    for (let key in svgAttrs) {     // collect basic (numeric) attributes for positioning and extent
       svgAttrs[key] = getAttributeValue(element, key);       // collect this numeric attribute
     }
   }
-  var bubbleGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  let bubbleGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
   // var bubble;
 
   switch (element.tagName) {
     case 'circle':    // 1 relocation bubble, 4 compass-point resize bubbles (flagged SHIFT and SIZE respecively)
-      var cx = svgAttrs['cx'];
-      var cy = svgAttrs['cy'];
-      var cr = svgAttrs['r'];
+      let cx = svgAttrs['cx'];
+      let cy = svgAttrs['cy'];
+      let cr = svgAttrs['r'];
       bubbleGroup.appendChild(createShiftBubble(cx, cy));    // this is the center point of both bubble and circle
       bubbleGroup.appendChild(createSizeBubble(cr + cx, cy));    // this is the E resize point
       bubbleGroup.appendChild(createSizeBubble(cx, cr + cy));    // this is the S resize point
@@ -925,10 +925,10 @@ function createBubbleGroup(group) {
       bubbleGroup.appendChild(createSizeBubble(cx, cy - cr));    // this is the N resize point
       return bubbleGroup;
     case 'ellipse':    // 1 relocation bubble, 4 compass-point resize bubbles (flagged SHIFT and SIZE respecively)
-      var cx = svgAttrs['cx'];
-      var cy = svgAttrs['cy'];
-      var rx = svgAttrs['rx'];
-      var ry = svgAttrs['ry'];
+      cx = svgAttrs['cx'];
+      cy = svgAttrs['cy'];
+      let rx = svgAttrs['rx'];
+      let ry = svgAttrs['ry'];
       bubbleGroup.appendChild(createShiftBubble(cx, cy));    // this is the center point of both bubble and circle
       bubbleGroup.appendChild(createSizeBubble(rx + cx, cy));    // this is the E resize point
       bubbleGroup.appendChild(createSizeBubble(cx, ry + cy));    // this is the S resize point
@@ -936,25 +936,25 @@ function createBubbleGroup(group) {
       bubbleGroup.appendChild(createSizeBubble(cx, cy - ry));    // this is the N resize point
       return bubbleGroup;
     case 'rect':
-      var x = svgAttrs['x'];
-      var y = svgAttrs['y'];
-      var w = svgAttrs['width'];
-      var h = svgAttrs['height'];
+      let x = svgAttrs['x'];
+      let y = svgAttrs['y'];
+      let w = svgAttrs['width'];
+      let h = svgAttrs['height'];
       bubbleGroup.appendChild(createShiftBubble(x, y));     // this is the rectangle origin, anomalous as it may be
       bubbleGroup.appendChild(createSizeBubble(x + w, y + h));    // this is the resize point
       return bubbleGroup;
     case 'line':
-      var x1 = svgAttrs['x1'];
-      var y1 = svgAttrs['y1'];
-      var x2 = svgAttrs['x2'];
-      var y2 = svgAttrs['y2'];
+      let x1 = svgAttrs['x1'];
+      let y1 = svgAttrs['y1'];
+      let x2 = svgAttrs['x2'];
+      let y2 = svgAttrs['y2'];
       bubbleGroup.appendChild(createPointBubble(x1, y1, 'x1-y1'));     // this is the 1st line coordinate
       bubbleGroup.appendChild(createPointBubble(x2, y2, 'x2-y2'));    // this is the 2nd (terminal) line point
       return bubbleGroup;
     case 'path':           // this is a MAJOR EXCEPTION to the other cases, used for curve !! articulate for type !!
-      var theseCurvePoints = element.attributes['d'].value;
-      var thisCurveTypeQuadratic = theseCurvePoints.indexOf('Q ') > 0;
-      var theseCoords = getCurveCoords(theseCurvePoints);       // stack control points after end points after helpers
+      let theseCurvePoints = element.attributes['d'].value;
+      let thisCurveTypeQuadratic = theseCurvePoints.indexOf('Q ') > 0;
+      let theseCoords = getCurveCoords(theseCurvePoints);       // stack control points after end points after helpers
       // fill out both control points in either case
       if (thisCurveTypeQuadratic) {          // if quadratic
         theseCoords[6] = theseCoords[4];  // replicate p2
@@ -978,15 +978,15 @@ function createBubbleGroup(group) {
       return bubbleGroup;
     case 'polygon':
     case 'polyline':      // create a parallel structure to the point attr, using its coords
-      var thesePoints = element.attributes['points'].value.trim();      // trim to eliminate extraneous empty string
+      let thesePoints = element.attributes['points'].value.trim();      // trim to eliminate extraneous empty string
       splitPoints = thesePoints.split(' ');
-      var thisPoint = splitPoints[0].split(',');   // prime the pump for iteration
+      let thisPoint = splitPoints[0].split(',');   // prime the pump for iteration
       thisX = parseFloat(thisPoint[0]);
       thisY = parseFloat(thisPoint[1]);
-      var nextPoint;                      // nextX,nextY these are used to bound and calculate the intermediate
+      let nextPoint;                      // nextX,nextY these are used to bound and calculate the intermediate
       // insert new point bubbles in separate parallel group
-      var newBubbleGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      for (var k = 0; k < splitPoints.length; k++) {    // append this point and an intermediary point
+      let newBubbleGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      for (let k = 0; k < splitPoints.length; k++) {    // append this point and an intermediary point
         //thisPoint  = splitPoints[k].split(',');
         bubbleGroup.appendChild(createPointBubble(thisX, thisY, k.toString()));   // add the vertex point
         if (k < splitPoints.length - 1) {     // since we are looking ahead one point
@@ -1003,7 +1003,7 @@ function createBubbleGroup(group) {
         thisPoint = splitPoints[0].split(',');   // get the first point again
         thisX = parseFloat(thisPoint[0]);
         thisY = parseFloat(thisPoint[1]);
-        var thisID = (splitPoints.length - 1).toString() + '.5';
+        let thisID = (splitPoints.length - 1).toString() + '.5';
         newBubbleGroup.appendChild(createNewPointBubble(0.5 * (thisX + nextX), 0.5 * (thisY + nextY), thisID));
       }
       bubbleGroup.appendChild(newBubbleGroup);   // add the new point insertion bubbles
@@ -1017,27 +1017,27 @@ function createBubbleGroup(group) {
 }
 
 function createShiftBubble(cx, cy) {
-  var bubble = createBubbleStub(cx, cy);
+  let bubble = createBubbleStub(cx, cy);
   bubble.setAttributeNS(null, 'fill-opacity', '0.8');         // SHIFT bubble is slightly more opaque
   // bubble.setAttributeNS(null, 'onmousedown', "setMoveElement(this);");
   // bubble.setAttributeNS(null, 'onmouseup', "setElementMouseOverOut(this);");
-  bubble.setAttributeNS(null, 'style', 'cursor:move;');
   bubble.addEventListener('mousedown', (event) => { setMoveElement(bubble) });
   bubble.addEventListener('mouseup', (event) => { setElementMouseOverOut(bubble) });
+  bubble.setAttributeNS(null, 'style', 'cursor:move;');
   return bubble;
 }
 
 function createSizeBubble(cx, cy, id) {
-  var bubble = createBubbleStub(cx, cy);
+  let bubble = createBubbleStub(cx, cy);
   bubble.setAttributeNS(null, 'fill-opacity', '0.6');         // SIZE/POINT bubble is slightly less opaque
   // bubble.setAttributeNS(null, 'onmousedown', "setSizeElement(this);");
-  bubble.setAttributeNS(null, 'id', id);    // use this identifier to attach cursor in onSvgMouseMove
   bubble.addEventListener('mousedown', (event) => { setSizeElement(bubble) });
+  bubble.setAttributeNS(null, 'id', id);    // use this identifier to attach cursor in onSvgMouseMove
   return bubble;
 }
 
 function createPointBubble(cx, cy, id) {    // used for <poly...> vertices
-  var bubble = createBubbleStub(cx, cy);
+  let bubble = createBubbleStub(cx, cy);
   bubble.setAttributeNS(null, 'fill-opacity', '0.6');         // SIZE/POINT bubble is slightly less opaque
   // bubble.setAttributeNS(null, 'onmousedown', "setPointElement(this);");
   // bubble.setAttributeNS(null, 'onmouseup', "exitEditPoint(thisGroup);");   // questionable reference
@@ -1050,7 +1050,7 @@ function createPointBubble(cx, cy, id) {    // used for <poly...> vertices
 }
 
 function createNewPointBubble(cx, cy, id) {    // used for <poly...> inter-vertex insert new point
-  var bubble = createBubbleStub(cx, cy);
+  let bubble = createBubbleStub(cx, cy);
   bubble.setAttributeNS(null, 'r', bubbleRadius * 0.8);      // radius override for insertion point
   bubble.setAttributeNS(null, 'stroke', '#555555');     // not that great, use below
   bubble.setAttributeNS(null, 'stroke-opacity', '0.6');     // not that great, use below
@@ -1065,7 +1065,7 @@ function createNewPointBubble(cx, cy, id) {    // used for <poly...> inter-verte
 }
 
 function createCurveBubble(cx, cy, id) {    // used for <path...> inter-vertex control point
-  var bubble = createBubbleStub(cx, cy);
+  let bubble = createBubbleStub(cx, cy);
   bubble.setAttributeNS(null, 'r', bubbleRadius * 1.25);      // radius override for insertion point
   bubble.setAttributeNS(null, 'stroke', '#333333');     // not that great, use below
   bubble.setAttributeNS(null, 'stroke-opacity', '0.6');     // not that great, use below
@@ -1080,7 +1080,7 @@ function createCurveBubble(cx, cy, id) {    // used for <path...> inter-vertex c
 }
 
 function createControlLine(x1, y1, x2, y2, id) {
-  var line = createElement('line');
+  let line = createElement('line');
   line.setAttributeNS(null, 'x1', x1);
   line.setAttributeNS(null, 'y1', y1);
   line.setAttributeNS(null, 'x2', x2);
@@ -1091,7 +1091,7 @@ function createControlLine(x1, y1, x2, y2, id) {
 }
 
 function createCurvePoly(coords) {        // used by createBubbleGroup.path
-  var poly = createElement('polyline');
+  let poly = createElement('polyline');
   poly.setAttributeNS(null, 'id', 'poly');
   poly.setAttributeNS(null, 'points', getCurvePoints(coords));
   poly.setAttributeNS(null, 'stroke-opacity', '0.0');
@@ -1099,7 +1099,7 @@ function createCurvePoly(coords) {        // used by createBubbleGroup.path
 }
 
 function createBubbleStub(offsetX, offsetY) {   // create same-size bubble
-  var bubble = createElement('circle');      // this is constant, since it is a bubble
+  let bubble = createElement('circle');      // this is constant, since it is a bubble
   //bubbleGroup.appendChild(bubble);    // delegate this to caller
   if (isNaN(offsetX)) {
     alert(offsetX);
@@ -1123,10 +1123,10 @@ function getAttributeValue(element, attr) {     // convert string numeric and tr
 }
 
 function getModel(element) {            // by svg element type, return its salient model attributes for bubbles
-  var ox = 0;
-  var oy = 0;
-  var p1 = 1;
-  var p2 = 1;
+  let ox = 0;
+  let oy = 0;
+  let p1 = 1;
+  let p2 = 1;
   switch (element) {
     case 'polyline':
       return {
@@ -1180,7 +1180,7 @@ function unbindMouseHandlers(self) {    //   /////////////  this routine and its
 }
 
 SVGDraw.prototype.onSvgMouseMove = function () {
-  var self = this;
+  let self = this;
   return function (event) {
 
     self.renderFunction(event);
@@ -1193,31 +1193,31 @@ function length2points(x1, y1, x2, y2) {
   return Math.sqrt(Math.pow((x1 - x2), 2) + (Math.pow((y1 - y2), 2)));
 }
 
-var Trig = {
+let Trig = {
   distanceBetween2Points: function (point1, point2) {
 
-    var dx = point2.x - point1.x;
-    var dy = point2.y - point1.y;
+    let dx = point2.x - point1.x;
+    let dy = point2.y - point1.y;
     return Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
   },
 
   angleBetween2Points: function (point1, point2) {
 
-    var dx = point2.x - point1.x;
-    var dy = point2.y - point1.y;
+    let dx = point2.x - point1.x;
+    let dy = point2.y - point1.y;
     return Math.atan2(dx, dy);
   }
 };
 
 SVGDraw.prototype.updateMousePosition = function (event) {
-  var target;
+  let target;
   if (this.touchSupported) {
     target = event.originalEvent.touches[0]
   }
   else {
     target = event;
   }
-  var offset = svgOffset;    //  was this.canvas.offset();
+  let offset = svgOffset;    //  was this.canvas.offset();
   this.lastMousePoint.x = target.pageX - offset.left;
   this.lastMousePoint.y = target.pageY - offset.top;
   lastMouseX = this.lastMousePoint.x;
@@ -1255,17 +1255,17 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         return;
       }     // could be POINT or NEW or polygon
       this.updateMousePosition(event);
-      var thisPoint = ((lastMouseX - xC) / zoom).toFixed(2).toString()
+      let thisPoint = ((lastMouseX - xC) / zoom).toFixed(2).toString()
         + ',' + ((lastMouseY - yC) / zoom).toFixed(2).toString();
-      var thesePoints = thisElement.attributes['points'].value.trim();
-      var splitPoints = thesePoints.split(' ');
+      let thesePoints = thisElement.attributes['points'].value.trim();
+      let splitPoints = thesePoints.split(' ');
       if (thisBubble != null) {       // look for bubble to denote just move THIS point only
         thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom;     // translate the bubble
         thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
         if (isNumeric(thisBubble.id)) {       // presume integer for now
           splitPoints[parseInt(thisBubble.id)] = thisPoint;
           thesePoints = '';
-          for (var k = 0; k < splitPoints.length; k++) {
+          for (let k = 0; k < splitPoints.length; k++) {
             thesePoints += splitPoints[k] + ' ';
           }
           thisElement.attributes['points'].value = thesePoints
@@ -1286,10 +1286,10 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         return;
       }
       this.updateMousePosition(event);
-      var thisPoint = ((lastMouseX - xC) / zoom).toFixed(2).toString()
+      let thisPoint = ((lastMouseX - xC) / zoom).toFixed(2).toString()
         + ',' + ((lastMouseY - yC) / zoom).toFixed(2).toString();
-      var thesePoints = thisElement.attributes['points'].value.trim();
-      var splitPoints = thesePoints.split(' ');
+      let thesePoints = thisElement.attributes['points'].value.trim();
+      let splitPoints = thesePoints.split(' ');
       if (thisBubble != null) {       // look for bubble to denote just move THIS point only
         // currently, no distinction is made between existing vertex and new point
         // however, this may change in the future JRF 23NOV15
@@ -1298,7 +1298,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         if (isNumeric(thisBubble.id)) {       // presume integer for now
           splitPoints[parseInt(thisBubble.id)] = thisPoint;   // replace this point
           thesePoints = '';
-          for (var k = 0; k < splitPoints.length; k++) {
+          for (let k = 0; k < splitPoints.length; k++) {
             thesePoints += splitPoints[k] + ' ';
           }
           thisElement.attributes['points'].value = thesePoints
@@ -1328,8 +1328,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         thisElement.attributes['y'].value = (lastMouseY - yC) / zoom;
       }
       else {
-        var thisRectX = thisElement.attributes['x'].value;
-        var thisRectY = thisElement.attributes['y'].value;
+        let thisRectX = thisElement.attributes['x'].value;
+        let thisRectY = thisElement.attributes['y'].value;
         // var thisRectW = thisElement.attributes['width'].value;
         // var thisRectH = thisElement.attributes['height'].value;
 
@@ -1346,7 +1346,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         return;
       }
       this.updateMousePosition(event);
-      var linePoints = ['x2', 'y2'];          // preset for normal post-creation mode
+      let linePoints = ['x2', 'y2'];          // preset for normal post-creation mode
       if (thisBubble != null) {       // look for bubble to denote just move THIS point only
         thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom;     // translate the bubble
         thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
@@ -1365,7 +1365,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         return;
       }
       this.updateMousePosition(event);
-      var linePoints = ['x2', 'y2'];          // preset for normal post-creation mode
+      let linePoints = ['x2', 'y2'];          // preset for normal post-creation mode
       if (thisBubble != null) {       // look for bubble to denote just move THIS point only
         thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom;     // translate the bubble
         thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
@@ -1378,44 +1378,44 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       while (thisGroup.childElementCount > 1) {
         thisGroup.lastChild.remove();             // ///////////////////  VERY TEMPORARY METHOD
       }
-      var thisX1 = thisElement.attributes['x1'].value;    // shorter references to original line's values
-      var thisY1 = thisElement.attributes['y1'].value;
-      var thisX2 = thisElement.attributes['x2'].value;
-      var thisY2 = thisElement.attributes['y2'].value;
-      var thisColor = thisElement.attributes['stroke'].value;
-      var deltaX = thisX2 - thisX1;
-      var deltaY = thisY2 - thisY1;
-      var lineLength = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-      var dx = deltaX / lineLength;
-      var dy = deltaY / lineLength;
+      let thisX1 = thisElement.attributes['x1'].value;    // shorter references to original line's values
+      let thisY1 = thisElement.attributes['y1'].value;
+      let thisX2 = thisElement.attributes['x2'].value;
+      let thisY2 = thisElement.attributes['y2'].value;
+      let thisColor = thisElement.attributes['stroke'].value;
+      let deltaX = thisX2 - thisX1;
+      let deltaY = thisY2 - thisY1;
+      let lineLength = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      let dx = deltaX / lineLength;
+      let dy = deltaY / lineLength;
       if (document.getElementById('arrowHeadPixels').checked) {
         barbLength = document.getElementById('arrowHeadLength').value;
       }
       else {
-        var barbLength = lineLength * arrowSize/ 100;
+        let barbLength = lineLength * arrowSize/ 100;
       }
-      var pctX = parseFloat(thisX2/* - deltaX / arrowSize*/) - (dx * barbLength);   //  baseline for barb trailing end
-      var pctY = parseFloat(thisY2/* - deltaY / arrowSize*/) - (dy * barbLength);
-      var x3 = pctX + barbLength * dy / 2;
-      var y3 = pctY - barbLength * dx / 2;
-      var x4 = pctX - barbLength * dy / 2;
-      var y4 = pctY + barbLength * dx / 2;
+      let pctX = parseFloat(thisX2/* - deltaX / arrowSize*/) - (dx * barbLength);   //  baseline for barb trailing end
+      let pctY = parseFloat(thisY2/* - deltaY / arrowSize*/) - (dy * barbLength);
+      let x3 = pctX + barbLength * dy / 2;
+      let y3 = pctY - barbLength * dx / 2;
+      let x4 = pctX - barbLength * dy / 2;
+      let y4 = pctY + barbLength * dx / 2;
 
-      var leftBarb = createElement('line');
+      let leftBarb = createElement('line');
       thisGroup.appendChild(leftBarb);
       leftBarb.setAttributeNS(null, 'x1', thisX2);       // start x of barbs
       leftBarb.setAttributeNS(null, 'y1', thisY2);      // start y of barbs
       leftBarb.setAttributeNS(null, 'x2', x3);      // end x
       leftBarb.setAttributeNS(null, 'y2', y3);      // end y
       leftBarb.setAttributeNS(null, 'stroke', thisColor);
-      var rightBarb = createElement('line');
+      let rightBarb = createElement('line');
       thisGroup.appendChild(rightBarb);
       rightBarb.setAttributeNS(null, 'x1', thisX2);       // start x of barbs
       rightBarb.setAttributeNS(null, 'y1', thisY2);      // start y of barbs
       rightBarb.setAttributeNS(null, 'x2', x4);      // end x
       rightBarb.setAttributeNS(null, 'y2', y4);      // end y
       rightBarb.setAttributeNS(null, 'stroke', thisColor);
-      var baseBarb;
+      let baseBarb;
       if(document.getElementById('arrowHeadClosed').checked) {
         baseBarb = createElement('line');
         thisGroup.appendChild(baseBarb);
@@ -1440,12 +1440,12 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       }
       else {                                // either resizing or originally sizing
         //this.context.moveTo(lastMouseX, lastMouseY);
-        var thisCircX = thisElement.attributes['cx'].value;
-        var thisCircY = thisElement.attributes['cy'].value;
+        let thisCircX = thisElement.attributes['cx'].value;
+        let thisCircY = thisElement.attributes['cy'].value;
         this.updateMousePosition(event);
         lastMouseX = this.lastMousePoint.x;
         lastMouseY = this.lastMousePoint.y;
-        var radius = length2points(thisCircX, thisCircY, (lastMouseX - xC) / zoom, (lastMouseY - yC) / zoom);
+        let radius = length2points(thisCircX, thisCircY, (lastMouseX - xC) / zoom, (lastMouseY - yC) / zoom);
         thisElement.attributes['r'].value = radius;
         //thisElement.attributes['stroke'].value = cursorColor;   ///// disabled due to unwanted side effects
       }
@@ -1464,8 +1464,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         thisElement.attributes['cy'].value = (lastMouseY - yC) / zoom;
       }
       else {                              // resizing: note cursor does not osculate ellipse as in circle; sorry.
-        var thisEllipseX = thisElement.attributes['cx'].value;
-        var thisEllipseY = thisElement.attributes['cy'].value;
+        let thisEllipseX = thisElement.attributes['cx'].value;
+        let thisEllipseY = thisElement.attributes['cy'].value;
 
         this.updateMousePosition(event);
         lastMouseX = this.lastMousePoint.x;
@@ -1480,8 +1480,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         return;
       }
       this.updateMousePosition(event);
-      var thesePoints = thisElement.attributes['points'].value;
-      var thisPoint = ((lastMouseX - xC) / zoom).toFixed(2).toString()
+      let thesePoints = thisElement.attributes['points'].value;
+      let thisPoint = ((lastMouseX - xC) / zoom).toFixed(2).toString()
         + ',' + ((lastMouseY - yC) / zoom).toFixed(2).toString() + ' ';
       thisElement.attributes['points'].value = thesePoints.concat(thisPoint);
     }
@@ -1492,16 +1492,16 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         return;
       }
       this.updateMousePosition(event);
-      var thisDvalue = thisElement.attributes['d'].value;
-      var thisCurveQuadratic = thisDvalue.indexOf('Q ') > 0;
+      let thisDvalue = thisElement.attributes['d'].value;
+      let thisCurveQuadratic = thisDvalue.indexOf('Q ') > 0;
       if (thisBubble != null) {       // look for bubble to denote just move THIS point only
                                       // currently, no distinction is made between existing vertex and new point
                                       // however, this may change in the future JRF 23NOV15
-        var thisX = (lastMouseX - xC) / zoom;
-        var thisY = (lastMouseY - yC) / zoom;
+        let thisX = (lastMouseX - xC) / zoom;
+        let thisY = (lastMouseY - yC) / zoom;
         thisBubble.attributes['cx'].value = thisX;     // translate the bubble
         thisBubble.attributes['cy'].value = thisY;
-        var theseCoords = getCurveCoords(thisDvalue);
+        let theseCoords = getCurveCoords(thisDvalue);
         if (thisCurveQuadratic) {
           theseCoords[6] = theseCoords[4];    // populate cubic curve p2
           theseCoords[7] = theseCoords[5];    // coordinates from quadratic values
@@ -1546,14 +1546,14 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           + theseCoords[0] + ', ' + theseCoords[1];     // 'poly' is bounding polygon of endpoints and control points
       }
       else {    // defining initial curve as straight line, i.e., rubber-banding p2 until mouseup
-        var thisX2 = (lastMouseX - xC) / zoom;
-        var thisY2 = (lastMouseY - yC) / zoom;
-        var thisPathType = ' C ';              // set quadratic control point at midpoint, cubic's at p1 and p2
+        let thisX2 = (lastMouseX - xC) / zoom;
+        let thisY2 = (lastMouseY - yC) / zoom;
+        let thisPathType = ' C ';              // set quadratic control point at midpoint, cubic's at p1 and p2
         if (cursorMode == 'quadratic')  thisPathType = ' Q ';
-        var theseCurvePoints = thisDvalue.split(thisPathType);      // isolate control point(s) and p2
-        var thisP1 = theseCurvePoints[0].split('M ');               // isolate p1
+        let theseCurvePoints = thisDvalue.split(thisPathType);      // isolate control point(s) and p2
+        let thisP1 = theseCurvePoints[0].split('M ');               // isolate p1
         thisP1 = thisP1[1].split(', ');
-        var theseControlPoints = theseCurvePoints[1].split(', ');              // get array of x,y,x,y(,x,y)
+        let theseControlPoints = theseCurvePoints[1].split(', ');              // get array of x,y,x,y(,x,y)
         if (thisPathType == ' Q ') {
           theseControlPoints[0] = ((parseInt(thisP1[0]) + thisX2) / 2).toFixed();
           theseControlPoints[1] = ((parseInt(thisP1[1]) + thisY2) / 2).toFixed();
@@ -1564,7 +1564,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         //   theseControlPoints[2] = ((parseInt(thisP1[2]) + thisX2) / 1.5).toFixed();
         //   theseControlPoints[3] = ((parseInt(thisP1[3]) + thisY2) / 1.5).toFixed();
         // }
-        var thisD = theseCurvePoints[0] + thisPathType + curvePoint(theseControlPoints[0], theseControlPoints[1]);
+        let thisD = theseCurvePoints[0] + thisPathType + curvePoint(theseControlPoints[0], theseControlPoints[1]);
         if (cursorMode == 'cubic') {
           thisD += curvePoint(thisX2, thisY2);
         }
@@ -1577,7 +1577,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         this.updateMousePosition(event);
         thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom;     // translate the bubble
         thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
-        for (var i = 0; i < thisGroup.children.length; i++) {      // for any text lines in this group (skip bubble)
+        for (let i = 0; i < thisGroup.children.length; i++) {      // for any text lines in this group (skip bubble)
           if (thisGroup.children[i].tagName == 'text') {          // only shift text elements, not bubbles
             thisGroup.children[i].attributes['x'].value = (lastMouseX - xC) / zoom;    // translate each <text> element
             thisGroup.children[i].attributes['y'].value = ((lastMouseY - yC) / zoom) + (i * textHeight);
@@ -1594,8 +1594,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
 
     if (svgInProgress == 'MOVE') {
 
-      var oldX = this.lastMousePoint.x;
-      var oldY = this.lastMousePoint.y;
+      let oldX = this.lastMousePoint.x;
+      let oldY = this.lastMousePoint.y;
       this.updateMousePosition(event);
       //lastMouseX = this.lastMousePoint.x;
       //lastMouseY = this.lastMousePoint.y;
@@ -1608,7 +1608,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
 };
 
 SVGDraw.prototype.onSvgMouseUp = function (event) {
-  var self = this;
+  let self = this;
   return function (event) {
     if (!svgInProgress) {                       // i.e., if svgInProgress is not false
       return event.preventDefault() && false;
@@ -1732,7 +1732,7 @@ SVGDraw.prototype.onSvgMouseUp = function (event) {
  line; rectangle; circle; ellipse; cubic quadratic all now terminate on Enter, ABORT on Escape, including edited element
  */
 SVGDraw.prototype.keyUpHandler = function () {
-  var self = this;
+  let self = this;
   return function (event) {
     if (event.keyCode == 0x14) {
       capsLock = !capsLock;
@@ -1741,12 +1741,12 @@ SVGDraw.prototype.keyUpHandler = function () {
 };
 
 SVGDraw.prototype.keyHandler = function () {
-  var self = this;
+  let self = this;
   return function (event) {
     // event.preventDefault();
     // Due to browser differences from fireFox, use event.keyCode vs key since key is undefined in Chrome and Safari
-    var thisKeyCode = event.keyCode;
-    var inFocus = document.activeElement;
+    let thisKeyCode = event.keyCode;
+    let inFocus = document.activeElement;
     switch (thisKeyCode) {
       case 16:                // shift
         thisKey = 'Shift';
@@ -1768,7 +1768,7 @@ SVGDraw.prototype.keyHandler = function () {
       case 0x42:              // looking for control-B to move mouseovered group to "bottom"
         if (event.ctrlKey) {  // which is first in the SVG list
           if (thisGroup) {
-            var cloneGroup = thisGroup.cloneNode(true);
+            let cloneGroup = thisGroup.cloneNode(true);
             thisGroup.remove();
             clearEditElement(cloneGroup);
             svgLayer.firstChild.insertBefore(cloneGroup, svgLayer.firstChild.childNodes[1]);
@@ -1777,7 +1777,7 @@ SVGDraw.prototype.keyHandler = function () {
       case 0x54:              // looking for control-T to move mouseovered group to "top"
         if (event.ctrlKey) {  // which is last in the SVG element list
           if (thisGroup) {
-            var cloneGroup = thisGroup.cloneNode(true);
+            let cloneGroup = thisGroup.cloneNode(true);
             thisGroup.remove();
             clearEditElement(cloneGroup);
             svgLayer.firstChild.appendChild(cloneGroup);
@@ -1859,17 +1859,17 @@ SVGDraw.prototype.keyHandler = function () {
 };
 
 function lookUpKey(event) {     // sort out the keyboard mess and return the key
-  var eventKey = event.key;
-  var thisKeyCode = event.keyCode;
-  var thisCharCode = event.charCode;
-  var Shifted = event.shiftKey;
-  var Control = event.ctrlKey;
+  let eventKey = event.key;
+  let thisKeyCode = event.keyCode;
+  let thisCharCode = event.charCode;
+  let Shifted = event.shiftKey;
+  let Control = event.ctrlKey;
   if (thisKeyCode == 0x14) {
     //var CapsLock = isCapsLockOn(event);
     capsLock = !capsLock;            // on keyDown and capsLock keyCode (= 20d or 0x14)
     return false;
   }
-  var mapKey = _KEYCODE_MAP[thisKeyCode];   // from CapsLock.js, non-alphanumeric keys
+  let mapKey = _KEYCODE_MAP[thisKeyCode];   // from CapsLock.js, non-alphanumeric keys
   if (mapKey) {                             // existence mostly implies we caught one
     if (Shifted && _SHIFTMAP[mapKey]) {   // if there is a shifted version of this key
       return _SHIFTMAP[mapKey];             // and the shift key is down (not CapsLock)
@@ -1919,7 +1919,7 @@ function doMouseUp() {
 }
 
 SVGDraw.prototype.doubleClickHandler = function () {
-  var self = this;
+  let self = this;
   return function () {
     dblClick()
   }
@@ -1949,21 +1949,21 @@ function dblClick() {
 }
 
 SVGDraw.prototype.mouseWheelScrollHandler = function () {
-  var self = this;
+  let self = this;
   return function (event) {
     event.stopImmediatePropagation();
     event.stopPropagation();
-    var deltaDiv = 1000;                              // default for non-FireFox
+    let deltaDiv = 1000;                              // default for non-FireFox
     if (event.type == "DOMMouseScroll") {
       deltaDiv = 100
     }   // adjust for FireFox
     //var delta = parseInt(event.originalEvent.wheelDelta || -event.originalEvent.detail);
     //lastMouseX = (event.originalEvent.clientX - svgOffset.left);      // fixed reference for mouse offset
     //lastMouseY = (event.originalEvent.clientY - svgOffset.top);
-    var delta = -parseInt(event.deltaY || -event.detail);
+    let delta = -parseInt(event.deltaY || -event.detail);
     lastMouseX = (event.clientX - svgOffset.left);      // fixed reference for mouse offset
     lastMouseY = (event.clientY - svgOffset.top);
-    var zoomDelta = delta / deltaDiv;
+    let zoomDelta = delta / deltaDiv;
     if (zoomDelta > 0) {
       zoomIn();
     } else {
@@ -1974,8 +1974,8 @@ SVGDraw.prototype.mouseWheelScrollHandler = function () {
 };
 
 function deleteDuplicatePoints(element) {
-  var thesePoints = element.attributes['points'].value.trim();
-  var splitPoints = thesePoints.split(' ');
+  let thesePoints = element.attributes['points'].value.trim();
+  let splitPoints = thesePoints.split(' ');
   thesePoints = splitPoints[0] + ' ';
   for (let k = 1; k < splitPoints.length; k++) {
     if (splitPoints[k] != splitPoints[k - 1]) {   // only keep this point
@@ -1986,8 +1986,8 @@ function deleteDuplicatePoints(element) {
 }
 
 function deleteLastPoint(element) {   // specific to <poly->
-  var thesePoints = element.attributes['points'].value.trim();
-  var splitPoints = thesePoints.split(' ');
+  let thesePoints = element.attributes['points'].value.trim();
+  let splitPoints = thesePoints.split(' ');
   thesePoints = splitPoints[0] + ' ';
   for (let k = 1; k < splitPoints.length - 1; k++) {
     if (splitPoints[k] != splitPoints[k - 1]) {   // only keep this point
@@ -2080,7 +2080,7 @@ function checkLeftoverElement() {       // this function is only called when svg
 }
 
 function clearLastGroup() {
-  var xlt = document.getElementById("xlt");
+  let xlt = document.getElementById("xlt");
   if (xlt.childElementCount > 1) {              // don't remove the base image
     xlt.lastChild.remove();
   }
@@ -2093,14 +2093,14 @@ function clearThisGroup(group) {
 }
 
 function inverseColor(color) {          // color is required to be string as #RRGGBB hexadecimal
-  var red = makeHex8(color.slice(1, 3));
-  var grn = makeHex8(color.slice(3, 5));
-  var blu = makeHex8(color.slice(5, 7));
+  let red = makeHex8(color.slice(1, 3));
+  let grn = makeHex8(color.slice(3, 5));
+  let blu = makeHex8(color.slice(5, 7));
   return '#' + red + grn + blu;
 }
 
 function makeHex8(colorSegment) {       // colorSegment is 8 bit hex encoded string
-  var izit = ((parseInt('0X' + colorSegment)) ^ 0xFF).toString(16);
+  let izit = ((parseInt('0X' + colorSegment)) ^ 0xFF).toString(16);
   if (izit.length == 2) {
     return izit;
   }
@@ -2110,7 +2110,7 @@ function makeHex8(colorSegment) {       // colorSegment is 8 bit hex encoded str
 function zoomIn() {
 //            var zoomDelta = 0.05;
   if (zoom < maxZoom) {           // zoom of 1 is pixel-per-pixel on svgLayer
-    var newZoom = zoom * ( 1.0 + zoomDelta);
+    let newZoom = zoom * ( 1.0 + zoomDelta);
     if (newZoom > maxZoom) {
       newZoom = maxZoom;
     }
@@ -2126,7 +2126,7 @@ function zoomIn() {
 function zoomOut() {
 //            var zoomDelta = 0.05;
   if (zoom > baseZoom / 3) {
-    var newZoom = zoom / (1.0 + zoomDelta);
+    let newZoom = zoom / (1.0 + zoomDelta);
     xC = lastMouseX - (lastMouseX - xC) * newZoom / zoom;
     yC = lastMouseY - (lastMouseY - yC) * newZoom / zoom;
     zoom_trans(xC, yC, newZoom);
@@ -2137,8 +2137,8 @@ function zoomOut() {
 }
 
 function zoom_trans(x, y, factor) {
-  var xlt = document.getElementById('xlt');         // DOM svg element g xlt
-  var transform = 'translate(' + ((x)).toString() + ', ' + ((y)).toString() + ')scale(' + factor.toString() + ')';
+  let xlt = document.getElementById('xlt');         // DOM svg element g xlt
+  let transform = 'translate(' + ((x)).toString() + ', ' + ((y)).toString() + ')scale(' + factor.toString() + ')';
   zoom = factor;
   xC = x;
   yC = y;
@@ -2148,7 +2148,7 @@ function zoom_trans(x, y, factor) {
 
 function updateSvgText(event) {                       // modified to eliminate mousetrap
   thisKey = event.key;                            // this attribute only works for FireFox
-  var thisKeyCode = event.keyCode;
+  let thisKeyCode = event.keyCode;
   //if (thisKey == undefined) {                   // undefined if not FireFox
   thisKey = lookUpKey(event);     // consolidate
   //if (cursorMode != 'text') {     // redundant, since we only get here from keyDown handler
@@ -2177,7 +2177,7 @@ function updateSvgText(event) {                       // modified to eliminate m
     finishTextGroup();
     return false;
   }
-  var text4svgValue;     // text4svg is string
+  let text4svgValue;     // text4svg is string
   text4svgValue = text4svg.slice(0, text4svg.length - 1);   // remove text cursor (underscore)
 
   if (thisKeyCode > 31) {       // space or other printing character
@@ -2194,9 +2194,9 @@ function updateSvgText(event) {                       // modified to eliminate m
   thisElement.attributes['stroke'].value = cursorColor;       // allow in-line whole line color/font/size over-ride
   thisElement.attributes['style'].value = 'font-family: ' + textFont + '; fill: ' + cursorColor + ';';    //  including fill
   thisElement.attributes['font-size'].value = textHeight;
-  var nextX = thisElement.attributes['x'].value;
-  var nextY = parseInt(thisElement.attributes['y'].value) + parseInt(textHeight);
-  var nextLine = thisElement.cloneNode();
+  let nextX = thisElement.attributes['x'].value;
+  let nextY = parseInt(thisElement.attributes['y'].value) + parseInt(textHeight);
+  let nextLine = thisElement.cloneNode();
   if (event.keyCode == 13) {      // line feed on ENTER/CR -- termination on shift-Enter/Return already picked off
     thisElement.innerHTML = parseHTML(text4svgValue.slice(0, text4svgValue.length));   // remove cursor at end of line
     //    var thisInverse = inverseColor(cursorColor);        // no longer used -- relocation bubble used now
@@ -2212,7 +2212,7 @@ function updateSvgText(event) {                       // modified to eliminate m
 }
 
 function parseHTML(spaceText) {         // morphs multiple spaces in string to HTML equivalent
-  var result = spaceText.replace(/  /g, ' &nbsp;');   // two consecutive spaces become space+nonbreakingspace
+  let result = spaceText.replace(/  /g, ' &nbsp;');   // two consecutive spaces become space+nonbreakingspace
   result = result.replace(/</g, '&lt;').replace(/>/g, '&gt');
   return result;
 
@@ -2229,7 +2229,7 @@ function finishTextGroup() {             // uses global variable thisGroup for <
   }
   else {                                 // if no child nodes, it is empty and should be
     thisGroup.remove();                  // removed
-    var BreakHere = true;
+    let BreakHere = true;
   }
   closeSvgText();
   // checkLeftoverElement();         // //////////// does not consider <text> === useless
@@ -2252,12 +2252,12 @@ function removeCursorFromSvgText() {            //   ///////////  does this do e
         if (thisElement.innerHTML == '') {
           thisElement.remove();
           thisElement = null;
-          var BreakHere = true;
+          let BreakHere = true;
         }
         if (thisGroup.lastChild.tagName == 'g') {        // this is to detect a leftover bubble
           thisGroup.lastChild.remove;
           // clearEditElement(group);
-          var BreakHere = true;
+          let BreakHere = true;
         }
       }
     }
@@ -2283,7 +2283,7 @@ function setCursorColor(color) {
 }
 
 function setUserColor(color) {          // only sets up the color for later selection
-  var userColorTextbox = document.getElementById('setUserColor');
+  let userColorTextbox = document.getElementById('setUserColor');
   userColorTextbox.attributes['style'].value = 'background-color: ' + color;
   userColorTextbox.blur();
 }
@@ -2294,7 +2294,7 @@ function getUserColor() {
 }
 
 function indicateMode(mode) {
-  var coverRect = mode;
+  let coverRect = mode;
   if (mode == 'rect') {
     coverRect = 'rectangle';        // replace anomalous rect with rectangle
   }
@@ -2304,18 +2304,18 @@ function indicateMode(mode) {
 }
 
 function collectSVG(verbatim) {   // verbatim true includes all markup, false means stripped
-  var clonedSVG = svgLayer.cloneNode(true);
-  var thisXLT = clonedSVG.firstChild;
+  let clonedSVG = svgLayer.cloneNode(true);
+  let thisXLT = clonedSVG.firstChild;
   if (!verbatim) {
     clonedSVG.removeAttribute('height');
     clonedSVG.removeAttribute('width');
     clonedSVG.firstChild.attributes['transform'].value = 'translate(0, 0)scale(1)';
   }
-  var innerElement;
-  var thisG;
-  var terminus = thisXLT.childElementCount;     // this will vary if we replace <g> elements when not "verbatim"
-  var j = 1;                                    // this will be the indexer for <g> elements
-  var k;
+  let innerElement;
+  let thisG;
+  let terminus = thisXLT.childElementCount;     // this will lety if we replace <g> elements when not "verbatim"
+  let j = 1;                                    // this will be the indexer for <g> elements
+  let k;
   for (i = 1; i < terminus; i++) {                // i will range over the original children count
     thisG = thisXLT.childNodes[j];              // probably should be firstChild since iteratively
     thisG.removeAttribute('onmouseenter');
@@ -2350,11 +2350,11 @@ function jsonSVG(verbatim) {      // package SVG into JSON object
 // { "data": {
 //      "type":  "svg",
 //      "attributes": "<svg . . . the svg text . . . </svg>"
-  var clonedSVG = collectSVG(false).firstChild;     // strip off <svg...> </svg>
+  let clonedSVG = collectSVG(false).firstChild;     // strip off <svg...> </svg>
   clonedSVG.removeAttribute('id');
   clonedSVG.removeAttribute('transform');
   clonedSVG.childNodes[0].remove();
-  var JSONsvg = {
+  let JSONsvg = {
     "data": {
       "type": "svg",
       "attributes": clonedSVG.outerHTML
@@ -2365,7 +2365,7 @@ function jsonSVG(verbatim) {      // package SVG into JSON object
 }
 
 function buildSVGmenu() {
-  var thisButton;
+  let thisButton;
   thisButton = document.createElement('input');     // default MOVE button
   //thisButton.setAttribute('id', 'btn_' + buttons[i].function);
   thisButton.setAttribute('type', 'button');
@@ -2374,7 +2374,7 @@ function buildSVGmenu() {
   svgMenu.appendChild(thisButton);
   thisButton.addEventListener('click', (event) => { setCursorMode('MOVE') })
 
-  var thisSpan;
+  let thisSpan;
   thisSpan = document.createElement('span');      // mode/status display area
   thisSpan.setAttribute('id', 'mode');
   svgMenu.appendChild(thisSpan);
@@ -2384,7 +2384,7 @@ function buildSVGmenu() {
   thisButton.setAttribute('value', 'Zoom IN');
   // thisButton.setAttribute('onclick', "this.blur(); zoomIn();");
   svgMenu.appendChild(thisButton);
-  thisButton.addEventListener('click', (event) => { this.blur(); zoomIn(); })
+  thisButton.addEventListener('click', (event) => { thisButton.blur(); zoomIn(); })
 
   thisButton = document.createElement('span');      // ZOOM display area
   thisButton.setAttribute('id', 'zoom');
@@ -2396,20 +2396,20 @@ function buildSVGmenu() {
   thisButton.setAttribute('value', 'Zoom OUT');
   // thisButton.setAttribute('onclick', "this.blur(); zoomOut();");
   svgMenu.appendChild(thisButton);
-  thisButton.addEventListener('click', (event) => { this.blur(); zoomOut(); })
+  thisButton.addEventListener('click', (event) => { thisButton.blur(); zoomOut(); })
 
   thisButton = document.createElement('input');     // default ZOOM OUT button
   thisButton.setAttribute('type', 'button');
   thisButton.setAttribute('value', 'Reset');
   // thisButton.setAttribute('onclick', "this.blur(); zoom_trans(0, 0, baseZoom);");
   svgMenu.appendChild(thisButton);
-  thisButton.addEventListener('click', (event) => { this.blur(); zoom_trans(0, 0,  baseZoom); })
+  thisButton.addEventListener('click', (event) => { thisButton.blur(); zoom_trans(0, 0,  baseZoom); })
 
   thisSpan = document.createElement('span');      // TEXT display area
   thisSpan.setAttribute('id', 'textBlock');
   //thisSpan.textContent = 'Text Size: ';
   svgMenu.appendChild(thisSpan);
-  var thisTextsizeTitle = document.createElement('span');
+  let thisTextsizeTitle = document.createElement('span');
   thisTextsizeTitle.innerHTML = 'Text Size: ';
   thisSpan.appendChild(thisTextsizeTitle);
   thisButton = document.createElement('input');     // default TEXT SIZE input
@@ -2422,16 +2422,19 @@ function buildSVGmenu() {
   thisButton.setAttribute('value', '75');
   // thisButton.setAttribute('onchange', 'textHeight=this.value; this.blur();');
   thisSpan.appendChild(thisButton);
-  thisButton.addEventListener('change', (event) => { textHeight = this.value; this.blur(); })
+  thisButton.addEventListener('change', (event) => { textHeight = thisButton.value; thisButton.blur(); })
 
   //thisButton = document.createElement('input');     // default TEXT input
   //thisButton.setAttribute('id', 'text4svg');        // this control eliminated
   //thisButton.setAttribute('type', 'text');
   //thisButton.setAttribute('disabled', 'true');
   //thisSpan.appendChild(thisButton);
-  thisSpan.innerHTML += '<br>Select color: ';
-
-  var colorSelect = {
+  // thisSpan.innerHTML += '<br>Select color: ';
+  svgMenu.appendChild(document.createElement('br'))
+  thisSpan = document.createElement('span');
+  thisSpan.innerHTML = 'Select color: '
+  svgMenu.appendChild(thisSpan)
+  let colorSelect = {
     "buttons": [     // select this color buttons: Red/Green/Blue/Black/UserDefined/Selected
       {"color": "#FF0000"},
       {"color": "#00FF00"},
@@ -2471,7 +2474,7 @@ function buildSVGmenu() {
       thisButton.addEventListener('click', (event) => { setCursorColor(thisColor); thisButton.blur(); })
     }
     if (i > colorSelect.buttons.length - 2) {   // insert the selected color block (5) (indicator only) as last
-      var thisColorTitle = document.createElement('span');
+      let thisColorTitle = document.createElement('span');
       thisColorTitle.innerHTML = ' Selected Color >';
       svgMenu.appendChild(thisColorTitle);
       thisButton = document.createElement('input');
@@ -2569,7 +2572,7 @@ function buildSVGmenu() {
   //svgMenu.innerHTML += '<br>'; <--- This breaks EVERYTHING and it will destroy DOM objects converting it in string.
   svgMenu.appendChild(document.createElement('br'))
 
-  var thisTextArea = document.createElement('textarea');
+  let thisTextArea = document.createElement('textarea');
   thisTextArea.setAttribute('id', 'textSVGorJSON');
   svgMenu.appendChild(thisTextArea);
 
