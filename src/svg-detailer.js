@@ -651,13 +651,13 @@ function setMouseoverOut(element) {
 }
 
 function setElementMouseOverOut(group) {     // this actually sets the parent group's listeners
-  if (group == null) {
+  if ((group == null) || (group == undefined)) {
     group = null;         //  debug catch point
   }
   // group.setAttributeNS(null, 'onmouseenter', "setEditElement(this);");               // new reference method 14NOV
   // group.setAttributeNS(null, 'onmouseleave', "clearEditElement(this);");      // global var
-  group.addEventListener('mouseenter', (event) => { setEditElement(event.id) });
-  group.addEventListener('mouseleave', (event) => { clearEditElement(event.id) });
+  group.addEventListener('mouseenter', (event) => { setEditElement(group) });
+  group.addEventListener('mouseleave', (event) => { clearEditElement(group) });
   return group;
 }
 
@@ -787,17 +787,17 @@ function exitEditPoint(group) {    // services mouseUp from SIZE/point bubble
 
 function setMoveElement(bubble) {    // end of SHIFT leaves single bubble; should be removed on mouseleave of group
   //thisParent = element;                           // group containing real element and the bubbles group
-  var group = bubble.parentNode.parentNode;          // set group for mousemove
+  let group = bubble.parentNode.parentNode;          // set group for mousemove
   thisGroup = group;          // set group for mousemove
   thisElement = group.firstChild;
   thisBubble = group.lastChild.firstChild;      // this is the center/first bubble
   cursorMode = thisElement.tagName;
-  thisGroup.attributes['onmouseenter'].value = ''; // disable mouseover on real circle's containing group
-  var endK = group.lastChild.childElementCount;        // total bubbles, leave the first one
-  for (var k = endK; k > 1; k--) {
+///////////  thisGroup.attributes['onmouseenter'].value = ''; // disable mouseover on real circle's containing group
+  let endK = group.lastChild.childElementCount;        // total bubbles, leave the first one
+  for (let k = endK; k > 1; k--) {
     group.lastChild.lastChild.remove();      // remove resize bubbles from the end
   }
-  group.attributes['onmouseenter'].value = '';    // turn off enter!
+///////////  group.attributes['onmouseenter'].value = '';    // turn off enter!
   //group.attributes['onmouseleave'].value = '';    // turn off leave!
   //group.setAttribute('onmouseout', 'clearEditElement(this);');      // as of right NOW
 //  eliminated savedCursorMode = 'MOVE';
@@ -815,8 +815,8 @@ function setSizeElement(bubble) {       // this sets up the single point functio
   if (!((cursorMode == 'cubic') || (cursorMode == 'quadratic'))) {      // tagName will be 'path'
     cursorMode = thisElement.tagName;
   }
-  group.attributes['onmouseenter'].value = ''; // disable mouseover on real element's containing group
-  group.attributes['onmouseleave'].value = ''; // disable mouseleaver on real element's containing group
+//////////////  group.attributes['onmouseenter'].value = ''; // disable mouseover on real element's containing group
+//////////////  group.attributes['onmouseleave'].value = ''; // disable mouseleaver on real element's containing group
   if (!((cursorMode == 'cubic') || (cursorMode == 'quadratic'))) {      // tagName will be 'path'
     if (group.childElementCount > 1) {         // if more than one child, we have bubbles
       group.lastChild.remove();      // remove ALL bubbles, since we are going to drop into drag radius
@@ -1019,25 +1019,30 @@ function createBubbleGroup(group) {
 function createShiftBubble(cx, cy) {
   var bubble = createBubbleStub(cx, cy);
   bubble.setAttributeNS(null, 'fill-opacity', '0.8');         // SHIFT bubble is slightly more opaque
-  bubble.setAttributeNS(null, 'onmousedown', "setMoveElement(this);");
-  bubble.setAttributeNS(null, 'onmouseup', "setElementMouseOverOut(this);");
+  // bubble.setAttributeNS(null, 'onmousedown', "setMoveElement(this);");
+  // bubble.setAttributeNS(null, 'onmouseup', "setElementMouseOverOut(this);");
   bubble.setAttributeNS(null, 'style', 'cursor:move;');
+  bubble.addEventListener('mousedown', (event) => { setMoveElement(bubble) });
+  bubble.addEventListener('mouseup', (event) => { setElementMouseOverOut(bubble) });
   return bubble;
 }
 
 function createSizeBubble(cx, cy, id) {
   var bubble = createBubbleStub(cx, cy);
   bubble.setAttributeNS(null, 'fill-opacity', '0.6');         // SIZE/POINT bubble is slightly less opaque
-  bubble.setAttributeNS(null, 'onmousedown', "setSizeElement(this);");
+  // bubble.setAttributeNS(null, 'onmousedown', "setSizeElement(this);");
   bubble.setAttributeNS(null, 'id', id);    // use this identifier to attach cursor in onSvgMouseMove
+  bubble.addEventListener('mousedown', (event) => { setSizeElement(bubble) });
   return bubble;
 }
 
 function createPointBubble(cx, cy, id) {    // used for <poly...> vertices
   var bubble = createBubbleStub(cx, cy);
   bubble.setAttributeNS(null, 'fill-opacity', '0.6');         // SIZE/POINT bubble is slightly less opaque
-  bubble.setAttributeNS(null, 'onmousedown', "setPointElement(this);");
-  bubble.setAttributeNS(null, 'onmouseup', "exitEditPoint(thisGroup);");   // questionable reference
+  // bubble.setAttributeNS(null, 'onmousedown', "setPointElement(this);");
+  // bubble.setAttributeNS(null, 'onmouseup', "exitEditPoint(thisGroup);");   // questionable reference
+  bubble.addEventListener('mousedown', (event) => { setPointElement(bubble) });
+  bubble.addEventListener('mouseup', (event) => { exitEditPoint(thisGroup) });
   bubble.setAttributeNS(null, 'id', id);    // use this identifier to attach cursor in onSvgMouseMove
                                             // will take the form: 'x1-y1', 'x2-y2' for <line>,
                                             // will take the form: '0', '13' for <poly-...>
@@ -1050,8 +1055,10 @@ function createNewPointBubble(cx, cy, id) {    // used for <poly...> inter-verte
   bubble.setAttributeNS(null, 'stroke', '#555555');     // not that great, use below
   bubble.setAttributeNS(null, 'stroke-opacity', '0.6');     // not that great, use below
   bubble.setAttributeNS(null, 'fill-opacity', '0.4');         // SIZE/POINT bubble is even less opaque
-  bubble.setAttributeNS(null, 'onmousedown', "setNewPointElement(this);");
-  bubble.setAttributeNS(null, 'onmouseup', 'exitEditPoint(thisGroup);');
+  // bubble.setAttributeNS(null, 'onmousedown', "setNewPointElement(this);");
+  // bubble.setAttributeNS(null, 'onmouseup', 'exitEditPoint(thisGroup);');
+  bubble.addEventListener('mousedown', (event) => { setNewPointElement(bubble) });
+  bubble.addEventListener('mouseup', (event) => { exitEditPoint(thisGroup) });
   bubble.setAttributeNS(null, 'id', id);    // use this identifier to attach cursor in onSvgMouseMove
                                             // will take the form: '0.5', '23.5' for <poly-...>
   return bubble;
@@ -1063,8 +1070,10 @@ function createCurveBubble(cx, cy, id) {    // used for <path...> inter-vertex c
   bubble.setAttributeNS(null, 'stroke', '#333333');     // not that great, use below
   bubble.setAttributeNS(null, 'stroke-opacity', '0.6');     // not that great, use below
   bubble.setAttributeNS(null, 'fill-opacity', '0.8');         // make these stand out
-  bubble.setAttributeNS(null, 'onmousedown', "setSizeElement(this);");    //  ///////////  change?
-  bubble.setAttributeNS(null, 'onmouseup', 'exitEditPoint(thisGroup);');
+  // bubble.setAttributeNS(null, 'onmousedown', "setSizeElement(this);");    //  ///////////  change?
+  // bubble.setAttributeNS(null, 'onmouseup', 'exitEditPoint(thisGroup);');
+  bubble.addEventListener('mousedown', (event) => { setSizeElement(bubble) });
+  bubble.addEventListener('mouseup', (event) => { exitEditPoint(thisGroup) });
   bubble.setAttributeNS(null, 'id', id);    // use this identifier to attach cursor in onSvgMouseMove
                                             // will take the form: 'c1', 'c2' for <path-...>
   return bubble;
