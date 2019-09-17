@@ -552,6 +552,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
       }
     }
     if (cursorMode == "text") {     // mouseDown - could be initial click, revised position click, or preemie
+      let group
       if (thisElement) {
         // removeCursorFromSvgText();    //  ////////// fix case of new <text>-click disrupts active <text> creation
         finishTextGroup();
@@ -566,7 +567,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
       if (svgInProgress == false) {
         thisSvg[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
         savedCursorMode = cursorMode;     // plant this to prevent immediate post-creation clearing
-        let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         thisGroup = group;
         let newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
         group.setAttributeNS(null, 'id', newGroupID);
@@ -1102,10 +1103,10 @@ function createBubbleStub(offsetX, offsetY) {   // create same-size bubble
   let bubble = createElement('circle');      // this is constant, since it is a bubble
   //bubbleGroup.appendChild(bubble);    // delegate this to caller
   if (isNaN(offsetX)) {
-    alert(offsetX);
+    alert('offsetX: ' + offsetX.toString());
   }
   if (isNaN(offsetY)) {
-    alert(offsetY);
+    alert('offsetY: ' + offsetY.toString());
   }
   //thisCircle = group.children[0];     // this var is used to dynamically create the element
   bubble.setAttributeNS(null, 'cx', offsetX);      // start x
@@ -2422,7 +2423,8 @@ function buildSVGmenu() {
   thisButton.setAttribute('value', '75');
   // thisButton.setAttribute('onchange', 'textHeight=this.value; this.blur();');
   thisSpan.appendChild(thisButton);
-  thisButton.addEventListener('change', (event) => { textHeight = thisButton.value; thisButton.blur(); })
+  // thisButton.addEventListener('change', (event) => { textHeight = thisButton.value; thisButton.blur(); })
+  thisButton.addEventListener('change', (event) => { setTextHeight() })
 
   //thisButton = document.createElement('input');     // default TEXT input
   //thisButton.setAttribute('id', 'text4svg');        // this control eliminated
@@ -2568,13 +2570,14 @@ function buildSVGmenu() {
   svgMenu.appendChild(thisButton);
   thisButton.addEventListener('click', (event) => { this.blur(); showSVG(false); });
 
-
   //svgMenu.innerHTML += '<br>'; <--- This breaks EVERYTHING and it will destroy DOM objects converting it in string.
   svgMenu.appendChild(document.createElement('br'))
 
   let thisTextArea = document.createElement('textarea');
   thisTextArea.setAttribute('id', 'textSVGorJSON');
   svgMenu.appendChild(thisTextArea);
-
+}
+function setTextHeight() {
+  textHeight = document.getElementById('textSize').value
 }
 export default SVGDraw
