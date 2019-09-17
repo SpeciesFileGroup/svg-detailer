@@ -657,8 +657,14 @@ function setElementMouseOverOut(group) {     // this actually sets the parent gr
   }
   // group.setAttributeNS(null, 'onmouseenter', "setEditElement(this);");               // new reference method 14NOV
   // group.setAttributeNS(null, 'onmouseleave', "clearEditElement(this);");      // global var
-  group.addEventListener('mouseenter', (event) => { setEditElement(group) });
-  group.addEventListener('mouseleave', (event) => { clearEditElement(group) });
+  group.addEventListener('mouseenter', (event) => { 
+    console.log("mouseenter")
+    setEditElement(group) 
+  });
+  group.addEventListener('mouseleave', (event) => { 
+    console.log("mouseenter")
+    clearEditElement(group) 
+  });
   return group;
 }
 
