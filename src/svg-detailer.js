@@ -657,14 +657,22 @@ function setElementMouseOverOut(group) {     // this actually sets the parent gr
   }
   // group.setAttributeNS(null, 'onmouseenter', "setEditElement(this);");               // new reference method 14NOV
   // group.setAttributeNS(null, 'onmouseleave', "clearEditElement(this);");      // global var
-  group.addEventListener('mouseenter', (event) => {
+
+  let mouseEnterFunction = (event) => {
     console.log("mouseenter")
-    setEditElement(group)
-  });
-  group.addEventListener('mouseleave', (event) => {
+    setEditElement(event.target)
+  }
+
+  let mouseLeaveFunction = (event) => {
     console.log("mouseleave")
-    clearEditElement(group)
-  });
+    clearEditElement(event.target)
+  }
+
+  group.removeEventListener('mouseenter', mouseEnterFunction)
+  group.removeEventListener('mouseleave', mouseLeaveFunction)
+  group.addEventListener('mouseenter', mouseEnterFunction)
+  group.addEventListener('mouseleave', mouseLeaveFunction)
+
   return group;
 }
 
@@ -725,7 +733,7 @@ function clearEditElement(group) {   // given containing group; invoked by mouse
       group.lastChild.remove();         // this is the group of bubbles (and maybe nested ones) if not just a SHIFT bubble
       // clearEditElement(group);
       thisBubble = null;
-      setElementMouseOverOut(group);
+      //setElementMouseOverOut(group); <--- This is creating a loop, you should check how your functions are attaching and dettaching events. And check if you're adding the events in the correct place.
       cursorMode = 'MOVE';    // was savedCursorMode;   // on exit of edit mode, restore
       indicateMode(cursorMode);
       svgInProgress = false;
