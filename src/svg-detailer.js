@@ -823,9 +823,10 @@ function setSizeElement(bubble) {       // this sets up the single point functio
     cursorMode = thisElement.tagName;
   }
 //////////////  group.attributes['onmouseenter'].value = ''; // disable mouseover on real element's containing group
-  group.removeEventListener('mouseenter', (event) => { setEditElement(group) })
+  group.removeEventListener('mouseenter', (event) => setEditElement(group))
 //////////////  group.attributes['onmouseleave'].value = ''; // disable mouseleave on real element's containing group
-  group.removeEventListener('mouseleave', (event) => { clearEditElement(group) })
+  group.removeEventListener('mouseleave', clearEditElement(group))
+  bubble.removeEventListener('mousedown', setSizeElement(bubble))
   if (!((cursorMode == 'cubic') || (cursorMode == 'quadratic'))) {      // tagName will be 'path'
     if (group.childElementCount > 1) {         // if more than one child, we have bubbles
       group.lastChild.remove();      // remove ALL bubbles, since we are going to drop into drag radius
