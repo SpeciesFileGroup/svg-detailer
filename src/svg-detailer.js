@@ -2284,9 +2284,9 @@ function setCursorColor(color) {
 }
 
 function setUserColor(color) {          // only sets up the color for later selection
-  let userColorTextbox = document.getElementById('setUserColor');
-  userColorTextbox.attributes['style'].value = 'background-color: ' + color;
-  userColorTextbox.blur();
+  let userColorCheckbox = document.getElementById('selectUserColor');
+  userColorCheckbox.attributes['style'].value = 'background-color: ' + color;
+  userColorCheckbox.blur();
 }
 
 function getUserColor() {
@@ -2456,10 +2456,10 @@ function buildSVGmenu() {
       thisButton.setAttribute('style', 'width: 5em');
       // thisButton.setAttribute('onchange', "setUserColor(this.value); this.blur();");
       svgMenu.appendChild(thisButton);
-      thisButton.addEventListener('change', (event) => { setUserColor(thisButton.value); thisButton.blur(); });
+      thisButton.addEventListener('change', (event) => { setUserColor(getUserColor()); thisButton.blur(); });
 
       thisButton = document.createElement('input');   // add the user-defined color select button
-      thisButton.setAttribute('id', 'setUserColor');
+      thisButton.setAttribute('id', 'selectUserColor');
       thisButton.setAttribute('type', 'button');
       thisButton.setAttribute('style', 'background-color: ' + colorSelect.buttons[i].color);
       // thisButton.setAttribute('onclick', "setCursorColor(getUserColor()); this.blur();");
