@@ -817,7 +817,9 @@ function setSizeElement(bubble) {       // this sets up the single point functio
     cursorMode = thisElement.tagName;
   }
 //////////////  group.attributes['onmouseenter'].value = ''; // disable mouseover on real element's containing group
-//////////////  group.attributes['onmouseleave'].value = ''; // disable mouseleaver on real element's containing group
+  group.removeEventListener('mouseenter', (event) => { setEditElement(group) })
+//////////////  group.attributes['onmouseleave'].value = ''; // disable mouseleave on real element's containing group
+  group.removeEventListener('mouseleave', (event) => { clearEditElement(group) })
   if (!((cursorMode == 'cubic') || (cursorMode == 'quadratic'))) {      // tagName will be 'path'
     if (group.childElementCount > 1) {         // if more than one child, we have bubbles
       group.lastChild.remove();      // remove ALL bubbles, since we are going to drop into drag radius
@@ -846,9 +848,12 @@ function setPointElement(bubble) {    // this performs the inline substitution o
   else {
     cursorMode = thisElement.tagName;
   }
-  group.attributes['onmouseenter'].value = ''; // disable mouseover on real element's containing group
-  group.attributes['onmouseleave'].value = ''; // disable mouseleave on real element's containing group
-  bubble.attributes['onmousedown'].value = '';  // cascade to onSvgMouseDown
+  // group.attributes['onmouseenter'].value = ''; // disable mouseover on real element's containing group
+  group.removeEventListener('mouseenter', (event) => { setEditElement(group) })
+  // group.attributes['onmouseleave'].value = ''; // disable mouseleaver on real element's containing group
+  group.removeEventListener('mouseleave', (event) => { clearEditElement(group) })
+  // bubble.attributes['onmousedown'].value = '';  // cascade to onSvgMouseDown
+  bubble.removeEventListener('mousedown', (event) => {})
   //bubble.attributes['onmouseup'].value = '';  // calculate/populate insert point
   //if (group.childElementCount > 1) {         // if more than one child, we have bubbles
   //  group.lastChild.remove();      // remove ALL bubbles, since we are going to drop into drag point
@@ -870,9 +875,12 @@ function setNewPointElement(bubble) {     // this inserts the new point into the
     thisBubble = bubble;
   }
   cursorMode = thisElement.tagName;
-  group.attributes['onmouseenter'].value = ''; // disable mouseover on real element's containing group
-  group.attributes['onmouseleave'].value = ''; // disable mouseleaver on real element's containing group
-  bubble.attributes['onmousedown'].value = '';  // cascade to onSvgMouseDown
+  // group.attributes['onmouseenter'].value = ''; // disable mouseover on real element's containing group
+  group.removeEventListener('mouseenter', (event) => { setEditElement(group) })
+  // group.attributes['onmouseleave'].value = ''; // disable mouseleaver on real element's containing group
+  group.removeEventListener('mouseleave', (event) => { clearEditElement(group) })
+  // bubble.attributes['onmousedown'].value = '';  // cascade to onSvgMouseDown
+  bubble.removeAllListeners()
   thisElement.attributes['points'].value = insertNewPoint(thisElement, thisBubble);
   thisBubble.id = (parseInt(thisBubble.id) + 1).toString();   // ///////// seems to work, but...
   //group.lastChild.lastChild.removeChild();      // ///////// vaporize the intermediate newPointBubbles' group
@@ -1033,6 +1041,7 @@ function createSizeBubble(cx, cy, id) {
   bubble.setAttributeNS(null, 'fill-opacity', '0.6');         // SIZE/POINT bubble is slightly less opaque
   // bubble.setAttributeNS(null, 'onmousedown', "setSizeElement(this);");
   bubble.addEventListener('mousedown', (event) => { setSizeElement(bubble) });
+  bubble.addEventListener('mouseup', (event) => { setElementMouseOverOut(bubble) });
   bubble.setAttributeNS(null, 'id', id);    // use this identifier to attach cursor in onSvgMouseMove
   return bubble;
 }
@@ -1389,11 +1398,12 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       let lineLength = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
       let dx = deltaX / lineLength;
       let dy = deltaY / lineLength;
+      let barbLength
       if (document.getElementById('arrowHeadPixels').checked) {
         barbLength = document.getElementById('arrowHeadLength').value;
       }
       else {
-        let barbLength = lineLength * arrowSize/ 100;
+        barbLength = lineLength * arrowSize/ 100;
       }
       let pctX = parseFloat(thisX2/* - deltaX / arrowSize*/) - (dx * barbLength);   //  baseline for barb trailing end
       let pctY = parseFloat(thisY2/* - deltaY / arrowSize*/) - (dy * barbLength);
