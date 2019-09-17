@@ -662,7 +662,7 @@ function setElementMouseOverOut(group) {     // this actually sets the parent gr
     setEditElement(group) 
   });
   group.addEventListener('mouseleave', (event) => { 
-    console.log("mouseenter")
+    console.log("mouseleave")
     clearEditElement(group) 
   });
   return group;
