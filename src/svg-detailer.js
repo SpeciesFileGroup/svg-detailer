@@ -657,13 +657,13 @@ function setElementMouseOverOut(group) {     // this actually sets the parent gr
   }
   // group.setAttributeNS(null, 'onmouseenter', "setEditElement(this);");               // new reference method 14NOV
   // group.setAttributeNS(null, 'onmouseleave', "clearEditElement(this);");      // global var
-  group.addEventListener('mouseenter', (event) => { 
+  group.addEventListener('mouseenter', (event) => {
     console.log("mouseenter")
-    setEditElement(group) 
+    setEditElement(group)
   });
-  group.addEventListener('mouseleave', (event) => { 
-    console.log("mouseenter")
-    clearEditElement(group) 
+  group.addEventListener('mouseleave', (event) => {
+    console.log("mouseleave")
+    clearEditElement(group)
   });
   return group;
 }
@@ -823,9 +823,10 @@ function setSizeElement(bubble) {       // this sets up the single point functio
     cursorMode = thisElement.tagName;
   }
 //////////////  group.attributes['onmouseenter'].value = ''; // disable mouseover on real element's containing group
-  group.removeEventListener('mouseenter', (event) => { setEditElement(group) })
+  group.removeEventListener('mouseenter', setEditElement(group))
 //////////////  group.attributes['onmouseleave'].value = ''; // disable mouseleave on real element's containing group
-  group.removeEventListener('mouseleave', (event) => { clearEditElement(group) })
+  group.removeEventListener('mouseleave', clearEditElement(group))
+  bubble.removeEventListener('mousedown', setSizeElement(bubble))
   if (!((cursorMode == 'cubic') || (cursorMode == 'quadratic'))) {      // tagName will be 'path'
     if (group.childElementCount > 1) {         // if more than one child, we have bubbles
       group.lastChild.remove();      // remove ALL bubbles, since we are going to drop into drag radius
@@ -859,7 +860,7 @@ function setPointElement(bubble) {    // this performs the inline substitution o
   // group.attributes['onmouseleave'].value = ''; // disable mouseleaver on real element's containing group
   group.removeEventListener('mouseleave', (event) => { clearEditElement(group) })
   // bubble.attributes['onmousedown'].value = '';  // cascade to onSvgMouseDown
-  bubble.removeEventListener('mousedown', (event) => {})
+  bubble.removeEventListener('mousedown', (event) => {setSizeElement(bubble) })
   //bubble.attributes['onmouseup'].value = '';  // calculate/populate insert point
   //if (group.childElementCount > 1) {         // if more than one child, we have bubbles
   //  group.lastChild.remove();      // remove ALL bubbles, since we are going to drop into drag point
@@ -886,7 +887,7 @@ function setNewPointElement(bubble) {     // this inserts the new point into the
   // group.attributes['onmouseleave'].value = ''; // disable mouseleaver on real element's containing group
   group.removeEventListener('mouseleave', (event) => { clearEditElement(group) })
   // bubble.attributes['onmousedown'].value = '';  // cascade to onSvgMouseDown
-  bubble.removeAllListeners()
+  bubble.removeEventListener('mousedown', (event) => {setPointElement(bubble) })
   thisElement.attributes['points'].value = insertNewPoint(thisElement, thisBubble);
   thisBubble.id = (parseInt(thisBubble.id) + 1).toString();   // ///////// seems to work, but...
   //group.lastChild.lastChild.removeChild();      // ///////// vaporize the intermediate newPointBubbles' group
@@ -1046,8 +1047,8 @@ function createSizeBubble(cx, cy, id) {
   let bubble = createBubbleStub(cx, cy);
   bubble.setAttributeNS(null, 'fill-opacity', '0.6');         // SIZE/POINT bubble is slightly less opaque
   // bubble.setAttributeNS(null, 'onmousedown', "setSizeElement(this);");
-  bubble.addEventListener('mousedown', (event) => { setSizeElement(bubble) });
-  bubble.addEventListener('mouseup', (event) => { setElementMouseOverOut(bubble) });
+  bubble.addEventListener('mousedown', setSizeElement(bubble));
+  bubble.addEventListener('mouseup', setElementMouseOverOut(bubble));
   bubble.setAttributeNS(null, 'id', id);    // use this identifier to attach cursor in onSvgMouseMove
   return bubble;
 }
