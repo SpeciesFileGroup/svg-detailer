@@ -819,7 +819,29 @@ function setMoveElement(bubble) {    // end of SHIFT leaves single bubble; shoul
   svgInProgress = 'SHIFT';
 }
 
-function setSizeElement(bubble) {       // this sets up the single point functions
+function setSizeElement(bubble) {    // end of SHIFT leaves single bubble; should be removed on mouseleave of group
+  //thisParent = element;                           // group containing real element and the bubbles group
+  let group = bubble.parentNode.parentNode;          // set group for mousemove
+  thisGroup = group;          // set group for mousemove
+  thisElement = group.firstChild;
+  thisBubble = group.lastChild.firstChild;      // this is the center/first bubble
+  cursorMode = thisElement.tagName;
+///////////  thisGroup.attributes['onmouseenter'].value = ''; // disable mouseover on real circle's containing group
+  if (cursorMode == 'circle')
+    {
+      let endK = group.lastChild.childElementCount;        // total bubbles, leave the first one
+      for (let k = endK; k > 1; k--) {
+      group.lastChild.lastChild.remove();      // remove resize bubbles from the end
+      }
+    }
+///////////  group.attributes['onmouseenter'].value = '';    // turn off enter!
+  //group.attributes['onmouseleave'].value = '';    // turn off leave!
+  //group.setAttribute('onmouseout', 'clearEditElement(this);');      // as of right NOW
+//  eliminated savedCursorMode = 'MOVE';
+  svgInProgress = 'SIZE';
+}
+
+function OldsetSizeElement(bubble) {       // this sets up the single point functions
   //thisParent = element;                           // group containing real element and the bubbles group
   //thisElement = group.firstChild;    // this is the real element
   //cursorMode = group.firstChild.tagName;  // extract its tag
@@ -834,7 +856,7 @@ function setSizeElement(bubble) {       // this sets up the single point functio
   group.removeEventListener('mouseenter', (event) => setEditElement(group))
 //////////////  group.attributes['onmouseleave'].value = ''; // disable mouseleave on real element's containing group
   group.removeEventListener('mouseleave', clearEditElement(group))
-  bubble.removeEventListener('mousedown', setSizeElement(bubble))
+  // bubble.removeEventListener('mousedown', setSizeElement(bubble))
   if (!((cursorMode == 'cubic') || (cursorMode == 'quadratic'))) {      // tagName will be 'path'
     if (group.childElementCount > 1) {         // if more than one child, we have bubbles
       group.lastChild.remove();      // remove ALL bubbles, since we are going to drop into drag radius
@@ -1056,7 +1078,7 @@ function createSizeBubble(cx, cy, id) {
   bubble.setAttributeNS(null, 'fill-opacity', '0.6');         // SIZE/POINT bubble is slightly less opaque
   // bubble.setAttributeNS(null, 'onmousedown', "setSizeElement(this);");
   bubble.addEventListener('mousedown', (event) => { setSizeElement(bubble) });
-  bubble.addEventListener('mouseup', (event) => { setElementMouseOverOut(bubble) });
+  // bubble.addEventListener('mouseup', (event) => { setElementMouseOverOut(bubble) });
   bubble.setAttributeNS(null, 'id', id);    // use this identifier to attach cursor in onSvgMouseMove
   return bubble;
 }
