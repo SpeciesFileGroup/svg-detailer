@@ -288,7 +288,8 @@ function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
 
       svgLayer.ondblclick = self.doubleClickHandler();       // replace jquery reference
 
-      svgLayer.onwheel = self.mouseWheelScrollHandler();        // replace jquery reference
+      // svgLayer.onwheel = self.mouseWheelScrollHandler();        // replace jquery reference
+      /////////////////// TEMPORARILY SUPPRESS WHEEL SCROLL
     }
     svgLayer.onmousedown = self.onSvgMouseDown();       // replace jquery reference
     self.mouseMoveHandler = self.onSvgMouseMove;
@@ -659,12 +660,12 @@ function setElementMouseOverOut(group) {     // this actually sets the parent gr
   // group.setAttributeNS(null, 'onmouseleave', "clearEditElement(this);");      // global var
 
   let mouseEnterFunction = (event) => {
-    console.log("mouseenter")
+    console.log("mouseenter" + ' ' + thisElement + ' ' + cursorMode + ' ')
     setEditElement(event.target)
   }
 
   let mouseLeaveFunction = (event) => {
-    console.log("mouseleave")
+    console.log("mouseleave" + ' ' + thisElement + ' ' + cursorMode )
     clearEditElement(event.target)
   }
 
@@ -790,7 +791,7 @@ function exitEditPoint(group) {    // services mouseUp from SIZE/point bubble
   //  group.lastChild.remove();                        // eliminates all bubbles
   //  //group.appendChild(createBubbleGroup(group));    // reconstitutes new bubbles (clearly, this is done elswhere)
   //}
-  while ((group.childElementCount > 1) && (group.lastChild.tagName = 'g')) {             // changed from group.childElementCount > 1
+  while ((group.childElementCount > 1) && (group.lastChild.tagName == 'g')) {             // changed from group.childElementCount > 1
     group.lastChild.remove();                        // eliminates all bubbles
   }
   svgInProgress = false;  ///////////////
@@ -817,6 +818,7 @@ function setMoveElement(bubble) {    // end of SHIFT leaves single bubble; shoul
   //group.setAttribute('onmouseout', 'clearEditElement(this);');      // as of right NOW
 //  eliminated savedCursorMode = 'MOVE';
   svgInProgress = 'SHIFT';
+  console.log('svgInProgress = SHIFT')
 }
 
 function setSizeElement(bubble) {    // end of SHIFT leaves single bubble; should be removed on mouseleave of group
@@ -839,6 +841,7 @@ function setSizeElement(bubble) {    // end of SHIFT leaves single bubble; shoul
   //group.setAttribute('onmouseout', 'clearEditElement(this);');      // as of right NOW
 //  eliminated savedCursorMode = 'MOVE';
   svgInProgress = 'SIZE';
+  console.log('svgInProgress = SIZE, cursorMode = ' + cursorMode + ' ' + thisElement.tagName)
 }
 
 function OldsetSizeElement(bubble) {       // this sets up the single point functions
@@ -917,7 +920,7 @@ function setNewPointElement(bubble) {     // this inserts the new point into the
   // group.attributes['onmouseleave'].value = ''; // disable mouseleaver on real element's containing group
   group.removeEventListener('mouseleave', (event) => { clearEditElement(group) })
   // bubble.attributes['onmousedown'].value = '';  // cascade to onSvgMouseDown
-  bubble.removeAllListeners()
+  /////////////////////////bubble.removeAllListeners()
   thisElement.attributes['points'].value = insertNewPoint(thisElement, thisBubble);
   thisBubble.id = (parseInt(thisBubble.id) + 1).toString();   // ///////// seems to work, but...
   //group.lastChild.lastChild.removeChild();      // ///////// vaporize the intermediate newPointBubbles' group
@@ -1383,6 +1386,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         this.updateMousePosition(event);
         thisElement.attributes['width'].value = (lastMouseX - xC) / zoom - thisRectX;
         thisElement.attributes['height'].value = (lastMouseY - yC) / zoom - thisRectY;
+        thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom;     // translate the bubble
+        thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
         //thisElement.attributes['stroke'] = cursorColor;   ///// disabled due to unwanted side effects
       }
     }
@@ -2055,6 +2060,7 @@ function setCursorMode(mode) {      // detect current mode not completed prior t
   // }
   if (mode.toUpperCase() == 'MOVE') {
     cursorMode = mode;
+    console.log('@setCursorMode1 cursorMode = ' + cursorMode)
   }
   else {
     cursorMode = mode.toLowerCase();
@@ -2064,11 +2070,13 @@ function setCursorMode(mode) {      // detect current mode not completed prior t
     }
     if (mode == 'rectangle') {      // there are  few cases where the tagName of the element != cursorMode
       cursorMode = 'rect';          // also cubic and quadratic, whose tagName is path and draw which is polyline
+      console.log('@setCursorMode2 cursorMode = ' + cursorMode)
     }
   }
   savedCursorMode = 'MOVE';      ////////////// eliminated but reinstated
   if (mode.toUpperCase() != 'MOVE') {
     waitElement = true;
+    console.log('@setCursorMode1 saitElement = ' + cursorMode)
   }
   indicateMode(mode);
   svgInProgress = false;
