@@ -968,10 +968,10 @@ function createBubbleGroup(group) {
       let cy = svgAttrs['cy'];
       let cr = svgAttrs['r'];
       bubbleGroup.appendChild(createShiftBubble(cx, cy));    // this is the center point of both bubble and circle
-      bubbleGroup.appendChild(createSizeBubble(cr + cx, cy));    // this is the E resize point
-      bubbleGroup.appendChild(createSizeBubble(cx, cr + cy));    // this is the S resize point
-      bubbleGroup.appendChild(createSizeBubble(cx - cr, cy));    // this is the W resize point
-      bubbleGroup.appendChild(createSizeBubble(cx, cy - cr));    // this is the N resize point
+      bubbleGroup.appendChild(createSizeBubble(cr + cx, cy, 'E'));    // this is the E resize point
+      bubbleGroup.appendChild(createSizeBubble(cx, cr + cy, 'S'));    // this is the S resize point
+      bubbleGroup.appendChild(createSizeBubble(cx - cr, cy, 'W'));    // this is the W resize point
+      bubbleGroup.appendChild(createSizeBubble(cx, cy - cr, 'N'));    // this is the N resize point
       return bubbleGroup;
     case 'ellipse':    // 1 relocation bubble, 4 compass-point resize bubbles (flagged SHIFT and SIZE respecively)
       cx = svgAttrs['cx'];
@@ -1500,6 +1500,23 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         lastMouseY = this.lastMousePoint.y;
         let radius = length2points(thisCircX, thisCircY, (lastMouseX - xC) / zoom, (lastMouseY - yC) / zoom);
         thisElement.attributes['r'].value = radius;
+        if (thisBubble) {
+          thisBubble = event.target
+          switch (thisBubble.id) {
+            case 'E':
+              thisBubble.attributes['cx'].value = parseFloat(thisCircX) + radius
+              break
+            case 'S':
+              thisBubble.attributes['cy'].value = parseFloat(thisCircY) + radius
+              break
+            case 'W':
+              thisBubble.attributes['cx'].value = parseFloat(thisCircX) - radius
+              break
+            case 'N':
+              thisBubble.attributes['cy'].value = parseFloat(thisCircY) - radius
+              break
+          }
+        }
         //thisElement.attributes['stroke'].value = cursorColor;   ///// disabled due to unwanted side effects
       }
     }
