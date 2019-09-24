@@ -829,13 +829,13 @@ function setSizeElement(bubble) {    // end of SHIFT leaves single bubble; shoul
   thisBubble = group.lastChild.firstChild;      // this is the center/first bubble
   cursorMode = thisElement.tagName;
 ///////////  thisGroup.attributes['onmouseenter'].value = ''; // disable mouseover on real circle's containing group
-  if (cursorMode == 'circle')
-    {
-      let endK = group.lastChild.childElementCount;        // total bubbles, leave the first one
-      for (let k = endK; k > 1; k--) {
-      group.lastChild.lastChild.remove();      // remove resize bubbles from the end
-      }
-    }
+//   if (cursorMode == 'circle')
+//     {
+//       let endK = group.lastChild.childElementCount;        // total bubbles, leave the first one
+//       for (let k = endK; k > 1; k--) {
+//       group.lastChild.lastChild.remove();      // remove resize bubbles from the end
+//       }
+//     }
 ///////////  group.attributes['onmouseenter'].value = '';    // turn off enter!
   //group.attributes['onmouseleave'].value = '';    // turn off leave!
   //group.setAttribute('onmouseout', 'clearEditElement(this);');      // as of right NOW
