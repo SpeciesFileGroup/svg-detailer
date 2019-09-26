@@ -998,6 +998,7 @@ function createBubbleGroup(group) {
       let x2 = svgAttrs['x2'];
       let y2 = svgAttrs['y2'];
       bubbleGroup.appendChild(createPointBubble(x1, y1, 'x1-y1'));     // this is the 1st line coordinate
+      bubbleGroup.appendChild(createShiftBubble((x2+x1)/2, (y2+y1)/2, 'moveline'));    // this is the 2nd (terminal) line point
       bubbleGroup.appendChild(createPointBubble(x2, y2, 'x2-y2'));    // this is the 2nd (terminal) line point
       return bubbleGroup;
     case 'path':           // this is a MAJOR EXCEPTION to the other cases, used for curve !! articulate for type !!
@@ -1219,7 +1220,7 @@ function isNumeric(n) {
 
 
 function unbindMouseHandlers(self) {    //   /////////////  this routine and its usages should be excised
-  if (self.event != 'mouseup') {
+  if (event.type != 'mouseup') {
     return false;                 // ////// this is always happening
   }
   //$(document).unbind(self.mouseMoveEvent, self.mouseMoveHandler);   // unbinding on mouse UP
@@ -1386,8 +1387,12 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         this.updateMousePosition(event);
         thisElement.attributes['width'].value = (lastMouseX - xC) / zoom - thisRectX;
         thisElement.attributes['height'].value = (lastMouseY - yC) / zoom - thisRectY;
-        thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom;     // translate the bubble
-        thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
+        if (thisBubble)
+          {
+            thisBubble = event.target
+            thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom;     // translate the bubble
+            thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
+          }
         //thisElement.attributes['stroke'] = cursorColor;   ///// disabled due to unwanted side effects
       }
     }
@@ -1397,17 +1402,42 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       if ((event.type == 'mousedown') || (svgInProgress == false)) {    // extra condition for line
         return;
       }
-      this.updateMousePosition(event);
-      let linePoints = ['x2', 'y2'];          // preset for normal post-creation mode
-      if (thisBubble != null) {       // look for bubble to denote just move THIS point only
-        thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom;     // translate the bubble
-        thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
-        if (!isNumeric(thisBubble.id)) {                 // presume either 'x1-y1' or 'x2-y2'
-          linePoints = (thisBubble.id).split('-');      // this will result in ['x1', 'y1'] or  ['x2', 'y2'] used below
+      if (svgInProgress == 'SHIFT') {
+        this.updateMousePosition(event);
+        let x1 = parseFloat(thisElement.attributes['x1'].value)
+        let x2 = parseFloat(thisElement.attributes['x2'].value)
+        let y1 = parseFloat(thisElement.attributes['y1'].value)
+        let y2 = parseFloat(thisElement.attributes['y2'].value)
+        let cx = parseFloat(thisBubble.attributes['cx'].value)
+        let cy = parseFloat(thisBubble.attributes['cy'].value)
+        let cx2 = (lastMouseX - xC) / zoom
+        let cy2 = (lastMouseY - yC) / zoom
+        let dx = cx - cx2
+        let dy = cy2 - cy
+
+        if (thisBubble) {
+          // thisBubble = event.target
+          thisBubble.attributes['cx'].value = cx2;     // translate the bubble
+          thisBubble.attributes['cy'].value = cy2;
+          thisElement.attributes['x1'].value = dx + x1;    // correspondingly translate thisElement
+          thisElement.attributes['y1'].value = dy + y1;
+          thisElement.attributes['x2'].value = dx + x2;    // correspondingly translate thisElement
+          thisElement.attributes['y2'].value = dy + y2;
         }
       }
-      thisElement.attributes[linePoints[0]].value = (lastMouseX - xC) / zoom;
-      thisElement.attributes[linePoints[1]].value = (lastMouseY - yC) / zoom;
+      else {
+        this.updateMousePosition(event);
+        let linePoints = ['x2', 'y2'];          // preset for normal post-creation mode
+        if (thisBubble != null) {       // look for bubble to denote just move THIS point only
+          thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom;     // translate the bubble
+          thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
+          if (!isNumeric(thisBubble.id)) {                 // presume either 'x1-y1' or 'x2-y2'
+            linePoints = (thisBubble.id).split('-');      // this will result in ['x1', 'y1'] or  ['x2', 'y2'] used below
+          }
+        }
+        thisElement.attributes[linePoints[0]].value = (lastMouseX - xC) / zoom;
+        thisElement.attributes[linePoints[1]].value = (lastMouseY - yC) / zoom;
+      }
       //thisElement.attributes['stroke'] = cursorColor;   ///// disabled due to unwanted side effects
     }
     else if (cursorMode == 'arrow') {
@@ -1517,6 +1547,12 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
               break
           }
         }
+        // let bubbles = thisElement.parentElement.children
+        let bubbles = event.target.parentElement.children
+        bubbles['E'].attributes['cx'].value = parseFloat(thisCircX) + radius
+        bubbles['S'].attributes['cy'].value = parseFloat(thisCircY) + radius
+        bubbles['W'].attributes['cx'].value = parseFloat(thisCircX) - radius
+        bubbles['N'].attributes['cy'].value = parseFloat(thisCircY) - radius
         //thisElement.attributes['stroke'].value = cursorColor;   ///// disabled due to unwanted side effects
       }
     }
