@@ -806,9 +806,11 @@ function setMoveElement(bubble) {    // end of SHIFT leaves single bubble; shoul
   let group = bubble.parentNode.parentNode;          // set group for mousemove
   thisGroup = group;          // set group for mousemove
   thisElement = group.firstChild;
-  thisBubble = group.lastChild.firstChild;      // this is the center/first bubble
+  // thisBubble = group.lastChild.firstChild;      // this is the center/first bubble
+  thisBubble = group.lastChild.children['shift'];      // this is the center/first bubble
   cursorMode = thisElement.tagName;
 ///////////  thisGroup.attributes['onmouseenter'].value = ''; // disable mouseover on real circle's containing group
+  //// presumption of ordering of shift bubble vs other bubbles: FIRST bubble is shift -- FALSE
   let endK = group.lastChild.childElementCount;        // total bubbles, leave the first one
   for (let k = endK; k > 1; k--) {
     group.lastChild.lastChild.remove();      // remove resize bubbles from the end
@@ -967,7 +969,7 @@ function createBubbleGroup(group) {
       let cx = svgAttrs['cx'];
       let cy = svgAttrs['cy'];
       let cr = svgAttrs['r'];
-      bubbleGroup.appendChild(createShiftBubble(cx, cy));    // this is the center point of both bubble and circle
+      bubbleGroup.appendChild(createShiftBubble(cx, cy, 'shift'));    // this is the center point of both bubble and circle
       bubbleGroup.appendChild(createSizeBubble(cr + cx, cy, 'E'));    // this is the E resize point
       bubbleGroup.appendChild(createSizeBubble(cx, cr + cy, 'S'));    // this is the S resize point
       bubbleGroup.appendChild(createSizeBubble(cx - cr, cy, 'W'));    // this is the W resize point
@@ -978,7 +980,7 @@ function createBubbleGroup(group) {
       cy = svgAttrs['cy'];
       let rx = svgAttrs['rx'];
       let ry = svgAttrs['ry'];
-      bubbleGroup.appendChild(createShiftBubble(cx, cy));    // this is the center point of both bubble and circle
+      bubbleGroup.appendChild(createShiftBubble(cx, cy, 'shift'));    // this is the center point of both bubble and circle
       bubbleGroup.appendChild(createSizeBubble(rx + cx, cy));    // this is the E resize point
       bubbleGroup.appendChild(createSizeBubble(cx, ry + cy));    // this is the S resize point
       bubbleGroup.appendChild(createSizeBubble(cx - rx, cy));    // this is the W resize point
@@ -989,7 +991,7 @@ function createBubbleGroup(group) {
       let y = svgAttrs['y'];
       let w = svgAttrs['width'];
       let h = svgAttrs['height'];
-      bubbleGroup.appendChild(createShiftBubble(x, y));     // this is the rectangle origin, anomalous as it may be
+      bubbleGroup.appendChild(createShiftBubble(x, y, 'shift'));     // this is the rectangle origin, anomalous as it may be
       bubbleGroup.appendChild(createSizeBubble(x + w, y + h));    // this is the resize point
       return bubbleGroup;
     case 'line':
@@ -997,8 +999,8 @@ function createBubbleGroup(group) {
       let y1 = svgAttrs['y1'];
       let x2 = svgAttrs['x2'];
       let y2 = svgAttrs['y2'];
+      bubbleGroup.appendChild(createShiftBubble((x2+x1)/2, (y2+y1)/2, 'shift'));    // this is the move line point
       bubbleGroup.appendChild(createPointBubble(x1, y1, 'x1-y1'));     // this is the 1st line coordinate
-      bubbleGroup.appendChild(createShiftBubble((x2+x1)/2, (y2+y1)/2, 'moveline'));    // this is the 2nd (terminal) line point
       bubbleGroup.appendChild(createPointBubble(x2, y2, 'x2-y2'));    // this is the 2nd (terminal) line point
       return bubbleGroup;
     case 'path':           // this is a MAJOR EXCEPTION to the other cases, used for curve !! articulate for type !!
@@ -1061,12 +1063,12 @@ function createBubbleGroup(group) {
     case 'text':
       thisX = svgAttrs['x'];
       thisY = svgAttrs['y'];
-      bubbleGroup.appendChild(createShiftBubble(thisX, thisY));
+      bubbleGroup.appendChild(createShiftBubble(thisX, thisY, 'shift'));
       return bubbleGroup;
   }
 }
 
-function createShiftBubble(cx, cy) {
+function createShiftBubble(cx, cy, id) {
   let bubble = createBubbleStub(cx, cy);
   bubble.setAttributeNS(null, 'fill-opacity', '0.8');         // SHIFT bubble is slightly more opaque
   // bubble.setAttributeNS(null, 'onmousedown', "setMoveElement(this);");
@@ -1074,6 +1076,7 @@ function createShiftBubble(cx, cy) {
   bubble.addEventListener('mousedown', (event) => { setMoveElement(bubble) });
   bubble.addEventListener('mouseup', (event) => { setElementMouseOverOut(bubble) });
   bubble.setAttributeNS(null, 'style', 'cursor:move;');
+  bubble.setAttributeNS(null, 'id', id);    // use this identifier to attach cursor in onSvgMouseMove
   return bubble;
 }
 
@@ -1092,11 +1095,11 @@ function createPointBubble(cx, cy, id) {    // used for <poly...> vertices
   bubble.setAttributeNS(null, 'fill-opacity', '0.6');         // SIZE/POINT bubble is slightly less opaque
   // bubble.setAttributeNS(null, 'onmousedown', "setPointElement(this);");
   // bubble.setAttributeNS(null, 'onmouseup', "exitEditPoint(thisGroup);");   // questionable reference
-  bubble.addEventListener('mousedown', (event) => { setPointElement(bubble) });
-  bubble.addEventListener('mouseup', (event) => { exitEditPoint(thisGroup) });
   bubble.setAttributeNS(null, 'id', id);    // use this identifier to attach cursor in onSvgMouseMove
                                             // will take the form: 'x1-y1', 'x2-y2' for <line>,
                                             // will take the form: '0', '13' for <poly-...>
+  bubble.addEventListener('mousedown', (event) => { setPointElement(bubble) });
+  bubble.addEventListener('mouseup', (event) => { exitEditPoint(thisGroup) });
   return bubble;
 }
 
@@ -1405,23 +1408,23 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       if (svgInProgress == 'SHIFT') {
         this.updateMousePosition(event);
         let x1 = parseFloat(thisElement.attributes['x1'].value)
-        let x2 = parseFloat(thisElement.attributes['x2'].value)
         let y1 = parseFloat(thisElement.attributes['y1'].value)
+        let x2 = parseFloat(thisElement.attributes['x2'].value)
         let y2 = parseFloat(thisElement.attributes['y2'].value)
+        // thisBubble set on mousedown
         let cx = parseFloat(thisBubble.attributes['cx'].value)
         let cy = parseFloat(thisBubble.attributes['cy'].value)
         let cx2 = (lastMouseX - xC) / zoom
         let cy2 = (lastMouseY - yC) / zoom
-        let dx = cx - cx2
-        let dy = cy2 - cy
+        let dx = (cx - cx2)
+        let dy = (cy2 - cy)
 
         if (thisBubble) {
-          // thisBubble = event.target
           thisBubble.attributes['cx'].value = cx2;     // translate the bubble
           thisBubble.attributes['cy'].value = cy2;
-          thisElement.attributes['x1'].value = dx + x1;    // correspondingly translate thisElement
+          thisElement.attributes['x1'].value = x1 - dx*zoom;    // correspondingly translate thisElement
           thisElement.attributes['y1'].value = dy + y1;
-          thisElement.attributes['x2'].value = dx + x2;    // correspondingly translate thisElement
+          thisElement.attributes['x2'].value = x2 - dx*zoom;    // correspondingly translate thisElement
           thisElement.attributes['y2'].value = dy + y2;
         }
       }
