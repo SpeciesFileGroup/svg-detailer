@@ -1422,9 +1422,9 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         if (thisBubble) {
           thisBubble.attributes['cx'].value = cx2;     // translate the bubble
           thisBubble.attributes['cy'].value = cy2;
-          thisElement.attributes['x1'].value = x1 - dx*zoom;    // correspondingly translate thisElement
+          thisElement.attributes['x1'].value = x1 - dx;    // correspondingly translate thisElement
           thisElement.attributes['y1'].value = dy + y1;
-          thisElement.attributes['x2'].value = x2 - dx*zoom;    // correspondingly translate thisElement
+          thisElement.attributes['x2'].value = x2 - dx;    // correspondingly translate thisElement
           thisElement.attributes['y2'].value = dy + y2;
         }
       }
