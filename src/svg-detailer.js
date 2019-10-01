@@ -801,7 +801,7 @@ function exitEditPoint(group) {    // services mouseUp from SIZE/point bubble
   setElementMouseOverOut(group);
 }
 
-function setMoveElement(bubble) {    // end of SHIFT leaves single bubble; should be removed on mouseleave of group
+function setShiftElement(bubble) {    // end of SHIFT leaves single bubble; should be removed on mouseleave of group
   //thisParent = element;                           // group containing real element and the bubbles group
   let group = bubble.parentNode.parentNode;          // set group for mousemove
   thisGroup = group;          // set group for mousemove
@@ -809,6 +809,7 @@ function setMoveElement(bubble) {    // end of SHIFT leaves single bubble; shoul
   // thisBubble = group.lastChild.firstChild;      // this is the center/first bubble
   thisBubble = group.lastChild.children['shift'];      // this is the center/first bubble
   cursorMode = thisElement.tagName;
+  if(group.attributes.type) { cursorMode = group.attributes.type.value}
 ///////////  thisGroup.attributes['onmouseenter'].value = ''; // disable mouseover on real circle's containing group
   //// presumption of ordering of shift bubble vs other bubbles: FIRST bubble is shift -- FALSE
   let endK = group.lastChild.childElementCount;        // total bubbles, leave the first one
@@ -1071,9 +1072,7 @@ function createBubbleGroup(group) {
 function createShiftBubble(cx, cy, id) {
   let bubble = createBubbleStub(cx, cy);
   bubble.setAttributeNS(null, 'fill-opacity', '0.8');         // SHIFT bubble is slightly more opaque
-  // bubble.setAttributeNS(null, 'onmousedown', "setMoveElement(this);");
-  // bubble.setAttributeNS(null, 'onmouseup', "setElementMouseOverOut(this);");
-  bubble.addEventListener('mousedown', (event) => { setMoveElement(bubble) });
+  bubble.addEventListener('mousedown', (event) => { setShiftElement(bubble) });
   bubble.addEventListener('mouseup', (event) => { setElementMouseOverOut(bubble) });
   bubble.setAttributeNS(null, 'style', 'cursor:move;');
   bubble.setAttributeNS(null, 'id', id);    // use this identifier to attach cursor in onSvgMouseMove
@@ -1402,6 +1401,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
     else if (cursorMode == "line") {
       lastMouseX = this.lastMousePoint.x;
       lastMouseY = this.lastMousePoint.y;
+      let linePoints
       if ((event.type == 'mousedown') || (svgInProgress == false)) {    // extra condition for line
         return;
       }
@@ -1430,7 +1430,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       }
       else {
         this.updateMousePosition(event);
-        let linePoints = ['x2', 'y2'];          // preset for normal post-creation mode
+        linePoints = ['x2', 'y2'];          // preset for normal post-creation mode
         if (thisBubble != null) {       // look for bubble to denote just move THIS point only
           thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom;     // translate the bubble
           thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
@@ -1446,11 +1446,12 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
     else if (cursorMode == 'arrow') {
       lastMouseX = this.lastMousePoint.x;
       lastMouseY = this.lastMousePoint.y;
+      let linePoints
       if ((event.type == 'mousedown') || (svgInProgress == false)) {    // extra condition for line
         return;
       }
       this.updateMousePosition(event);
-      let linePoints = ['x2', 'y2'];          // preset for normal post-creation mode
+      linePoints = ['x2', 'y2'];          // preset for normal post-creation mode
       if (thisBubble != null) {       // look for bubble to denote just move THIS point only
         thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom;     // translate the bubble
         thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
