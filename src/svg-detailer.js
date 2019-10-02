@@ -811,7 +811,7 @@ function setShiftElement(bubble) {    // end of SHIFT leaves single bubble; shou
   cursorMode = thisElement.tagName;
   if(group.attributes.type) { cursorMode = group.attributes.type.value}
 ///////////  thisGroup.attributes['onmouseenter'].value = ''; // disable mouseover on real circle's containing group
-  //// presumption of ordering of shift bubble vs other bubbles: FIRST bubble is shift -- FALSE
+  //// presumption of ordering of shift bubble vs other bubbles: FIRST bubble is shift -- modified other code so TRUE
   let endK = group.lastChild.childElementCount;        // total bubbles, leave the first one
   for (let k = endK; k > 1; k--) {
     group.lastChild.lastChild.remove();      // remove resize bubbles from the end
