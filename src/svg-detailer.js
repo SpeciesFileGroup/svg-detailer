@@ -1420,7 +1420,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         let dy = (cy2 - cy)
 
         if (thisBubble) {
-          thisBubble.attributes['cx'].value = cx2;     // translate the bubble
+          thisBubble.attributes['cx'].value = cx2;         // translate the bubble
           thisBubble.attributes['cy'].value = cy2;
           thisElement.attributes['x1'].value = x1 - dx;    // correspondingly translate thisElement
           thisElement.attributes['y1'].value = dy + y1;
@@ -1450,18 +1450,44 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       if ((event.type == 'mousedown') || (svgInProgress == false)) {    // extra condition for line
         return;
       }
-      this.updateMousePosition(event);
-      linePoints = ['x2', 'y2'];          // preset for normal post-creation mode
-      if (thisBubble != null) {       // look for bubble to denote just move THIS point only
-        thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom;     // translate the bubble
-        thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
-        if (!isNumeric(thisBubble.id)) {       // presume either 'x1-y1' or 'x2-y2'
-          linePoints = (thisBubble.id).split('-');      // this will result in ['x1', 'y1'] or  ['x2', 'y2'] used below
+      let mainLine = thisGroup.children[0]
+      if (svgInProgress == 'SHIFT') {
+        this.updateMousePosition(event);
+        let x1 = parseFloat(mainLine.attributes['x1'].value)
+        let y1 = parseFloat(mainLine.attributes['y1'].value)
+        let x2 = parseFloat(mainLine.attributes['x2'].value)
+        let y2 = parseFloat(mainLine.attributes['y2'].value)
+        // thisBubble set on mousedown
+        let cx = parseFloat(thisBubble.attributes['cx'].value)
+        let cy = parseFloat(thisBubble.attributes['cy'].value)
+        let cx2 = (lastMouseX - xC) / zoom
+        let cy2 = (lastMouseY - yC) / zoom
+        let dx = (cx - cx2)
+        let dy = (cy2 - cy)
+
+        if (thisBubble) {
+          thisBubble.attributes['cx'].value = cx2;         // translate the bubble
+          thisBubble.attributes['cy'].value = cy2;
+          mainLine.attributes['x1'].value = x1 - dx;    // correspondingly translate mainLine
+          mainLine.attributes['y1'].value = dy + y1;
+          mainLine.attributes['x2'].value = x2 - dx;    // correspondingly translate mainLine
+          mainLine.attributes['y2'].value = dy + y2;
         }
       }
-      thisElement.attributes[linePoints[0]].value = (lastMouseX - xC) / zoom;
-      thisElement.attributes[linePoints[1]].value = (lastMouseY - yC) / zoom;
-      while (thisGroup.childElementCount > 1) {
+      else {
+        this.updateMousePosition(event);
+        linePoints = ['x2', 'y2'];          // preset for normal post-creation mode
+        if (thisBubble != null) {       // look for bubble to denote just move THIS point only
+          thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom;     // translate the bubble
+          thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
+          if (!isNumeric(thisBubble.id)) {       // presume either 'x1-y1' or 'x2-y2'
+            linePoints = (thisBubble.id).split('-');      // this will result in ['x1', 'y1'] or  ['x2', 'y2'] used below
+          }
+        }
+        mainLine.attributes[linePoints[0]].value = (lastMouseX - xC) / zoom;
+        mainLine.attributes[linePoints[1]].value = (lastMouseY - yC) / zoom;
+      }
+      while (thisGroup.childElementCount > 1) {   // remove everything except the main line
         thisGroup.lastChild.remove();             // ///////////////////  VERY TEMPORARY METHOD
       }
       let thisX1 = thisElement.attributes['x1'].value;    // shorter references to original line's values
@@ -1472,6 +1498,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       let deltaX = thisX2 - thisX1;
       let deltaY = thisY2 - thisY1;
       let lineLength = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+      if (lineLength == 0) {lineLength = 1}   // preempt divide by 0
       let dx = deltaX / lineLength;
       let dy = deltaY / lineLength;
       let barbLength
@@ -2594,7 +2621,8 @@ function buildSVGmenu() {
       thisButton = document.createElement('input');
       thisButton.setAttribute('id', 'cursorColor');
       thisButton.setAttribute('type', 'button');
-      thisButton.setAttribute('style', 'this.blur(); background-color: ' + colorSelect.buttons[i].color);
+      // thisButton.setAttribute('style', 'this.blur(); background-color: ' + colorSelect.buttons[i].color);
+      thisButton.setAttribute('style', 'background-color: ' + colorSelect.buttons[i].color);
       svgMenu.appendChild(thisButton);
       // let thisColor = colorSelect.buttons[i].color;
       // thisButton.addEventListener('click', (event) => { setUserColor(thisColor); this.blur(); });
@@ -2611,7 +2639,7 @@ function buildSVGmenu() {
   thisButton.setAttribute('value', 'Arrow line');
   // thisButton.setAttribute('onclick', "setCursorMode('arrow'); this.blur();");
   svgMenu.appendChild(thisButton);
-  thisButton.addEventListener('click', (event) => { setCursorMode('arrow'); this.blur(); })
+  thisButton.addEventListener('click', (event) => { setCursorMode('arrow'); thisButton.blur(); })
 
   thisSpan = document.createElement('span');      // arrow display area
   thisSpan.setAttribute('id', 'arrowBlock');
@@ -2622,7 +2650,7 @@ function buildSVGmenu() {
   thisButton.setAttribute('type', 'checkbox');
   // thisButton.setAttribute('onclick', "this.blur();");
   thisSpan.appendChild(thisButton);
-  thisButton.addEventListener('click', (event) => { this.blur(); })
+  thisButton.addEventListener('click', (event) => { thisButton.blur(); })
 
   thisSpan.innerHTML += ' &nbsp; Closed:';
   thisButton = document.createElement('input');
@@ -2630,7 +2658,7 @@ function buildSVGmenu() {
   thisButton.setAttribute('type', 'checkbox');
   // thisButton.setAttribute('onclick', "this.blur();");
   thisSpan.appendChild(thisButton);
-  thisButton.addEventListener('click', (event) => { this.blur(); })
+  thisButton.addEventListener('click', (event) => { thisButton.blur(); })
 
   thisSpan.innerHTML += ' &nbsp; Length:';
   thisButton = document.createElement('input');
@@ -2643,7 +2671,7 @@ function buildSVGmenu() {
   thisButton.setAttribute('style', 'width: 4em');
   // thisButton.setAttribute('onchange', 'this.blur();');
   thisSpan.appendChild(thisButton);
-  thisButton.addEventListener('change', (event) => { this.blur(); })
+  thisButton.addEventListener('change', (event) => { thisButton.blur(); })
 
   thisSpan.innerHTML += ' &nbsp; Percent:';
   thisButton = document.createElement('input');     // default TEXT SIZE input
@@ -2656,7 +2684,7 @@ function buildSVGmenu() {
   thisButton.setAttribute('value', '10');
   // thisButton.setAttribute('onchange', 'this.blur(); arrowSize=this.value;');
   thisSpan.appendChild(thisButton);
-  thisSpan.addEventListener('change', (event) => { this.blur(); arrowSize = this.value; });
+  thisSpan.addEventListener('change', (event) => { thisButton.blur(); arrowSize = thisButton.value; });
   svgMenu.appendChild(thisSpan);
 
   thisButton = document.createElement('input');
@@ -2665,13 +2693,14 @@ function buildSVGmenu() {
   thisButton.setAttribute('value', 'Extract SVG');
   // thisButton.setAttribute('onclick', 'this.blur(); showSVG(true);');
   svgMenu.appendChild(thisButton);
-  thisButton.addEventListener('click', (event) => { this.blur(); showSVG(true); });
+  thisButton.addEventListener('click', (event) => { thisButton.blur(); showSVG(true); });
 
   thisButton = document.createElement('input');
   thisButton.setAttribute('id', 'plainSVG');
   thisButton.setAttribute('type', 'button');
   thisButton.setAttribute('value', 'Plain SVG');
-  thisButton.setAttribute('onclick', 'this.blur(); showSVG(false);');
+  // thisButton.setAttribute('onclick', 'this.blur(); showSVG(false);');
+  thisButton.setAttribute('onclick', 'showSVG(false);');
   svgMenu.appendChild(thisButton);
 
   thisButton = document.createElement('input');
@@ -2680,7 +2709,8 @@ function buildSVGmenu() {
   thisButton.setAttribute('value', 'JSON SVG');
   // thisButton.setAttribute('onclick', 'this.blur(); jsonSVG(false);');
   svgMenu.appendChild(thisButton);
-  thisButton.addEventListener('click', (event) => { this.blur(); showSVG(false); });
+  // thisButton.addEventListener('click', (event) => { this.blur(); showSVG(false); });
+  thisButton.addEventListener('click', (event) => { showSVG(false); });
 
   //svgMenu.innerHTML += '<br>'; <--- This breaks EVERYTHING and it will destroy DOM objects converting it in string.
   svgMenu.appendChild(document.createElement('br'))
