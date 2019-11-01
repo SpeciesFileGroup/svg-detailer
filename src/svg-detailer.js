@@ -65,7 +65,7 @@ var maxZoom = 4;        // this is 4 pixels per source image pixel
 var zoomDelta = 0.02;   // this can be altered to discriminate legacy firefox dommousescroll event
 var svgLayer;
 var svgImage;
-var thisSvg = [];            // collect points as [x,y]
+var thisSVGpoints = [];            // collect points as [x,y]
 var svgOffset;              // set on document ready ////////// test against fully packaged code
 var svgMenu;                // object built to be the element type selection and control menu
 
@@ -173,7 +173,7 @@ var _SHIFTMAP = {
 function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
 
   svgImage = new Image();
-  thisSvg = [];            // collect points as [x,y]
+  thisSVGpoints = [];            // collect points as [x,y]
 
   textHeight = 75;
   textFont = 'Verdana';
@@ -326,20 +326,21 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
     if (cursorMode == 'polygon') {     // mouseDown sets initial point, subsequent points set by mouseDown after mouseUp
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
         savedCursorMode = cursorMode;     // plant this to prevent immediate post-creation clearing
-        thisSvg[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
+        thisSVGpoints[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
         let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        let newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
+        let newGroupID = 'g' + (document.getElementById("xlt").childElementCount).toString();
         group.setAttributeNS(null, 'id', newGroupID);
+        group.setAttributeNS(null, 'type', cursorMode);
         thisGroup = group;
         document.getElementById("xlt").appendChild(group);
         let element = createElement('polyline');        //YES, I KNOW... polyline behavior mimics google maps better
 
         group.appendChild(element);
         thisElement = group.children[0];
-        element.setAttributeNS(null, 'points', thisSvg[0][0].toFixed(2).toString()
-          + ',' + thisSvg[0][1].toFixed(2).toString() + ' '
-          + thisSvg[0][0].toFixed(2).toString()
-          + ',' + thisSvg[0][1].toFixed(2).toString() + ' ');      // start x,y for both points initially
+        element.setAttributeNS(null, 'points', thisSVGpoints[0][0].toFixed(2).toString()
+          + ',' + thisSVGpoints[0][1].toFixed(2).toString() + ' '
+          + thisSVGpoints[0][0].toFixed(2).toString()
+          + ',' + thisSVGpoints[0][1].toFixed(2).toString() + ' ');      // start x,y for both points initially
         svgInProgress = cursorMode;     // mark in progress
       }
       else {      // this is the fixation of this last point, so DON'T dissociate mouse move handler
@@ -353,21 +354,22 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
     if (cursorMode == 'polyline') {    // mouseDown sets initial point, subsequent points set by mouseDown after mouseUp
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
         savedCursorMode = cursorMode;     // plant this to prevent immediate post-creation clearing
-        thisSvg[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
+        thisSVGpoints[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
         let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         thisGroup = group;
-        let newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
+        let newGroupID = 'g' + (document.getElementById("xlt").childElementCount).toString();
         group.setAttributeNS(null, 'id', newGroupID);
+        group.setAttributeNS(null, 'type', cursorMode);
         document.getElementById("xlt").appendChild(group);
         let element = createElement('polyline');
 
         group.appendChild(element);
         thisElement = group.children[0];
         element.setAttributeNS(null, 'stroke-linecap', 'round');
-        element.setAttributeNS(null, 'points', thisSvg[0][0].toFixed(2).toString()
-          + ',' + thisSvg[0][1].toFixed(2).toString() + ' '
-          + thisSvg[0][0].toFixed(2).toString()
-          + ',' + thisSvg[0][1].toFixed(2).toString() + ' ');      // start x,y for both points initially
+        element.setAttributeNS(null, 'points', thisSVGpoints[0][0].toFixed(2).toString()
+          + ',' + thisSVGpoints[0][1].toFixed(2).toString() + ' '
+          + thisSVGpoints[0][0].toFixed(2).toString()
+          + ',' + thisSVGpoints[0][1].toFixed(2).toString() + ' ');      // start x,y for both points initially
         svgInProgress = cursorMode;     // mark in progress
       }
       else {      // this is the fixation of this last point, so DON'T dissociate mouse move handler
@@ -381,18 +383,19 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
     if (cursorMode == 'rect') {     // mouseDown starts creation, after drag, mouseUp ends
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
         savedCursorMode = cursorMode;     // plant this to prevent immediate post-creation clearing
-        thisSvg[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
+        thisSVGpoints[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
         let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        let newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
+        let newGroupID = 'g' + (document.getElementById("xlt").childElementCount).toString();
         group.setAttributeNS(null, 'id', newGroupID);
+        group.setAttributeNS(null, 'type', cursorMode);
         document.getElementById("xlt").appendChild(group);
         let element = createElement('rect');
 
         group.appendChild(element);
         thisGroup = group;
         thisElement = group.children[0];
-        element.setAttributeNS(null, 'x', thisSvg[0][0]);      // start x
-        element.setAttributeNS(null, 'y', thisSvg[0][1]);      // start y
+        element.setAttributeNS(null, 'x', thisSVGpoints[0][0]);      // start x
+        element.setAttributeNS(null, 'y', thisSVGpoints[0][1]);      // start y
         element.setAttributeNS(null, 'width', 1);      // width x
         element.setAttributeNS(null, 'height', 1);      // height y
         svgInProgress = cursorMode;     // mark in progress
@@ -402,35 +405,10 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
     if (cursorMode == 'line') {     //  mouseDown starts creation, after, drag mouseUp ends
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
         savedCursorMode = cursorMode;     // plant this to prevent immediate post-creation clearing
-        thisSvg[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
+        thisSVGpoints[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
         let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         thisGroup = group;
-        let newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
-        group.setAttributeNS(null, 'id', newGroupID);
-        document.getElementById("xlt").appendChild(group);
-        let element = createElement('line');
-
-        group.appendChild(element);
-        thisElement = group.children[0];
-        element.setAttributeNS(null, 'x1', thisSvg[0][0]);      // start x
-        element.setAttributeNS(null, 'y1', thisSvg[0][1]);      // start y
-        element.setAttributeNS(null, 'x2', thisSvg[0][0]);      // end x
-        element.setAttributeNS(null, 'y2', thisSvg[0][1]);      // end y
-        svgInProgress = cursorMode;     // mark in progress
-      }
-      else {      // this is the terminus of this instance, so dissociate mouse move handler
-        svgInProgress = false;
-        setElementMouseoverOut(thisElement);
-        unbindMouseHandlers(self);
-      }
-    }
-    if (cursorMode == 'arrow') {     //  mouseDown starts creation, after, drag mouseUp ends
-      if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
-        savedCursorMode = cursorMode;     // plant this to prevent immediate post-creation clearing
-        thisSvg[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
-        let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        thisGroup = group;
-        let newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
+        let newGroupID = 'g' + (document.getElementById("xlt").childElementCount).toString();
         group.setAttributeNS(null, 'id', newGroupID);
         group.setAttributeNS(null, 'type', cursorMode);
         document.getElementById("xlt").appendChild(group);
@@ -438,15 +416,41 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
 
         group.appendChild(element);
         thisElement = group.children[0];
-        element.setAttributeNS(null, 'x1', thisSvg[0][0]);      // start x
-        element.setAttributeNS(null, 'y1', thisSvg[0][1]);      // start y
-        element.setAttributeNS(null, 'x2', thisSvg[0][0]);      // end x
-        element.setAttributeNS(null, 'y2', thisSvg[0][1]);      // end y
+        element.setAttributeNS(null, 'x1', thisSVGpoints[0][0]);      // start x
+        element.setAttributeNS(null, 'y1', thisSVGpoints[0][1]);      // start y
+        element.setAttributeNS(null, 'x2', thisSVGpoints[0][0]);      // end x
+        element.setAttributeNS(null, 'y2', thisSVGpoints[0][1]);      // end y
         svgInProgress = cursorMode;     // mark in progress
       }
       else {      // this is the terminus of this instance, so dissociate mouse move handler
         svgInProgress = false;
-        setElementMouseoverOut(thisElement);
+        setElementMouseOverOut(thisElement);
+        unbindMouseHandlers(self);
+      }
+    }
+    if (cursorMode == 'arrow') {     //  mouseDown starts creation, after, drag mouseUp ends
+      if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
+        savedCursorMode = cursorMode;     // plant this to prevent immediate post-creation clearing
+        thisSVGpoints[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
+        let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        thisGroup = group;
+        let newGroupID = 'g' + (document.getElementById("xlt").childElementCount).toString();
+        group.setAttributeNS(null, 'id', newGroupID);
+        group.setAttributeNS(null, 'type', cursorMode);
+        document.getElementById("xlt").appendChild(group);
+        let element = createElement('line');
+
+        group.appendChild(element);
+        thisElement = group.children[0];
+        element.setAttributeNS(null, 'x1', thisSVGpoints[0][0]);      // start x
+        element.setAttributeNS(null, 'y1', thisSVGpoints[0][1]);      // start y
+        element.setAttributeNS(null, 'x2', thisSVGpoints[0][0]);      // end x
+        element.setAttributeNS(null, 'y2', thisSVGpoints[0][1]);      // end y
+        svgInProgress = cursorMode;     // mark in progress
+      }
+      else {      // this is the terminus of this instance, so dissociate mouse move handler
+        svgInProgress = false;
+        setElementMouseOverOut(thisElement);
         unbindMouseHandlers(self);
       }
     }
@@ -456,18 +460,19 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
           clearEditElement(thisGroup);    // this group is the one with bubbles, to be obviated
         }
         savedCursorMode = cursorMode;     // plant this to prevent immediate post-creation clearing
-        thisSvg[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
+        thisSVGpoints[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
         let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        let newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
+        let newGroupID = 'g' + (document.getElementById("xlt").childElementCount).toString();
         group.setAttributeNS(null, 'id', newGroupID);
+        group.setAttributeNS(null, 'type', cursorMode);
         document.getElementById("xlt").appendChild(group);
         let element = createElement(cursorMode);      // new generalized method
 
         group.appendChild(element);
         thisGroup = group;
         thisElement = group.children[0];     // this var is used to dynamically create the element
-        element.setAttributeNS(null, 'cx', thisSvg[0][0]);      // start x
-        element.setAttributeNS(null, 'cy', thisSvg[0][1]);      // start y
+        element.setAttributeNS(null, 'cx', thisSVGpoints[0][0]);      // start x
+        element.setAttributeNS(null, 'cy', thisSVGpoints[0][1]);      // start y
         element.setAttributeNS(null, 'r', 1);      // width x
         svgInProgress = cursorMode;     // mark in progress
       }
@@ -476,18 +481,19 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
     if (cursorMode == 'ellipse') {     // mouseDown
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
         savedCursorMode = cursorMode;     // plant this to prevent immediate post-creation clearing
-        thisSvg[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
+        thisSVGpoints[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
         let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         thisGroup = group;
-        let newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
+        let newGroupID = 'g' + (document.getElementById("xlt").childElementCount).toString();
         group.setAttributeNS(null, 'id', newGroupID);
+        group.setAttributeNS(null, 'type', cursorMode);
         document.getElementById("xlt").appendChild(group);
         let element = createElement('ellipse');
 
         group.appendChild(element);
         thisElement = group.children[0];
-        element.setAttributeNS(null, 'cx', thisSvg[0][0]);      // start x
-        element.setAttributeNS(null, 'cy', thisSvg[0][1]);      // start y
+        element.setAttributeNS(null, 'cx', thisSVGpoints[0][0]);      // start x
+        element.setAttributeNS(null, 'cy', thisSVGpoints[0][1]);      // start y
         element.setAttributeNS(null, 'rx', 1);      // radius x
         element.setAttributeNS(null, 'ry', 1);      // radius y
         svgInProgress = cursorMode;     // mark in progress
@@ -501,19 +507,20 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
     if (cursorMode == 'draw') {     // mouseDown
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
         savedCursorMode = cursorMode;     // plant this to prevent immediate post-creation clearing
-        thisSvg[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
+        thisSVGpoints[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
         let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         thisGroup = group;
-        let newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
+        let newGroupID = 'g' + (document.getElementById("xlt").childElementCount).toString();
         group.setAttributeNS(null, 'id', newGroupID);
+        group.setAttributeNS(null, 'type', cursorMode);
         document.getElementById("xlt").appendChild(group);
-        //for (j = 0; j < thisSvg.length; j++) {              // for text mode there is only one
+        //for (j = 0; j < thisSVGpoints.length; j++) {              // for text mode there is only one
         let element = createElement('polyline');
 
         group.appendChild(element);
         thisElement = group.children[0];
-        element.setAttributeNS(null, 'points', thisSvg[0][0].toFixed(2).toString()
-          + ',' + thisSvg[0][1].toFixed(2).toString() + ' ');      // start x,y
+        element.setAttributeNS(null, 'points', thisSVGpoints[0][0].toFixed(2).toString()
+          + ',' + thisSVGpoints[0][1].toFixed(2).toString() + ' ');      // start x,y
         //}
         svgInProgress = cursorMode;     // mark in progress
       }
@@ -531,18 +538,19 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
       // then annotate with bubbles to shape the curve.  This is an extra step more than other elements.
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
         savedCursorMode = cursorMode;     // plant this to prevent immediate post-creation clearing
-        thisSvg[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
+        thisSVGpoints[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
         let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         thisGroup = group;
-        let newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
+        let newGroupID = 'g' + (document.getElementById("xlt").childElementCount).toString();
         group.setAttributeNS(null, 'id', newGroupID);
+        group.setAttributeNS(null, 'type', cursorMode);
         document.getElementById("xlt").appendChild(group);
         let element = createElement('path');
 
         group.appendChild(element);
         thisElement = group.children[0];
-        let thisX = thisSvg[0][0];
-        let thisY = thisSvg[0][1];
+        let thisX = thisSVGpoints[0][0];
+        let thisY = thisSVGpoints[0][1];
         element.setAttributeNS(null, 'd', getCurvePath(thisX, thisY, thisX, thisY, thisX, thisY, thisX, thisY));
         svgInProgress = cursorMode;     // mark in progress
       }
@@ -566,25 +574,26 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
       //   }
       // }
       if (svgInProgress == false) {
-        thisSvg[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
+        thisSVGpoints[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
         savedCursorMode = cursorMode;     // plant this to prevent immediate post-creation clearing
         group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         thisGroup = group;
-        let newGroupID = 'g' + (document.getElementById("xlt").childElementCount + 1).toString();
+        let newGroupID = 'g' + (document.getElementById("xlt").childElementCount).toString();
         group.setAttributeNS(null, 'id', newGroupID);
+        group.setAttributeNS(null, 'type', cursorMode);
         document.getElementById("xlt").appendChild(group);
-        //for (j = 0; j < thisSvg.length; j++) {              // for text mode there is only one
+        //for (j = 0; j < thisSVGpoints.length; j++) {              // for text mode there is only one
         let element;
         element = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         //document.getElementById(group.id).appendChild(element);
         group.appendChild(element);
-        // thisSvgText = group.children[0];
+        // thisSVGpointsText = group.children[0];
         thisElement = group.children[0];
         element.setAttributeNS(null, 'stroke', cursorColor);
         element.setAttributeNS(null, 'stroke-width', '1');
         element.setAttributeNS(null, 'stroke-opacity', '1.0');
-        element.setAttributeNS(null, 'x', thisSvg[0][0]);      // start x
-        element.setAttributeNS(null, 'y', thisSvg[0][1]);      // start y
+        element.setAttributeNS(null, 'x', thisSVGpoints[0][0]);      // start x
+        element.setAttributeNS(null, 'y', thisSVGpoints[0][1]);      // start y
         element.setAttributeNS(null, 'style', 'font-family: ' + textFont + '; fill: ' + cursorColor.toString() + ';');
         element.setAttributeNS(null, 'font-size', textHeight);
         element.innerHTML = '_';    // plant the text cursor   /////////////////
@@ -679,9 +688,13 @@ function setElementMouseOverOut(group) {     // this actually sets the parent gr
 
 function setEditElement(group) {    // add bubble elements to the group containing this element
   if (checkElementConflict(group)) {    // returns true if conflict
+    console.log('Element conflict' + group.attributes['type']);
     return;
   }
   if (thisGroup == null) {    // no conflicts detected, so if thisGroup is null,
+    let msg = 'thisGroup is NULL';
+    if(thisElement) {msg += ', thisElement = ' + thisElement.toString()};
+    console.log(group.attributes['type'].value + ' ' + msg);
     thisGroup = group;        // there is probably no creation activity
   }
   //if (group.firstChild.tagName != cursorMode) {    // start editing an element not in the current mode
@@ -714,6 +727,7 @@ function setEditElement(group) {    // add bubble elements to the group containi
   // var element = group.firstChild;                  // new method using createBubbleGroup
   let bubbleGroup = createBubbleGroup(group);      // since bubble groups are heterogeneous in structure
   group.appendChild(bubbleGroup);             // make the new bubble group in a no-id <g>
+  console.log('setEditElement')
 }
 
 function clearEditElement(group) {   // given containing group; invoked by mouseleave, so order of statements reordered
@@ -791,6 +805,9 @@ function exitEditPoint(group) {    // services mouseUp from SIZE/point bubble
   //  group.lastChild.remove();                        // eliminates all bubbles
   //  //group.appendChild(createBubbleGroup(group));    // reconstitutes new bubbles (clearly, this is done elswhere)
   //}
+  if(group == null) {
+    console.log('fault')
+  }
   while ((group.childElementCount > 1) && (group.lastChild.tagName == 'g')) {             // changed from group.childElementCount > 1
     group.lastChild.remove();                        // eliminates all bubbles
   }
@@ -1403,6 +1420,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       lastMouseY = this.lastMousePoint.y;
       let linePoints
       if ((event.type == 'mousedown') || (svgInProgress == false)) {    // extra condition for line
+        console.log('line abort ' + event.type + ' ' + svgInProgress);
         return;
       }
       if (svgInProgress == 'SHIFT') {
@@ -1440,6 +1458,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         }
         thisElement.attributes[linePoints[0]].value = (lastMouseX - xC) / zoom;
         thisElement.attributes[linePoints[1]].value = (lastMouseY - yC) / zoom;
+        console.log('x: ' + ((lastMouseX - xC) / zoom).toString() + ' / y: ' + ((lastMouseY - yC) / zoom).toString())
       }
       //thisElement.attributes['stroke'] = cursorColor;   ///// disabled due to unwanted side effects
     }
@@ -1854,7 +1873,7 @@ SVGDraw.prototype.onSvgMouseUp = function (event) {
         setElementMouseOverOut(thisGroup);
       }
     }
-    thisSvg = [];      // and clear the collector
+    thisSVGpoints = [];      // and clear the collector
     //return event.preventDefault() && false;
     return false;
   };
@@ -2160,7 +2179,7 @@ function setCursorMode(mode) {      // detect current mode not completed prior t
   savedCursorMode = 'MOVE';      ////////////// eliminated but reinstated
   if (mode.toUpperCase() != 'MOVE') {
     waitElement = true;
-    console.log('@setCursorMode1 saitElement = ' + cursorMode)
+    console.log('@setCursorMode3 waitElement = ' + cursorMode)
   }
   indicateMode(mode);
   svgInProgress = false;
@@ -2411,7 +2430,7 @@ function closeSvgText() {
   //text4svg.setAttribute('disabled', 'true');   // this control eliminated
   //text4svg.blur();                            // this control eliminated
   //thisSvgText = null;         // remove the target
-  thisSvg = [];               // clear the container
+  thisSVGpoints = [];               // clear the container
   // setCursorMode('MOVE');
   thisElement = null;
   svgInProgress = false;
