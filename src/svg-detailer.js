@@ -901,7 +901,10 @@ function setPointElement(bubble) {    // this performs the inline substitution o
   if (parseInt(bubble.id) == bubble.parentNode.childElementCount - 1) {   // last point/bubble?
     thisBubble = bubble;
   }
-  bubble.parentNode.lastChild.remove(); // /////////// this is the fight place: remove insert point bubbles
+  if(bubble.parentNode.lastChild.tagName == 'g')
+  {
+    bubble.parentNode.lastChild.remove(); // /////////// this is the right place: remove insert point bubbles
+  }
   if (thisGroup.attributes.type) {
     cursorMode = thisGroup.attributes.type.value;
   }
@@ -1018,6 +1021,8 @@ function createBubbleGroup(group) {
       let x2 = svgAttrs['x2'];
       let y2 = svgAttrs['y2'];
       bubbleGroup.appendChild(createShiftBubble((x2+x1)/2, (y2+y1)/2, 'shift'));    // this is the move line point
+      // bubbleGroup.appendChild(createSizeBubble(x1, y1, 'x1-y1'));     // this is the 1st line coordinate
+      // bubbleGroup.appendChild(createSizeBubble(x2, y2, 'x2-y2'));    // this is the 2nd (terminal) line point
       bubbleGroup.appendChild(createPointBubble(x1, y1, 'x1-y1'));     // this is the 1st line coordinate
       bubbleGroup.appendChild(createPointBubble(x2, y2, 'x2-y2'));    // this is the 2nd (terminal) line point
       return bubbleGroup;
