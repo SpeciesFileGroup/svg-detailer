@@ -661,6 +661,16 @@ function setMouseoverOut(element) {
   return element;
 }
 
+function mouseEnterFunction (event) {
+  console.log("mouseenter" + ' ' + thisElement + ' ' + cursorMode + ' ')
+  setEditElement(event.target)
+}
+
+function mouseLeaveFunction(event) {
+  console.log("mouseleave" + ' ' + thisElement + ' ' + cursorMode )
+  clearEditElement(event.target)
+}
+
 function setElementMouseOverOut(group) {     // this actually sets the parent group's listeners
   if ((group == null) || (group == undefined)) {
     group = null;         //  debug catch point
@@ -668,20 +678,17 @@ function setElementMouseOverOut(group) {     // this actually sets the parent gr
   // group.setAttributeNS(null, 'onmouseenter', "setEditElement(this);");               // new reference method 14NOV
   // group.setAttributeNS(null, 'onmouseleave', "clearEditElement(this);");      // global var
 
-  let mouseEnterFunction = (event) => {
-    console.log("mouseenter" + ' ' + thisElement + ' ' + cursorMode + ' ')
-    setEditElement(event.target)
-  }
 
-  let mouseLeaveFunction = (event) => {
-    console.log("mouseleave" + ' ' + thisElement + ' ' + cursorMode )
-    clearEditElement(event.target)
-  }
 
   group.removeEventListener('mouseenter', mouseEnterFunction)
   group.removeEventListener('mouseleave', mouseLeaveFunction)
+
   group.addEventListener('mouseenter', mouseEnterFunction)
   group.addEventListener('mouseleave', mouseLeaveFunction)
+
+  console.log('---')
+  console.log(group)
+  console.log('---')
 
   return group;
 }
