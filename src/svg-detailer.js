@@ -863,6 +863,8 @@ function setSizeElement(bubble) {    // end of SHIFT leaves single bubble; shoul
 //  eliminated savedCursorMode = 'MOVE';
   svgInProgress = 'SIZE';
   console.log('svgInProgress = SIZE, cursorMode = ' + cursorMode + ' ' + thisElement.tagName)
+  group.removeEventListener('mouseenter', mouseEnterFunction)
+  group.removeEventListener('mouseleave', mouseLeaveFunction)
 }
 
 function OldsetSizeElement(bubble) {       // this sets up the single point functions
@@ -877,9 +879,9 @@ function OldsetSizeElement(bubble) {       // this sets up the single point func
     cursorMode = thisElement.tagName;
   }
 //////////////  group.attributes['onmouseenter'].value = ''; // disable mouseover on real element's containing group
-  group.removeEventListener('mouseenter', (event) => setEditElement(group))
+  group.removeEventListener('mouseenter', mouseEnterFunction)
 //////////////  group.attributes['onmouseleave'].value = ''; // disable mouseleave on real element's containing group
-  group.removeEventListener('mouseleave', clearEditElement(group))
+  group.removeEventListener('mouseleave', mouseLeaveFunction)
   // bubble.removeEventListener('mousedown', setSizeElement(bubble))
   if (!((cursorMode == 'cubic') || (cursorMode == 'quadratic'))) {      // tagName will be 'path'
     if (group.childElementCount > 1) {         // if more than one child, we have bubbles
@@ -913,9 +915,9 @@ function setPointElement(bubble) {    // this performs the inline substitution o
     cursorMode = thisElement.tagName;
   }
   // group.attributes['onmouseenter'].value = ''; // disable mouseover on real element's containing group
-  group.removeEventListener('mouseenter', (event) => { setEditElement(group) })
+  group.removeEventListener('mouseenter', mouseEnterFunction)
   // group.attributes['onmouseleave'].value = ''; // disable mouseleaver on real element's containing group
-  group.removeEventListener('mouseleave', (event) => { clearEditElement(group) })
+  group.removeEventListener('mouseleave', mouseLeaveFunction)
   // bubble.attributes['onmousedown'].value = '';  // cascade to onSvgMouseDown
   bubble.removeEventListener('mousedown', (event) => {})
   //bubble.attributes['onmouseup'].value = '';  // calculate/populate insert point
@@ -940,9 +942,9 @@ function setNewPointElement(bubble) {     // this inserts the new point into the
   }
   cursorMode = thisElement.tagName;
   // group.attributes['onmouseenter'].value = ''; // disable mouseover on real element's containing group
-  group.removeEventListener('mouseenter', (event) => { setEditElement(group) })
+  group.removeEventListener('mouseenter', mouseEnterFunction)
   // group.attributes['onmouseleave'].value = ''; // disable mouseleaver on real element's containing group
-  group.removeEventListener('mouseleave', (event) => { clearEditElement(group) })
+  group.removeEventListener('mouseleave', mouseLeaveFunction)
   // bubble.attributes['onmousedown'].value = '';  // cascade to onSvgMouseDown
   /////////////////////////bubble.removeAllListeners()
   thisElement.attributes['points'].value = insertNewPoint(thisElement, thisBubble);
