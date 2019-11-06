@@ -1150,7 +1150,8 @@ function createCurveBubble(cx, cy, id) {    // used for <path...> inter-vertex c
   bubble.setAttributeNS(null, 'fill-opacity', '0.8');         // make these stand out
   // bubble.setAttributeNS(null, 'onmousedown', "setSizeElement(this);");    //  ///////////  change?
   // bubble.setAttributeNS(null, 'onmouseup', 'exitEditPoint(thisGroup);');
-  bubble.addEventListener('mousedown', (event) => { setSizeElement(bubble) });
+  bubble.addEventListener('mousedown', (event) => { setPointElement(bubble) });
+  // bubble.addEventListener('mousedown', (event) => { setSizeElement(bubble) });
   bubble.addEventListener('mouseup', (event) => { exitEditPoint(thisGroup) });
   bubble.setAttributeNS(null, 'id', id);    // use this identifier to attach cursor in onSvgMouseMove
                                             // will take the form: 'c1', 'c2' for <path-...>
