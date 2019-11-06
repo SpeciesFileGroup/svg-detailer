@@ -1713,7 +1713,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         thisElement.parentElement.lastChild.children['poly'].attributes['points'].value = getCurvePoints(theseCoords)
           + theseCoords[0] + ', ' + theseCoords[1];     // 'poly' is bounding polygon of endpoints and control points
       }
-      else {    // defining initial curve as straight line, i.e., rubber-banding p2 until mouseup
+      else {
+        // defining initial curve as straight line, i.e., rubber-banding p2 until mouseup
         let thisX2 = (lastMouseX - xC) / zoom;
         let thisY2 = (lastMouseY - yC) / zoom;
         let thisPathType = ' C ';              // set quadratic control point at midpoint, cubic's at p1 and p2
@@ -1723,8 +1724,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         thisP1 = thisP1[1].split(', ');
         let theseControlPoints = theseCurvePoints[1].split(', ');              // get array of x,y,x,y(,x,y)
         if (thisPathType == ' Q ') {
-          theseControlPoints[0] = ((parseInt(thisP1[0]) + thisX2) / 2).toFixed();
-          theseControlPoints[1] = ((parseInt(thisP1[1]) + thisY2) / 2).toFixed();
+          theseControlPoints[0] = ((parseInt(thisP1[0]) + thisX2) / 2).toFixed();   // single control point
+          theseControlPoints[1] = ((parseInt(thisP1[1]) + thisY2) / 2).toFixed();   // for quadratic
         }
         // else {
         //   theseControlPoints[0] = ((parseInt(thisP1[0]) + thisX2) / 3).toFixed();
