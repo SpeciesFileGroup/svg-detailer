@@ -1455,7 +1455,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           thisElement.attributes['y2'].value = dy + y2;
         }
       }
-      else {
+      else {      // repositioning either line endpoint
         this.updateMousePosition(event);
         linePoints = ['x2', 'y2'];          // preset for normal post-creation mode
         if (thisBubble != null) {       // look for bubble to denote just move THIS point only
@@ -1463,6 +1463,9 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
           if (!isNumeric(thisBubble.id)) {                 // presume either 'x1-y1' or 'x2-y2'
             linePoints = (thisBubble.id).split('-');      // this will result in ['x1', 'y1'] or  ['x2', 'y2'] used below
+          }
+          if (thisGroup.lastChild.firstChild.id == 'shift') {
+            thisGroup.lastChild.firstChild.remove();        // kill off the move line bubble
           }
         }
         thisElement.attributes[linePoints[0]].value = (lastMouseX - xC) / zoom;
