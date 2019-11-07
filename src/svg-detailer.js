@@ -620,8 +620,7 @@ function curvePoint(x, y) {
 
 function getCurvePath(x1, y1, cx1, cy1, cx2, cy2, x2, y2) {
   if (cursorMode == 'cubic') {
-    return "M " + pathPoint(x1, y1) + " C " + curvePoint(cx1, cy1)
-      + curvePoint(cx2, cy2) + pathPoint(x2, y2);
+    return "M " + pathPoint(x1, y1) + " C " + curvePoint(cx1, cy1) + curvePoint(cx2, cy2) + pathPoint(x2, y2);
   }
   else return "M " + pathPoint(x1, y1) + " Q " + curvePoint(cx1, cy1) + pathPoint(x2, y2);
 }
@@ -1717,6 +1716,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         // defining initial curve as straight line, i.e., rubber-banding p2 until mouseup
         let thisX2 = (lastMouseX - xC) / zoom;
         let thisY2 = (lastMouseY - yC) / zoom;
+        let thisD;
         let thisPathType = ' C ';              // set quadratic control point at midpoint, cubic's at p1 and p2
         if (cursorMode == 'quadratic')  thisPathType = ' Q ';
         let theseCurvePoints = thisDvalue.split(thisPathType);      // isolate control point(s) and p2
@@ -1726,16 +1726,24 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         if (thisPathType == ' Q ') {
           theseControlPoints[0] = ((parseInt(thisP1[0]) + thisX2) / 2).toFixed();   // single control point
           theseControlPoints[1] = ((parseInt(thisP1[1]) + thisY2) / 2).toFixed();   // for quadratic
+          thisD = theseCurvePoints[0] + thisPathType + curvePoint(theseControlPoints[0], theseControlPoints[1]);
         }
-        // else {
-        //   theseControlPoints[0] = ((parseInt(thisP1[0]) + thisX2) / 3).toFixed();
-        //   theseControlPoints[1] = ((parseInt(thisP1[1]) + thisY2) / 3).toFixed();
-        //   theseControlPoints[2] = ((parseInt(thisP1[2]) + thisX2) / 1.5).toFixed();
-        //   theseControlPoints[3] = ((parseInt(thisP1[3]) + thisY2) / 1.5).toFixed();
-        // }
-        let thisD = theseCurvePoints[0] + thisPathType + curvePoint(theseControlPoints[0], theseControlPoints[1]);
-        if (cursorMode == 'cubic') {
+        else {
+          // if (cursorMode == 'cubic')
+          let thisX1 = parseInt(thisP1[0])
+          let thisY1 = parseInt(thisP1[1])
+          let dx = thisX1 - thisX2;
+          let dy = thisY1 - thisY2;
+          theseControlPoints[0] = (thisX1 - 0.4 * dx).toFixed();
+          theseControlPoints[1] = (thisY1 - 0.4 * dy).toFixed();
+          theseControlPoints[2] = (thisX1 - 0.6 * dx).toFixed();
+          theseControlPoints[3] = (thisY1 - 0.6 * dy).toFixed();
+          thisD = theseCurvePoints[0] + thisPathType + curvePoint(theseControlPoints[0], theseControlPoints[1]);
+          thisD += curvePoint(theseControlPoints[2], theseControlPoints[3]);
           thisD += curvePoint(thisX2, thisY2);
+          console.log('p1: ' + thisP1[0] + ', ' + thisP1[1])
+          console.log('control points: ' + theseControlPoints[0] + ', ' + theseControlPoints[1] + ' ... ' + theseControlPoints[2] + ', ' + theseControlPoints[3])
+          console.log('p2: ' + thisX2 + ', ' + thisY2)
         }
         thisD += pathPoint(thisX2, thisY2);
         thisElement.attributes['d'].value = thisD;
