@@ -1039,8 +1039,6 @@ function createBubbleGroup(group) {
         theseCoords[4] = theseCoords[2];          // for both control points
         theseCoords[5] = theseCoords[3];          // for control lines
       }
-      //theseCoords[2] = ((parseInt(theseCoords[0]) + parseInt(theseCoords[6])) / 2).toFixed();   // set to
-      //theseCoords[3] = ((parseInt(theseCoords[1]) + parseInt(theseCoords[7])) / 2).toFixed();   // mean point
       // create the lines between the control point(s) and the endpoints
       bubbleGroup.appendChild(createControlLine(theseCoords[0], theseCoords[1], theseCoords[2], theseCoords[3], 'l1'));
       bubbleGroup.appendChild(createControlLine(theseCoords[4], theseCoords[5], theseCoords[6], theseCoords[7], 'l2'));
@@ -1717,11 +1715,15 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         let thisX2 = (lastMouseX - xC) / zoom;
         let thisY2 = (lastMouseY - yC) / zoom;
         let thisD;
-        let thisPathType = ' C ';              // set quadratic control point at midpoint, cubic's at p1 and p2
+        let thisPathType = ' C ';              // set quadratic control point at midpoint, cubic's at 40% and 60% p1:p2
         if (cursorMode == 'quadratic')  thisPathType = ' Q ';
         let theseCurvePoints = thisDvalue.split(thisPathType);      // isolate control point(s) and p2
         let thisP1 = theseCurvePoints[0].split('M ');               // isolate p1
         thisP1 = thisP1[1].split(', ');
+        let thisX1 = parseInt(thisP1[0])
+        let thisY1 = parseInt(thisP1[1])
+        let dx = thisX1 - thisX2;
+        let dy = thisY1 - thisY2;
         let theseControlPoints = theseCurvePoints[1].split(', ');              // get array of x,y,x,y(,x,y)
         if (thisPathType == ' Q ') {
           theseControlPoints[0] = ((parseInt(thisP1[0]) + thisX2) / 2).toFixed();   // single control point
@@ -1730,10 +1732,6 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         }
         else {
           // if (cursorMode == 'cubic')
-          let thisX1 = parseInt(thisP1[0])
-          let thisY1 = parseInt(thisP1[1])
-          let dx = thisX1 - thisX2;
-          let dy = thisY1 - thisY2;
           theseControlPoints[0] = (thisX1 - 0.4 * dx).toFixed();
           theseControlPoints[1] = (thisY1 - 0.4 * dy).toFixed();
           theseControlPoints[2] = (thisX1 - 0.6 * dx).toFixed();
