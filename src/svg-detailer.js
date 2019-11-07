@@ -1726,8 +1726,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         let dy = thisY1 - thisY2;
         let theseControlPoints = theseCurvePoints[1].split(', ');              // get array of x,y,x,y(,x,y)
         if (thisPathType == ' Q ') {
-          theseControlPoints[0] = ((parseInt(thisP1[0]) + thisX2) / 2).toFixed();   // single control point
-          theseControlPoints[1] = ((parseInt(thisP1[1]) + thisY2) / 2).toFixed();   // for quadratic
+          theseControlPoints[0] = (thisX1 - 0.4 * dx).toFixed();   // single control point
+          theseControlPoints[1] = (thisY1 - 0.4 * dy).toFixed();   // for quadratic
           thisD = theseCurvePoints[0] + thisPathType + curvePoint(theseControlPoints[0], theseControlPoints[1]);
         }
         else {
