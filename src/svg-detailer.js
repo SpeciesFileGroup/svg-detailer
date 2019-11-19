@@ -1367,30 +1367,64 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         return;
       }     // could be POINT or NEW or polygon
       this.updateMousePosition(event);
-      let thisPoint = ((lastMouseX - xC) / zoom).toFixed(2).toString()
-        + ',' + ((lastMouseY - yC) / zoom).toFixed(2).toString();
-      let thesePoints = thisElement.attributes['points'].value.trim();
-      let splitPoints = thesePoints.split(' ');
-      if (thisBubble != null) {       // look for bubble to denote just move THIS point only
-        thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom;     // translate the bubble
-        thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
-        if (isNumeric(thisBubble.id)) {       // presume integer for now
-          splitPoints[parseInt(thisBubble.id)] = thisPoint;
-          thesePoints = '';
-          for (let k = 0; k < splitPoints.length; k++) {
-            thesePoints += splitPoints[k] + ' ';
+      if (svgInProgress == 'SHIFT') {
+        let shiftPoint = ((lastMouseX - xC) / zoom).toFixed(2).toString()
+          + ',' + ((lastMouseY - yC) / zoom).toFixed(2).toString();
+        let shiftingPoints = thisElement.attributes['points'].value.trim();
+        let splitShiftPoints = shiftingPoints.split(' ');
+        if (thisBubble != null) {       // thisBubble set on mousedown
+          let cx = parseFloat(thisBubble.attributes['cx'].value);   // old
+          let cy = parseFloat(thisBubble.attributes['cy'].value);   // x, y
+          let cx2 = (lastMouseX - xC) / zoom;                       // new x
+          let cy2 = (lastMouseY - yC) / zoom;                       // , y
+          let dx = (cx2 - cx)
+          let dy = (cy2 - cy)
+          thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom;     // translate the bubble
+          thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
+
+          // splitShiftPoints all need to be shifted by the deltas
+          // so iterate over all points, in initially a very pedantic way
+          let shiftedPoints = '';
+          let j;      //iterator for decomposing x, y point lists
+          let xPoints = [];
+          let yPoints = [];
+          for (j = 0; j < splitShiftPoints.length; j++) {
+            let thisXY = splitShiftPoints[j].split(',');
+            xPoints[j] = (parseFloat(thisXY[0]) + dx).toFixed(2);
+            yPoints[j] = (parseFloat(thisXY[1]) + dy).toFixed(2);
+            shiftedPoints += xPoints[j] + ',' + yPoints[j] + ' '
           }
-          thisElement.attributes['points'].value = thesePoints
+          for (let k = 0; k < splitShiftPoints.length; k++) {
+            shiftingPoints += splitShiftPoints[k] + ' ';
+          }
+          thisElement.attributes['points'].value = shiftedPoints
         }
-      } else {        // svgInProgress = 'polygon', so normal creation of element adding new point to end
-        thesePoints = '';                               // clear thecollector
-        for (let k = 0; k < splitPoints.length - 1; k++) {  // reconstruct except for the last point
-          thesePoints += splitPoints[k] + ' ';          // space delimiter at the end of each coordinate
+      } else {
+        let thisPoint = ((lastMouseX - xC) / zoom).toFixed(2).toString()
+          + ',' + ((lastMouseY - yC) / zoom).toFixed(2).toString();
+        let thesePoints = thisElement.attributes['points'].value.trim();
+        let splitPoints = thesePoints.split(' ');
+        if (thisBubble != null) {       // look for bubble to denote just move THIS point only
+          thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom;     // translate the bubble
+          thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
+          if (isNumeric(thisBubble.id)) {       // presume integer for now
+            splitPoints[parseInt(thisBubble.id)] = thisPoint;
+            thesePoints = '';
+            for (let k = 0; k < splitPoints.length; k++) {
+              thesePoints += splitPoints[k] + ' ';
+            }
+            thisElement.attributes['points'].value = thesePoints
+          }
+        } else {        // svgInProgress = 'polygon', so normal creation of element adding new point to end
+          thesePoints = '';                               // clear thecollector
+          for (let k = 0; k < splitPoints.length - 1; k++) {  // reconstruct except for the last point
+            thesePoints += splitPoints[k] + ' ';          // space delimiter at the end of each coordinate
+          }
+          thisPoint += ' ';
+          thisElement.attributes['points'].value = thesePoints.concat(thisPoint);
         }
-        thisPoint += ' ';
-        thisElement.attributes['points'].value = thesePoints.concat(thisPoint);
+        //thisElement.attributes['stroke'].value = cursorColor;   ///// disabled due to unwanted side effects
       }
-      //thisElement.attributes['stroke'].value = cursorColor;   ///// disabled due to unwanted side effects
     }
 
     else if (cursorMode == "polyline") {
