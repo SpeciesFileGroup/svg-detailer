@@ -814,20 +814,21 @@ function exitEditPoint(group) {    // services mouseUp from SIZE/point bubble
 
 function setShiftElement(bubble) {    // end of SHIFT leaves single bubble; should be removed on mouseleave of group
   //thisParent = element;                           // group containing real element and the bubbles group
-  let group = bubble.parentNode.parentNode;          // set group for mousemove
-  thisGroup = group;          // set group for mousemove
-  thisElement = group.firstChild;
+  if(!thisGroup) {
+    let thisGroup = bubble.parentNode.parentNode;          // set group for mousemove
+  }
+  thisElement = thisGroup.firstChild;
   // thisBubble = group.lastChild.firstChild;      // this is the center/first bubble
-  thisBubble = group.lastChild.children['shift'];      // this is the center/first bubble
+  thisBubble = thisGroup.children[1].children['shift'];      // this is the center/first bubble
   cursorMode = thisElement.tagName;
-  if (group.attributes.type) {
-    cursorMode = group.attributes.type.value
+  if (thisGroup.attributes.type) {
+    cursorMode = thisGroup.attributes.type.value
   }
 ///////////  thisGroup.attributes['onmouseenter'].value = ''; // disable mouseover on real circle's containing group
   //// presumption of ordering of shift bubble vs other bubbles: FIRST bubble is shift -- modified other code so TRUE
-  let endK = group.lastChild.childElementCount;        // total bubbles, leave the first one
+  let endK = thisGroup.lastChild.childElementCount;        // total bubbles, leave the first one
   for (let k = endK; k > 1; k--) {
-    group.lastChild.lastChild.remove();      // remove resize bubbles from the end
+    thisGroup.lastChild.lastChild.remove();      // remove resize bubbles from the end
   }
 ///////////  group.attributes['onmouseenter'].value = '';    // turn off enter!
   //group.attributes['onmouseleave'].value = '';    // turn off leave!
@@ -1059,9 +1060,26 @@ function createBubbleGroup(group) {
       let xAve = 0;
       let yAve = 0;
       let nextPoint;                      // nextX,nextY these are used to bound and calculate the intermediate
+      for (let k = 0; k < splitPoints.length; k++) {    // append this point and an intermediary point
+        xAve += thisX;    // simple computation
+        yAve += thisY;    // of center-ish point
+        if (k < splitPoints.length - 1) {     // since we are looking ahead one point
+          nextPoint = splitPoints[k + 1].split(',');     // only add intermediate point if we are not at the last point
+          nextX = parseFloat(nextPoint[0]);
+          nextY = parseFloat(nextPoint[1]);
+          thisX = nextX;
+          thisY = nextY;
+        }
+      }
+      thisX = xAve / splitPoints.length;
+      thisY = yAve / splitPoints.length;
+      bubbleGroup.appendChild(createShiftBubble(thisX, thisY, 'shift'));
+
       // insert new point bubbles in separate parallel group
       let newBubbleGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      for (let k = 0; k < splitPoints.length; k++) {    // append this point and an intermediary point
+        thisX = parseFloat(thisPoint[0]);
+        thisY = parseFloat(thisPoint[1]);
+        for (let k = 0; k < splitPoints.length; k++) {    // append this point and an intermediary point
         //thisPoint  = splitPoints[k].split(',');
         bubbleGroup.appendChild(createPointBubble(thisX, thisY, k.toString()));   // add the vertex point
         if (k < splitPoints.length - 1) {     // since we are looking ahead one point
@@ -1072,13 +1090,8 @@ function createBubbleGroup(group) {
           // ///////// watch for hierarchicial misplacement
           thisX = nextX;
           thisY = nextY;
-          xAve += thisX;
-          yAve += thisY;
         }
       }
-      thisX = xAve / splitPoints.length;
-      thisY = yAve / splitPoints.length;
-      // newBubbleGroup.appendChild(createShiftBubble(thisX, thisY, 'shift'));
 
       if (element.tagName == 'polygon') {       // additional step for polygon, since there is an implicit closure
         thisPoint = splitPoints[0].split(',');   // get the first point again
@@ -1385,30 +1398,65 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         return;
       }
       this.updateMousePosition(event);
-      let thisPoint = ((lastMouseX - xC) / zoom).toFixed(2).toString()
-        + ',' + ((lastMouseY - yC) / zoom).toFixed(2).toString();
-      let thesePoints = thisElement.attributes['points'].value.trim();
-      let splitPoints = thesePoints.split(' ');
-      if (thisBubble != null) {       // look for bubble to denote just move THIS point only
-                                      // currently, no distinction is made between existing vertex and new point
-                                      // however, this may change in the future JRF 23NOV15
-        thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom;     // translate the bubble
-        thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
-        if (isNumeric(thisBubble.id)) {       // presume integer for now
-          splitPoints[parseInt(thisBubble.id)] = thisPoint;   // replace this point
-          thesePoints = '';
-          for (let k = 0; k < splitPoints.length; k++) {
-            thesePoints += splitPoints[k] + ' ';
+      if(svgInProgress == 'SHIFT') {
+        let shiftPoint = ((lastMouseX - xC) / zoom).toFixed(2).toString()
+          + ',' + ((lastMouseY - yC) / zoom).toFixed(2).toString();
+        let shiftingPoints = thisElement.attributes['points'].value.trim();
+        let splitShiftPoints = shiftingPoints.split(' ');
+        if (thisBubble != null) {       // thisBubble set on mousedown
+          let cx = parseFloat(thisBubble.attributes['cx'].value);   // old
+          let cy = parseFloat(thisBubble.attributes['cy'].value);   // x, y
+          let cx2 = (lastMouseX - xC) / zoom;                       // new x
+          let cy2 = (lastMouseY - yC) / zoom;                       // , y
+          let dx = (cx2 - cx)
+          let dy = (cy2 - cy)
+          thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom;     // translate the bubble
+          thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
+
+          // splitShiftPoints all need to be shifted by the deltas
+          // so iterate over all points, in initially a very pedantic way
+          let shiftedPoints = '';
+          let j;      //iterator for decomposing x, y point lists
+          let xPoints = [];
+          let yPoints = [];
+          for (j=0; j < splitShiftPoints.length; j++) {
+            let thisXY = splitShiftPoints[j].split(',');
+            xPoints[j] = (parseFloat(thisXY[0]) + dx).toFixed(2);
+            yPoints[j] = (parseFloat(thisXY[1]) + dy).toFixed(2);
+            shiftedPoints += xPoints[j] + ',' + yPoints[j] + ' '
           }
-          thisElement.attributes['points'].value = thesePoints
+          for (let k = 0; k < splitShiftPoints.length; k++) {
+            shiftingPoints += splitShiftPoints[k] + ' ';
+          }
+          thisElement.attributes['points'].value = shiftedPoints
         }
-      } else {
-        thesePoints = '';                               // clear the collector
-        for (let k = 0; k < splitPoints.length - 1; k++) {  // reconstruct except for the last point
-          thesePoints += splitPoints[k] + ' ';          // space delimiter at the end of each coordinate
+      }
+      else {
+        let thisPoint = ((lastMouseX - xC) / zoom).toFixed(2).toString()
+          + ',' + ((lastMouseY - yC) / zoom).toFixed(2).toString();
+        let thesePoints = thisElement.attributes['points'].value.trim();
+        let splitPoints = thesePoints.split(' ');
+        if (thisBubble != null) {       // look for bubble to denote just move THIS point only
+                                        // currently, no distinction is made between existing vertex and new point
+                                        // however, this may change in the future JRF 23NOV15
+          thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom;     // translate the bubble
+          thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
+          if (isNumeric(thisBubble.id)) {       // presume integer for now
+            splitPoints[parseInt(thisBubble.id)] = thisPoint;   // replace this point
+            thesePoints = '';
+            for (let k = 0; k < splitPoints.length; k++) {
+              thesePoints += splitPoints[k] + ' ';
+            }
+            thisElement.attributes['points'].value = thesePoints
+          }
+        } else {
+          thesePoints = '';                               // clear the collector
+          for (let k = 0; k < splitPoints.length - 1; k++) {  // reconstruct except for the last point
+            thesePoints += splitPoints[k] + ' ';          // space delimiter at the end of each coordinate
+          }
+          thisPoint += ' ';
+          thisElement.attributes['points'].value = thesePoints.concat(thisPoint);
         }
-        thisPoint += ' ';
-        thisElement.attributes['points'].value = thesePoints.concat(thisPoint);
       }
       //thisElement.attributes['stroke'].value = cursorColor;   ///// disabled due to unwanted side effects
     }
