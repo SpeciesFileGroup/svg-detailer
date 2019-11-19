@@ -1112,7 +1112,8 @@ function createBubbleGroup(group) {
 
 function createShiftBubble(cx, cy, id) {
   let bubble = createBubbleStub(cx, cy);
-  bubble.setAttributeNS(null, 'fill-opacity', '0.8');         // SHIFT bubble is slightly more opaque
+  bubble.setAttributeNS(null, 'stroke', '#004477');           // override scaffold attrs
+  bubble.setAttributeNS(null, 'fill-opacity', '1.0');         // SHIFT bubble is slightly more opaque
   bubble.addEventListener('mousedown', (event) => {
     setShiftElement(bubble)
   });
