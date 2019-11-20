@@ -1584,8 +1584,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         return;
       }
       let mainLine = thisGroup.children[0]
+      this.updateMousePosition(event);
       if (svgInProgress == 'SHIFT') {
-        this.updateMousePosition(event);
         let x1 = parseFloat(mainLine.attributes['x1'].value)
         let y1 = parseFloat(mainLine.attributes['y1'].value)
         let x2 = parseFloat(mainLine.attributes['x2'].value)
@@ -1599,16 +1599,14 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         let dx = (cx - cx2)
         let dy = (cy2 - cy)
 
-        if (thisBubble) {
-          thisBubble.attributes['cx'].value = cx2;         // translate the bubble
-          thisBubble.attributes['cy'].value = cy2;
-          mainLine.attributes['x1'].value = x1 - dx;    // correspondingly translate mainLine
-          mainLine.attributes['y1'].value = dy + y1;
-          mainLine.attributes['x2'].value = x2 - dx;    // correspondingly translate mainLine
-          mainLine.attributes['y2'].value = dy + y2;
-        }
+        thisBubble.attributes['cx'].value = cx2;      // translate the bubble
+        thisBubble.attributes['cy'].value = cy2;
+        mainLine.attributes['x1'].value = x1 - dx;    // correspondingly
+        mainLine.attributes['y1'].value = dy + y1;
+        mainLine.attributes['x2'].value = x2 - dx;    // translate mainLine
+        mainLine.attributes['y2'].value = dy + y2;
+
       } else {
-        this.updateMousePosition(event);
         linePoints = ['x2', 'y2'];          // preset for normal post-creation mode
         if (thisBubble != null) {       // look for bubble to denote just move THIS point only
           thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom;     // translate the bubble
