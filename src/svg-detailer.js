@@ -1590,7 +1590,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         let y1 = parseFloat(mainLine.attributes['y1'].value)
         let x2 = parseFloat(mainLine.attributes['x2'].value)
         let y2 = parseFloat(mainLine.attributes['y2'].value)
-        // thisBubble set on mousedown
+        // thisBubble set on mousedown -- except not here for some reason TBD
+        if(!thisBubble) {thisBubble = mainLine.parentElement.lastChild.children['shift']}
         let cx = parseFloat(thisBubble.attributes['cx'].value)
         let cy = parseFloat(thisBubble.attributes['cy'].value)
         let cx2 = (lastMouseX - xC) / zoom
