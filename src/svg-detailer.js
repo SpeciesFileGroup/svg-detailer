@@ -1112,6 +1112,7 @@ function createBubbleGroup(group) {
 
 function createShiftBubble(cx, cy, id) {
   let bubble = createBubbleStub(cx, cy);
+  bubble.setAttributeNS(null, 'r', bubbleRadius * 1.25);      // radius override for SHIFT point
   bubble.setAttributeNS(null, 'stroke', '#004477');           // override scaffold attrs
   bubble.setAttributeNS(null, 'fill-opacity', '1.0');         // SHIFT bubble is slightly more opaque
   bubble.addEventListener('mousedown', (event) => {
@@ -1175,7 +1176,7 @@ function createNewPointBubble(cx, cy, id) {    // used for <poly...> inter-verte
 
 function createCurveBubble(cx, cy, id) {    // used for <path...> inter-vertex control point
   let bubble = createBubbleStub(cx, cy);
-  bubble.setAttributeNS(null, 'r', bubbleRadius * 1.25);      // radius override for insertion point
+  // bubble.setAttributeNS(null, 'r', bubbleRadius * 0.8);      // radius override for control point
   bubble.setAttributeNS(null, 'stroke', '#333333');     // not that great, use below
   bubble.setAttributeNS(null, 'stroke-opacity', '0.6');     // not that great, use below
   bubble.setAttributeNS(null, 'fill-opacity', '0.8');         // make these stand out
@@ -1648,28 +1649,28 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       let y4 = pctY + barbLength * dx / 2;
 
       let leftBarb = createElement('line');
-      thisGroup.appendChild(leftBarb);
       leftBarb.setAttributeNS(null, 'x1', thisX2);       // start x of barbs
       leftBarb.setAttributeNS(null, 'y1', thisY2);      // start y of barbs
       leftBarb.setAttributeNS(null, 'x2', x3);      // end x
       leftBarb.setAttributeNS(null, 'y2', y3);      // end y
       leftBarb.setAttributeNS(null, 'stroke', thisColor);
+      thisGroup.appendChild(leftBarb);
       let rightBarb = createElement('line');
-      thisGroup.appendChild(rightBarb);
       rightBarb.setAttributeNS(null, 'x1', thisX2);       // start x of barbs
       rightBarb.setAttributeNS(null, 'y1', thisY2);      // start y of barbs
       rightBarb.setAttributeNS(null, 'x2', x4);      // end x
       rightBarb.setAttributeNS(null, 'y2', y4);      // end y
       rightBarb.setAttributeNS(null, 'stroke', thisColor);
+      thisGroup.appendChild(rightBarb);
       let baseBarb;
       if (document.getElementById('arrowHeadClosed').checked) {
         baseBarb = createElement('line');
-        thisGroup.appendChild(baseBarb);
         baseBarb.setAttributeNS(null, 'x1', x3);       // start x of barbs base
         baseBarb.setAttributeNS(null, 'y1', y3);      // start y of barbs base
         baseBarb.setAttributeNS(null, 'x2', x4);      // end x
         baseBarb.setAttributeNS(null, 'y2', y4);      // end y
         baseBarb.setAttributeNS(null, 'stroke', thisColor);
+        thisGroup.appendChild(baseBarb);
       }
     }
 
