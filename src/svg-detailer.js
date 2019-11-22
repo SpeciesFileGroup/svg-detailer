@@ -781,6 +781,9 @@ function checkElementConflict(group) {  // only invoked by mouseenter listeners
   if (!svgInProgress) {
     return false;     // if no active element
   }
+  if(svgInProgress == 'SHIFT') {
+    return false
+  }
   if (svgInProgress != group.firstChild.tagName) {
     return true;     //  if we crossed another element
   }
@@ -815,7 +818,7 @@ function exitEditPoint(group) {    // services mouseUp from SIZE/point bubble
 function setShiftElement(bubble) {    // end of SHIFT leaves single bubble; should be removed on mouseleave of group
   //thisParent = element;                           // group containing real element and the bubbles group
   if(!thisGroup) {
-    let thisGroup = bubble.parentNode.parentNode;          // set group for mousemove
+    thisGroup = bubble.parentNode.parentNode;          // set group for mousemove
   }
   thisElement = thisGroup.firstChild;
   // thisBubble = group.lastChild.firstChild;      // this is the center/first bubble
@@ -846,13 +849,13 @@ function setSizeElement(bubble) {    // end of SHIFT leaves single bubble; shoul
   thisBubble = group.lastChild.firstChild;      // this is the center/first bubble
   cursorMode = thisElement.tagName;
 ///////////  thisGroup.attributes['onmouseenter'].value = ''; // disable mouseover on real circle's containing group
-//   if (cursorMode == 'circle')
-//     {
-//       let endK = group.lastChild.childElementCount;        // total bubbles, leave the first one
-//       for (let k = endK; k > 1; k--) {
-//       group.lastChild.lastChild.remove();      // remove resize bubbles from the end
-//       }
-//     }
+  if ((cursorMode == 'circle') || (cursorMode == 'ellipse'))
+    {
+      let endK = group.lastChild.childElementCount;        // total bubbles, leave the first one (thisElement)
+      for (let k = endK; k > 0; k--) {
+      group.lastChild.lastChild.remove();      // remove resize bubbles from the end
+      }
+    }
 ///////////  group.attributes['onmouseenter'].value = '';    // turn off enter!
   //group.attributes['onmouseleave'].value = '';    // turn off leave!
   //group.setAttribute('onmouseout', 'clearEditElement(this);');      // as of right NOW
@@ -908,9 +911,7 @@ function setPointElement(bubble) {    // this performs the inline substitution o
   } else {
     cursorMode = thisElement.tagName;
   }
-  // group.attributes['onmouseenter'].value = ''; // disable mouseover on real element's containing group
   group.removeEventListener('mouseenter', mouseEnterFunction)
-  // group.attributes['onmouseleave'].value = ''; // disable mouseleaver on real element's containing group
   group.removeEventListener('mouseleave', mouseLeaveFunction)
   // bubble.attributes['onmousedown'].value = '';  // cascade to onSvgMouseDown
   bubble.removeEventListener('mousedown', (event) => {
@@ -1004,6 +1005,13 @@ function createBubbleGroup(group) {
       bubbleGroup.appendChild(createSizeBubble(cx, ry + cy));    // this is the S resize point
       bubbleGroup.appendChild(createSizeBubble(cx - rx, cy));    // this is the W resize point
       bubbleGroup.appendChild(createSizeBubble(cx, cy - ry));    // this is the N resize point
+      // create bounding (rectangle) polygon for ellipse directors
+      // let ellipseBoundsPoints = [cx + rx, cy + ry, cx + rx, cy - ry, cx - rx, cy - ry, cx - rx, cy + ry]
+      // bubbleGroup.appendChild(createCurvePoly(ellipseBoundsPoints), 'ellipseBox')
+      // bubbleGroup.appendChild(createSizeBubble(cx + rx, cy + ry, 'SE'));    // this is the SE resize point
+      // bubbleGroup.appendChild(createSizeBubble(cx + rx, cy - ry, 'NE'));    // this is the NE resize point
+      // bubbleGroup.appendChild(createSizeBubble(cx - rx, cy - ry, 'NW'));    // this is the NW resize point
+      // bubbleGroup.appendChild(createSizeBubble(cx - rx, cy + ry, 'SW'));    // this is the SW resize point
       return bubbleGroup;
     case 'rect':
       let x = svgAttrs['x'];
@@ -1425,7 +1433,6 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           thisPoint += ' ';
           thisElement.attributes['points'].value = thesePoints.concat(thisPoint);
         }
-        //thisElement.attributes['stroke'].value = cursorColor;   ///// disabled due to unwanted side effects
       }
     }
 
@@ -1494,7 +1501,6 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           thisElement.attributes['points'].value = thesePoints.concat(thisPoint);
         }
       }
-      //thisElement.attributes['stroke'].value = cursorColor;   ///// disabled due to unwanted side effects
     }
 
     else if ((cursorMode == "rect") /*|| (cursorMode == 'bubble')*/) {
@@ -1711,13 +1717,14 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
               break
           }
         }
-        // let bubbles = thisElement.parentElement.children
         let bubbles = event.target.parentElement.children
+        if(bubbles['E']) {      // translate editing circle's bubbles
         bubbles['E'].attributes['cx'].value = parseFloat(thisCircX) + radius
         bubbles['S'].attributes['cy'].value = parseFloat(thisCircY) + radius
         bubbles['W'].attributes['cx'].value = parseFloat(thisCircX) - radius
         bubbles['N'].attributes['cy'].value = parseFloat(thisCircY) - radius
-        //thisElement.attributes['stroke'].value = cursorColor;   ///// disabled due to unwanted side effects
+      }
+      //thisElement.attributes['stroke'].value = cursorColor;   ///// disabled due to unwanted side effects
       }
     }
 
@@ -2557,13 +2564,8 @@ function removeCursorFromSvgText() {            //   ///////////  does this do e
 }
 
 function closeSvgText() {
-  //var text4svg = document.getElementById("text4svg");   // this control eliminated
   text4svg = '_';
-  //text4svg.setAttribute('disabled', 'true');   // this control eliminated
-  //text4svg.blur();                            // this control eliminated
-  //thisSvgText = null;         // remove the target
   thisSVGpoints = [];               // clear the container
-  // setCursorMode('MOVE');
   thisElement = null;
   svgInProgress = false;
 }
@@ -2605,12 +2607,13 @@ function collectSVG(verbatim) {   // verbatim true includes all markup, false me
   let innerElement;
   let thisG;
   let terminus = thisXLT.childElementCount;     // this will lety if we replace <g> elements when not "verbatim"
+  let i;
   let j = 1;                                    // this will be the indexer for <g> elements
   let k;
   for (i = 1; i < terminus; i++) {                // i will range over the original children count
     thisG = thisXLT.childNodes[j];              // probably should be firstChild since iteratively
-    thisG.removeAttribute('onmouseenter');
-    thisG.removeAttribute('onmouseleave');
+    // thisG.removeAttribute('onmouseenter');
+    // thisG.removeAttribute('onmouseleave');
     j++;                                        // index the next <g> in case we are verbatim-ish
     if (!verbatim) {    // new wrinkle for arrow and similar groups
       if (thisG.attributes.type) {
@@ -2887,8 +2890,12 @@ function buildSVGmenu() {
   thisButton.setAttribute('type', 'button');
   thisButton.setAttribute('value', 'Plain SVG');
   // thisButton.setAttribute('onclick', 'this.blur(); showSVG(false);');
-  thisButton.setAttribute('onclick', 'showSVG(false);');
+  // thisButton.setAttribute('onclick', 'showSVG(false);');
   svgMenu.appendChild(thisButton);
+  thisButton.addEventListener('click', (event) => {
+    thisButton.blur();
+    showSVG(false);
+  });
 
   thisButton = document.createElement('input');
   thisButton.setAttribute('id', 'svgJSON');
