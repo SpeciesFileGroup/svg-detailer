@@ -1745,15 +1745,15 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
         thisElement.attributes['cx'].value = (lastMouseX - xC) / zoom;    // correspondingly translate thisElement
         thisElement.attributes['cy'].value = (lastMouseY - yC) / zoom;
-      } else {                              // resizing: note cursor does not osculate ellipse as in circle; sorry.
+      } else {                              // resizing: note cursor does NOW osculate ellipse as in circle !!
         let thisEllipseX = thisElement.attributes['cx'].value;
         let thisEllipseY = thisElement.attributes['cy'].value;
 
         this.updateMousePosition(event);
         lastMouseX = this.lastMousePoint.x;
         lastMouseY = this.lastMousePoint.y;
-        thisElement.attributes['rx'].value = Math.abs(thisEllipseX - (lastMouseX - xC) / zoom);
-        thisElement.attributes['ry'].value = Math.abs(thisEllipseY - (lastMouseY - yC) / zoom);
+        thisElement.attributes['rx'].value = Math.abs(thisEllipseX - (lastMouseX - xC) / zoom) * 1.414;
+        thisElement.attributes['ry'].value = Math.abs(thisEllipseY - (lastMouseY - yC) / zoom) * 1.414;
       }
     }
 
