@@ -1009,10 +1009,14 @@ function createBubbleGroup(group) {
       // let ellipseBoundsPoints = [cx + rx, cy + ry, cx + rx, cy - ry, cx - rx, cy - ry, cx - rx, cy + ry]
       // bubbleGroup.appendChild(createBoundsPoly(ellipseBoundsPoints), 'ellipseBox')
       bubbleGroup.appendChild(createShiftBubble(cx, cy, 'shift'));    // this is the center point of both bubble and circle
-      bubbleGroup.appendChild(createPointBubble((cx + rx * 0.707), (cy + ry * 0.707), 'SE'));    // this is the SE resize point
-      bubbleGroup.appendChild(createPointBubble((cx + rx * 0.707), (cy - ry * 0.707), 'NE'));    // this is the NE resize point
-      bubbleGroup.appendChild(createPointBubble((cx - rx * 0.707), (cy - ry * 0.707), 'NW'));    // this is the NW resize point
-      bubbleGroup.appendChild(createPointBubble((cx - rx * 0.707), (cy + ry * 0.707), 'SW'));    // this is the SW resize point
+      // bubbleGroup.appendChild(createPointBubble((cx + rx * 0.707), (cy + ry * 0.707), 'SE'));    // this is the SE resize point
+      // bubbleGroup.appendChild(createPointBubble((cx + rx * 0.707), (cy - ry * 0.707), 'NE'));    // this is the NE resize point
+      // bubbleGroup.appendChild(createPointBubble((cx - rx * 0.707), (cy - ry * 0.707), 'NW'));    // this is the NW resize point
+      // bubbleGroup.appendChild(createPointBubble((cx - rx * 0.707), (cy + ry * 0.707), 'SW'));    // this is the SW resize point
+      bubbleGroup.appendChild(createSizeBubble((cx + rx * 0.707), (cy + ry * 0.707), 'SE'));    // this is the SE resize point
+      bubbleGroup.appendChild(createSizeBubble((cx + rx * 0.707), (cy - ry * 0.707), 'NE'));    // this is the NE resize point
+      bubbleGroup.appendChild(createSizeBubble((cx - rx * 0.707), (cy - ry * 0.707), 'NW'));    // this is the NW resize point
+      bubbleGroup.appendChild(createSizeBubble((cx - rx * 0.707), (cy + ry * 0.707), 'SW'));    // this is the SW resize point
       return bubbleGroup;
     case 'rect':
       let x = svgAttrs['x'];
