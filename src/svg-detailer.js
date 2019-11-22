@@ -1007,7 +1007,7 @@ function createBubbleGroup(group) {
       bubbleGroup.appendChild(createSizeBubble(cx, cy - ry));    // this is the N resize point
       // create bounding (rectangle) polygon for ellipse directors
       // let ellipseBoundsPoints = [cx + rx, cy + ry, cx + rx, cy - ry, cx - rx, cy - ry, cx - rx, cy + ry]
-      // bubbleGroup.appendChild(createCurvePoly(ellipseBoundsPoints), 'ellipseBox')
+      // bubbleGroup.appendChild(createBoundsPoly(ellipseBoundsPoints), 'ellipseBox')
       // bubbleGroup.appendChild(createSizeBubble(cx + rx, cy + ry, 'SE'));    // this is the SE resize point
       // bubbleGroup.appendChild(createSizeBubble(cx + rx, cy - ry, 'NE'));    // this is the NE resize point
       // bubbleGroup.appendChild(createSizeBubble(cx - rx, cy - ry, 'NW'));    // this is the NW resize point
@@ -1050,7 +1050,7 @@ function createBubbleGroup(group) {
       bubbleGroup.appendChild(createControlLine(theseCoords[0], theseCoords[1], theseCoords[2], theseCoords[3], 'l1'));
       bubbleGroup.appendChild(createControlLine(theseCoords[4], theseCoords[5], theseCoords[6], theseCoords[7], 'l2'));
       // create the "bounding" polygon  'poly'
-      bubbleGroup.appendChild(createCurvePoly(theseCoords, 'poly'));
+      bubbleGroup.appendChild(createBoundsPoly(theseCoords, 'poly'));
       bubbleGroup.appendChild(createCurveBubble(theseCoords[0], theseCoords[1], 'p1'));   // first endpoint
       bubbleGroup.appendChild(createCurveBubble(theseCoords[6], theseCoords[7], 'p2'));   // second endpoint
       bubbleGroup.appendChild(createCurveBubble(theseCoords[2], theseCoords[3], 'c1'));   // first control point
@@ -1213,7 +1213,7 @@ function createControlLine(x1, y1, x2, y2, id) {
   return line;
 }
 
-function createCurvePoly(coords) {        // used by createBubbleGroup.path
+function createBoundsPoly(coords) {        // used by createBubbleGroup.path
   let poly = createElement('polyline');
   poly.setAttributeNS(null, 'id', 'poly');
   poly.setAttributeNS(null, 'points', getCurvePoints(coords));
