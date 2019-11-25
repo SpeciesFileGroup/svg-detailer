@@ -2281,14 +2281,17 @@ function deleteDuplicatePoints(element) {
   let splitPoints = thesePoints.split(' ');
   thesePoints = splitPoints[0] + ' ';
   for (let k = 1; k < splitPoints.length; k++) {
-    if (splitPoints[k] != splitPoints[k - 1]) {   // only keep this point
+    // if (splitPoints[k] != splitPoints[k - 1]) {   // only keep this point
+    //   thesePoints += splitPoints[k] + ' ';        // if it is "new"
+    // }
+    if (checkDuplicatePoints(splitPoints[k - 1], splitPoints[k])) {   // only keep this point
       thesePoints += splitPoints[k] + ' ';        // if it is "new"
     }
   }
   thisElement.attributes['points'].value = thesePoints;
 }
 
-function deleteLastPoint(element) {   // specific to <poly->
+function deleteLastPoint(element) {   // specific to <poly-> ESC key
   let thesePoints = element.attributes['points'].value.trim();
   let splitPoints = thesePoints.split(' ');
   thesePoints = splitPoints[0] + ' ';
@@ -2298,6 +2301,19 @@ function deleteLastPoint(element) {   // specific to <poly->
     }
   }
   thisElement.attributes['points'].value = thesePoints;
+}
+
+function checkDuplicatePoints (pxy, qxy) {    // return false if too close together
+  let p = pxy.split(',')
+  let q = qxy.split(',')
+  let px = p[0];
+  let py = p[1];
+  let qx = q[0];
+  let qy = q[1];
+  if((Math.abs(px - qx) < 0.000001 * qx) && (Math.abs(py - qy) < 0.000001 * qy)){
+    return false
+  }
+  return true
 }
 
 function setCursorMode(mode) {      // detect current mode not completed prior to mode switch
