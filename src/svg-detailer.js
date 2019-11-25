@@ -1745,7 +1745,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
         thisElement.attributes['cx'].value = (lastMouseX - xC) / zoom;    // correspondingly translate thisElement
         thisElement.attributes['cy'].value = (lastMouseY - yC) / zoom;
-      } else {                              // resizing: note cursor does NOW osculate ellipse as in circle !!
+      } else {                        // resizing: cursor NOW osculates ellipse as in circle, diagonally positioned
         let thisEllipseX = thisElement.attributes['cx'].value;
         let thisEllipseY = thisElement.attributes['cy'].value;
 
