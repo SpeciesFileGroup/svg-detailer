@@ -423,7 +423,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         svgInProgress = cursorMode;     // mark in progress
       } else {      // this is the terminus of this instance, so dissociate mouse move handler
         svgInProgress = false;
-        setElementMouseOverOut(thisElement);
+        setElementMouseEnterLeave(thisElement);
         unbindMouseHandlers(self);
       }
     }
@@ -448,7 +448,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         svgInProgress = cursorMode;     // mark in progress
       } else {      // this is the terminus of this instance, so dissociate mouse move handler
         svgInProgress = false;
-        setElementMouseOverOut(thisElement);
+        setElementMouseEnterLeave(thisElement);
         unbindMouseHandlers(self);
       }
     }
@@ -497,7 +497,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         svgInProgress = cursorMode;     // mark in progress
       } else {      // this is the terminus of this instance, so dissociate mouse move handler
         svgInProgress = false;
-        setElementMouseOverOut(thisElement);
+        setElementMouseEnterLeave(thisElement);
         unbindMouseHandlers(self);
       }
     }
@@ -551,7 +551,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         svgInProgress = cursorMode;     // mark in progress
       } else {      // this is the terminus of this instance, so dissociate mouse move handler
         svgInProgress = false;
-        setElementMouseOverOut(thisElement);
+        setElementMouseEnterLeave(thisElement);
         unbindMouseHandlers(self);
       }
     }
@@ -664,7 +664,7 @@ function mouseLeaveFunction(event) {
   clearEditElement(event.target)
 }
 
-function setElementMouseOverOut(group) {     // this actually sets the parent group's listeners
+function setElementMouseEnterLeave(group) {     // this actually sets the parent group's listeners
   if ((group == null) || (group == undefined)) {
     group = null;         //  debug catch point
   }
@@ -743,7 +743,7 @@ function clearEditElement(group) {   // given containing group; invoked by mouse
       group.lastChild.remove();         // this is the group of bubbles (and maybe nested ones) if not just a SHIFT bubble
       // clearEditElement(group);
       thisBubble = null;
-      //setElementMouseOverOut(group); <--- This is creating a loop, you should check how your functions are attaching and dettaching events. And check if you're adding the events in the correct place.
+      //setElementMouseEnterLeave(group); <--- This is creating a loop, you should check how your functions are attaching and dettaching events. And check if you're adding the events in the correct place.
       cursorMode = 'MOVE';    // was savedCursorMode;   // on exit of edit mode, restore
       indicateMode(cursorMode);
       svgInProgress = false;
@@ -758,12 +758,12 @@ function clearEditElement(group) {   // given containing group; invoked by mouse
     }
   }
   //group./*firstChild.*/attributes['onmouseenter'].value = "this.firstChild.attributes['stroke-width'].value = '" + 1.5 * strokeWidth + "'; setEditElement(this.firstChild);"    // replant the listener in the real element
-  //setElementMouseOverOut(group);
-  //cursorMode = 'MOVE';    // was savedCursorMode;   // on exit of edit mode, restore
-  //indicateMode(cursorMode);
-  //svgInProgress = false;
-  //thisElement = null;
-  //thisGroup = null;
+  setElementMouseEnterLeave(group);
+  cursorMode = 'MOVE';    // was savedCursorMode;   // on exit of edit mode, restore
+  indicateMode(cursorMode);
+  svgInProgress = false;
+  thisElement = null;
+  thisGroup = null;
 //  eliminated savedCursorMode = 'MOVE';
 }
 
@@ -812,7 +812,7 @@ function exitEditPoint(group) {    // services mouseUp from SIZE/point bubble
   thisBubble = null;
   //cursorMode = "MOVE";  //was savedCursorMode; ////////////// actually editing element unchains creation of this type
   setCursorMode("MOVE");
-  setElementMouseOverOut(group);
+  setElementMouseEnterLeave(group);
 }
 
 function setShiftElement(bubble) {    // end of SHIFT leaves single bubble; should be removed on mouseleave of group
@@ -837,8 +837,10 @@ function setShiftElement(bubble) {    // end of SHIFT leaves single bubble; shou
   //group.attributes['onmouseleave'].value = '';    // turn off leave!
   //group.setAttribute('onmouseout', 'clearEditElement(this);');      // as of right NOW
 //  eliminated savedCursorMode = 'MOVE';
+  thisGroup.removeEventListener('mouseenter', mouseEnterFunction)
+  thisGroup.removeEventListener('mouseleave', mouseLeaveFunction)
   svgInProgress = 'SHIFT';
-  console.log('svgInProgress = SHIFT')
+  console.log('svgInProgress = SHIFT, cursorMode = ' + cursorMode);
 }
 
 function setSizeElement(bubble) {    // end of SHIFT leaves single bubble; should be removed on mouseleave of group
@@ -1132,7 +1134,7 @@ function createShiftBubble(cx, cy, id) {
     setShiftElement(bubble)
   });
   bubble.addEventListener('mouseup', (event) => {
-    setElementMouseOverOut(bubble)
+    setElementMouseEnterLeave(bubble)
   });
   bubble.setAttributeNS(null, 'style', 'cursor:move;');
   bubble.setAttributeNS(null, 'id', id);    // use this identifier to attach cursor in onSvgMouseMove
@@ -1146,7 +1148,7 @@ function createSizeBubble(cx, cy, id) {
   bubble.addEventListener('mousedown', (event) => {
     setSizeElement(bubble)
   });
-  // bubble.addEventListener('mouseup', (event) => { setElementMouseOverOut(bubble) });
+  // bubble.addEventListener('mouseup', (event) => { setElementMouseEnterLeave(bubble) });
   bubble.setAttributeNS(null, 'id', id);    // use this identifier to attach cursor in onSvgMouseMove
   return bubble;
 }
@@ -1543,7 +1545,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       lastMouseY = this.lastMousePoint.y;
       let linePoints
       if ((event.type == 'mousedown') || (svgInProgress == false)) {    // extra condition for line
-        console.log('line abort ' + event.type + ' ' + svgInProgress);
+        console.log('cursorMode=line abort event:' + event.type + ' svgInProgress= ' + svgInProgress);
         return;
       }
       if (svgInProgress == 'SHIFT') {
@@ -1941,37 +1943,37 @@ SVGDraw.prototype.onSvgMouseUp = function (event) {
     } else if (svgInProgress == 'SIZE') {
       // mouseup implies end of position shift or resize
       svgInProgress = false;
-      setElementMouseOverOut(thisElement.parentNode);   // this element is a SHIFT bubble
+      setElementMouseEnterLeave(thisElement.parentNode);   // this element is a SHIFT bubble
     } else if (cursorMode == 'bubble') {      // /////// all assignments of cursorMode to bubble have been disabled
       svgInProgress = false;
     } else if (cursorMode == 'draw') {
       svgInProgress = false;
-      setElementMouseOverOut(thisGroup);
+      setElementMouseEnterLeave(thisGroup);
       unbindMouseHandlers(self);
     } else if ((cursorMode == 'cubic') || (cursorMode == 'quadratic')) {
       svgInProgress = false;
-      setElementMouseOverOut(thisGroup);
+      setElementMouseEnterLeave(thisGroup);
       unbindMouseHandlers(self);
     } else if ((cursorMode == "MOVE") /*&& (svgInProgress == cursorMode)*/) {
       svgInProgress = false;
       unbindMouseHandlers(self);
     } else if (cursorMode == 'rect') {
       svgInProgress = false;
-      setElementMouseOverOut(thisGroup);
+      setElementMouseEnterLeave(thisGroup);
       unbindMouseHandlers(self);
       thisBubble = null;
       thisElement = null;
       thisGroup = null;
     } else if (cursorMode == 'line') {
       svgInProgress = false;
-      setElementMouseOverOut(thisGroup);
+      setElementMouseEnterLeave(thisGroup);
       unbindMouseHandlers(self);
       thisBubble = null;
       thisElement = null;
       thisGroup = null;
     } else if (cursorMode == 'arrow') {
       svgInProgress = false;
-      setElementMouseOverOut(thisGroup);
+      setElementMouseEnterLeave(thisGroup);
       unbindMouseHandlers(self);
       thisBubble = null;
       thisElement = null;
@@ -1981,7 +1983,7 @@ SVGDraw.prototype.onSvgMouseUp = function (event) {
 
       } else {
         svgInProgress = false;
-        setElementMouseOverOut(thisGroup);
+        setElementMouseEnterLeave(thisGroup);
         unbindMouseHandlers(self);
         thisBubble = null;
         thisElement = null;
@@ -1992,7 +1994,7 @@ SVGDraw.prototype.onSvgMouseUp = function (event) {
 
       } else {
         svgInProgress = false;
-        setElementMouseOverOut(thisGroup);
+        setElementMouseEnterLeave(thisGroup);
         unbindMouseHandlers(self);
         thisBubble = null;
         thisElement = null;
@@ -2001,7 +2003,7 @@ SVGDraw.prototype.onSvgMouseUp = function (event) {
     } else if (cursorMode == 'circle') {
       //checkLeftoverElement();
       svgInProgress = false;
-      setElementMouseOverOut(thisGroup);
+      setElementMouseEnterLeave(thisGroup);
       thisBubble = null;
       thisElement = null;
       thisGroup = null;
@@ -2009,7 +2011,7 @@ SVGDraw.prototype.onSvgMouseUp = function (event) {
       //thisCircle = thisElement;   // patch/hack to have routine below happy
       //checkLeftoverElement();
       svgInProgress = false;
-      setElementMouseOverOut(thisGroup);
+      setElementMouseEnterLeave(thisGroup);
       thisBubble = null;
       thisElement = null;
       thisGroup = null;
@@ -2020,7 +2022,7 @@ SVGDraw.prototype.onSvgMouseUp = function (event) {
           // thisGroup.lastChild.remove();
           clearEditElement(group);
         }
-        setElementMouseOverOut(thisGroup);
+        setElementMouseEnterLeave(thisGroup);
       }
     }
     thisSVGpoints = [];      // and clear the collector
@@ -2213,7 +2215,7 @@ function lookUpKey(event) {     // sort out the keyboard mess and return the key
 
 function doMouseUp() {
   svgInProgress = false;
-  setElementMouseOverOut(thisGroup);
+  setElementMouseEnterLeave(thisGroup);
   setCursorMode('MOVE');
   unbindMouseHandlers(self);
   thisBubble = null;
@@ -2235,11 +2237,11 @@ function dblClick() {
       case 'polygon':
         deleteDuplicatePoints(thisElement);
         thisGroup.innerHTML = thisGroup.innerHTML.replace('polyline', 'polygon').replace('polyline', 'polygon');
-        setElementMouseOverOut(thisGroup);
+        setElementMouseEnterLeave(thisGroup);
         break;
       case 'polyline':
         deleteDuplicatePoints(thisElement);
-        setElementMouseOverOut(thisGroup);
+        setElementMouseEnterLeave(thisGroup);
         break;
     }
     if (cursorMode == 'text') {
@@ -2491,7 +2493,7 @@ function updateSvgText(event) {                       // modified to eliminate m
     return false
   }
   if ((event.keyCode == 13) && (event.shiftKey)) {      // terminate this text block chain on Shift-Enter
-    // setElementMouseOverOut(thisGroup);
+    // setElementMouseEnterLeave(thisGroup);
     // removeCursorFromSvgText();
     // closeSvgText();
     // checkLeftoverElement();
@@ -2546,7 +2548,7 @@ function finishTextGroup() {             // uses global variable thisGroup for <
     return;
   }
   if (thisGroup.hasChildNodes()) {       // thisGroup may contain more that one text element, one for each line
-    setElementMouseOverOut(thisGroup);   // if this group is to be persisted, set the mouse listeners for future edit
+    setElementMouseEnterLeave(thisGroup);   // if this group is to be persisted, set the mouse listeners for future edit
   } else {                                 // if no child nodes, it is empty and should be
     thisGroup.remove();                  // removed
     let BreakHere = true;
