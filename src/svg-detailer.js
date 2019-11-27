@@ -785,9 +785,11 @@ function checkElementConflict(group) {  // only invoked by mouseenter listeners
     return false
   }
   if (svgInProgress != group.firstChild.tagName) {
+    console.log('svgInProgress=' + svgInProgress + ', thisElement=' + thisElement + ', group element=' +group.firstChild.tagName)
     return true;     //  if we crossed another element
   }
   if (thisGroup != group) {
+    console.log('svgInProgress=' + svgInProgress + ', thisGroup=' + thisGroup.attributes('type') + ', group element=' +group.firstChild.tagName)
     return true;
   }
 }
@@ -939,10 +941,10 @@ function setNewPointElement(bubble) {     // this inserts the new point into the
     thisBubble = bubble;
   }
   cursorMode = thisElement.tagName;
-  // group.attributes['onmouseenter'].value = ''; // disable mouseover on real element's containing group
-  group.removeEventListener('mouseenter', mouseEnterFunction)
-  // group.attributes['onmouseleave'].value = ''; // disable mouseleaver on real element's containing group
-  group.removeEventListener('mouseleave', mouseLeaveFunction)
+  // group.attributes['onmouseenter'].value = ''
+  group.removeEventListener('mouseenter', mouseEnterFunction); // disable mouseover on real element's containing group
+  // group.attributes['onmouseleave'].value = ''
+  group.removeEventListener('mouseleave', mouseLeaveFunction); // disable mouseleaver on real element's containing group
   // bubble.attributes['onmousedown'].value = '';  // cascade to onSvgMouseDown
   /////////////////////////bubble.removeAllListeners()
   thisElement.attributes['points'].value = insertNewPoint(thisElement, thisBubble);
@@ -976,6 +978,9 @@ function createBubbleGroup(group) {
   let splitPoints;
   let nextX;
   let nextY;
+  if(!group) {
+    console.log('group arg null, thisGroup=' + thisGroup)
+  }
   let element = group.firstChild;
   svgAttrs = getModel(element.tagName);
   if (element.tagName != 'path') {    // /////// skip this step for path exception
@@ -1002,19 +1007,7 @@ function createBubbleGroup(group) {
       cy = svgAttrs['cy'];
       let rx = svgAttrs['rx'];
       let ry = svgAttrs['ry'];
-      // bubbleGroup.appendChild(createShiftBubble(cx, cy, 'shift'));    // this is the center point of both bubble and circle
-      // bubbleGroup.appendChild(createSizeBubble(rx + cx, cy));    // this is the E resize point
-      // bubbleGroup.appendChild(createSizeBubble(cx, ry + cy));    // this is the S resize point
-      // bubbleGroup.appendChild(createSizeBubble(cx - rx, cy));    // this is the W resize point
-      // bubbleGroup.appendChild(createSizeBubble(cx, cy - ry));    // this is the N resize point
-      // create bounding (rectangle) polygon for ellipse directors
-      // let ellipseBoundsPoints = [cx + rx, cy + ry, cx + rx, cy - ry, cx - rx, cy - ry, cx - rx, cy + ry]
-      // bubbleGroup.appendChild(createBoundsPoly(ellipseBoundsPoints), 'ellipseBox')
       bubbleGroup.appendChild(createShiftBubble(cx, cy, 'shift'));    // this is the center point of both bubble and circle
-      // bubbleGroup.appendChild(createPointBubble((cx + rx * 0.707), (cy + ry * 0.707), 'SE'));    // this is the SE resize point
-      // bubbleGroup.appendChild(createPointBubble((cx + rx * 0.707), (cy - ry * 0.707), 'NE'));    // this is the NE resize point
-      // bubbleGroup.appendChild(createPointBubble((cx - rx * 0.707), (cy - ry * 0.707), 'NW'));    // this is the NW resize point
-      // bubbleGroup.appendChild(createPointBubble((cx - rx * 0.707), (cy + ry * 0.707), 'SW'));    // this is the SW resize point
       bubbleGroup.appendChild(createSizeBubble((cx + rx * 0.707), (cy + ry * 0.707), 'SE'));    // this is the SE resize point
       bubbleGroup.appendChild(createSizeBubble((cx + rx * 0.707), (cy - ry * 0.707), 'NE'));    // this is the NE resize point
       bubbleGroup.appendChild(createSizeBubble((cx - rx * 0.707), (cy - ry * 0.707), 'NW'));    // this is the NW resize point
@@ -1034,8 +1027,6 @@ function createBubbleGroup(group) {
       let x2 = svgAttrs['x2'];
       let y2 = svgAttrs['y2'];
       bubbleGroup.appendChild(createShiftBubble((x2 + x1) / 2, (y2 + y1) / 2, 'shift'));    // this is the move line point
-      // bubbleGroup.appendChild(createSizeBubble(x1, y1, 'x1-y1'));     // this is the 1st line coordinate
-      // bubbleGroup.appendChild(createSizeBubble(x2, y2, 'x2-y2'));    // this is the 2nd (terminal) line point
       bubbleGroup.appendChild(createPointBubble(x1, y1, 'x1-y1'));     // this is the 1st line coordinate
       bubbleGroup.appendChild(createPointBubble(x2, y2, 'x2-y2'));    // this is the 2nd (terminal) line point
       return bubbleGroup;
@@ -1654,12 +1645,12 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       } else {
         barbLength = lineLength * arrowSize / 100;
       }
-      let pctX = parseFloat(thisX2/* - deltaX / arrowSize*/) - (dx * barbLength);   //  baseline for barb trailing end
-      let pctY = parseFloat(thisY2/* - deltaY / arrowSize*/) - (dy * barbLength);
-      let x3 = pctX + barbLength * dy / 2;
-      let y3 = pctY - barbLength * dx / 2;
-      let x4 = pctX - barbLength * dy / 2;
-      let y4 = pctY + barbLength * dx / 2;
+      let pctX = parseFloat(thisX2) - (dx * barbLength);   //  baseline for barb trailing end
+      let pctY = parseFloat(thisY2) - (dy * barbLength);
+      let x3 = (pctX + barbLength * dy / 2).toFixed(3);
+      let y3 = (pctY - barbLength * dx / 2).toFixed(3);
+      let x4 = (pctX - barbLength * dy / 2).toFixed(3);
+      let y4 = (pctY + barbLength * dx / 2).toFixed(3);
 
       let leftBarb = createElement('line');
       leftBarb.setAttributeNS(null, 'x1', thisX2);       // start x of barbs
@@ -1667,23 +1658,31 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       leftBarb.setAttributeNS(null, 'x2', x3);      // end x
       leftBarb.setAttributeNS(null, 'y2', y3);      // end y
       leftBarb.setAttributeNS(null, 'stroke', thisColor);
-      thisGroup.appendChild(leftBarb);
+      // thisGroup.appendChild(leftBarb);
       let rightBarb = createElement('line');
       rightBarb.setAttributeNS(null, 'x1', thisX2);       // start x of barbs
       rightBarb.setAttributeNS(null, 'y1', thisY2);      // start y of barbs
       rightBarb.setAttributeNS(null, 'x2', x4);      // end x
       rightBarb.setAttributeNS(null, 'y2', y4);      // end y
       rightBarb.setAttributeNS(null, 'stroke', thisColor);
-      thisGroup.appendChild(rightBarb);
-      let baseBarb;
+      // thisGroup.appendChild(rightBarb);
+
       if (document.getElementById('arrowHeadClosed').checked) {
-        baseBarb = createElement('line');
-        baseBarb.setAttributeNS(null, 'x1', x3);       // start x of barbs base
-        baseBarb.setAttributeNS(null, 'y1', y3);      // start y of barbs base
-        baseBarb.setAttributeNS(null, 'x2', x4);      // end x
-        baseBarb.setAttributeNS(null, 'y2', y4);      // end y
+        // baseBarb = createElement('line');
+        // baseBarb.setAttributeNS(null, 'x1', x3);       // start x of barbs base
+        // baseBarb.setAttributeNS(null, 'y1', y3);      // start y of barbs base
+        // baseBarb.setAttributeNS(null, 'x2', x4);      // end x
+        // baseBarb.setAttributeNS(null, 'y2', y4);      // end y
+        // baseBarb.setAttributeNS(null, 'stroke', thisColor);
+        let baseBarb = createElement('polygon');
+        let barbPoints = thisX2 + ',' + thisY2 + ' ' + x3 + ',' + y3 + ' ' + x4 + ',' + y4;
+        baseBarb.setAttributeNS(null, 'points', barbPoints);
         baseBarb.setAttributeNS(null, 'stroke', thisColor);
-        thisGroup.appendChild(baseBarb);
+        thisGroup.appendChild(baseBarb)
+      }
+      else {
+        thisGroup.appendChild(leftBarb);
+        thisGroup.appendChild(rightBarb);
       }
     }
 
@@ -2893,7 +2892,7 @@ function buildSVGmenu() {
   thisSpan.appendChild(thisButton);
   thisSpan.addEventListener('change', (event) => {
     thisButton.blur();
-    arrowSize = thisButton.value;
+    arrowSize = parseFloat(document.getElementById('arrowHeadPercent').value);
   });
   svgMenu.appendChild(thisSpan);
 
