@@ -722,7 +722,7 @@ function setEditElement(group) {    // add bubble elements to the group containi
   // var element = group.firstChild;                  // new method using createBubbleGroup
   let bubbleGroup = createBubbleGroup(group);      // since bubble groups are heterogeneous in structure
   group.appendChild(bubbleGroup);             // make the new bubble group in a no-id <g>
-  console.log('setEditElement')
+  console.log('setEditElement ' + group.id + ' ' + group.attributes['type'])
 }
 
 function clearEditElement(group) {   // given containing group; invoked by mouseleave, so order of statements reordered
@@ -776,20 +776,23 @@ function checkElementConflict(group) {  // only invoked by mouseenter listeners
 
    */
   if (waitElement) {
+    console.log('checkElementConflict1: waitElement = ' + waitElement)
     return true;
   }
   if (!svgInProgress) {
+    console.log('checkElementConflict2: svgInProgress=' + svgInProgress)
     return false;     // if no active element
   }
   if(svgInProgress == 'SHIFT') {
+    console.log('checkElementConflict3: svgInProgress=' + svgInProgress)
     return false
   }
   if (svgInProgress != group.firstChild.tagName) {
-    console.log('svgInProgress=' + svgInProgress + ', thisElement=' + thisElement + ', group element=' +group.firstChild.tagName)
+    console.log('checkElementConflict4: svgInProgress=' + svgInProgress + ', thisElement=' + thisElement + ', group element=' +group.firstChild.tagName)
     return true;     //  if we crossed another element
   }
   if (thisGroup != group) {
-    console.log('svgInProgress=' + svgInProgress + ', thisGroup=' + thisGroup.attributes('type') + ', group element=' +group.firstChild.tagName)
+    console.log('checkElementConflict5: svgInProgress=' + svgInProgress + ', thisGroup=' + thisGroup.attributes('type') + ', group element=' +group.firstChild.tagName)
     return true;
   }
 }
