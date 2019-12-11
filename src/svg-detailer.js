@@ -682,9 +682,10 @@ function setElementMouseEnterLeave(group) {     // this actually sets the parent
 
 function setEditElement(group) {    // add bubble elements to the group containing this element
   if (checkElementConflict(group)) {    // returns true if conflict
-    console.log('Element conflict' + group.attributes['type']);
+    console.log('Element conflict: ' + group.attributes['type'].value);
     return;
   }
+  console.log('setEditElement no conflict')
   if (thisGroup == null) {    // no conflicts detected, so if thisGroup is null,
     let msg = 'thisGroup is NULL';
     if (thisElement) {
@@ -722,7 +723,8 @@ function setEditElement(group) {    // add bubble elements to the group containi
   // var element = group.firstChild;                  // new method using createBubbleGroup
   let bubbleGroup = createBubbleGroup(group);      // since bubble groups are heterogeneous in structure
   group.appendChild(bubbleGroup);             // make the new bubble group in a no-id <g>
-  console.log('setEditElement ' + group.id + ' ' + group.attributes['type'])
+  console.log('setEditElement ' + group.id + ' ' + group.attributes['type'].value)
+  // group.removeEventListener('mouseleave', mouseLeaveFunction)
 }
 
 function clearEditElement(group) {   // given containing group; invoked by mouseleave, so order of statements reordered
@@ -1049,9 +1051,18 @@ function createBubbleGroup(group) {
         theseCoords[4] = theseCoords[2];          // for both control points
         theseCoords[5] = theseCoords[3];          // for control lines
       }
-      let xm = ((parseFloat(theseCoords[0]) + parseFloat(theseCoords[6])) / 2).toFixed();
-      let ym = ((parseFloat(theseCoords[1]) + parseFloat(theseCoords[7])) / 2).toFixed();
-      bubbleGroup.appendChild(createShiftBubble(xm, ym, 'shift'));    // this is the move point
+      //# TODO: calculate centroid fot shift bubble
+      let xn = parseFloat(theseCoords[0]) + parseFloat(theseCoords[2]) + parseFloat(theseCoords[4])
+      let yn = parseFloat(theseCoords[1]) + parseFloat(theseCoords[3]) + parseFloat(theseCoords[5])
+      if(thisCurveTypeQuadratic) {
+        xn = (xn / 3).toFixed(3);
+        yn = (yn / 3).toFixed(3);
+      }
+      else {
+        xn = ((xn + parseFloat(theseCoords[6])) / 4).toFixed(3)
+        yn = ((yn + parseFloat(theseCoords[7])) / 4).toFixed(3)
+      }
+      bubbleGroup.appendChild(createShiftBubble(xn, yn, 'shift'));    // this is the move point
       // create the lines between the control point(s) and the endpoints
       bubbleGroup.appendChild(createControlLine(theseCoords[0], theseCoords[1], theseCoords[2], theseCoords[3], 'l1'));
       bubbleGroup.appendChild(createControlLine(theseCoords[4], theseCoords[5], theseCoords[6], theseCoords[7], 'l2'));
@@ -1201,7 +1212,8 @@ function createCurveBubble(cx, cy, id) {    // used for <path...> inter-vertex c
   });
   // bubble.addEventListener('mousedown', (event) => { setSizeElement(bubble) });
   bubble.addEventListener('mouseup', (event) => {
-    exitEditPoint(thisGroup)
+    // exitEditPoint(thisGroup)
+    exitEditPoint(event.target.parentElement.parentElement)
   });
   bubble.setAttributeNS(null, 'id', id);    // use this identifier to attach cursor in onSvgMouseMove
                                             // will take the form: 'c1', 'c2' for <path-...>
@@ -1804,8 +1816,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           console.log('dx: ' + dx + ', dy: ' + dy)
           // tranlate each coordinate (array contains x, y, x, y, ... x, y
           for (let k = 0; k < theseCoords.length; k++) {
-            theseCoords[k] = (dx + parseFloat(theseCoords[k])).toFixed()
-            theseCoords[k + 1] = (dy + parseFloat(theseCoords[k + 1])).toFixed()
+            theseCoords[k] = (dx + parseFloat(theseCoords[k])).toFixed(3)
+            theseCoords[k + 1] = (dy + parseFloat(theseCoords[k + 1])).toFixed(3)
             k++
           }
           if (thisCurveQuadratic) {     //////// this is a kludge to make user the param names line up in getCurveCoords
@@ -1828,20 +1840,20 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           }
           switch (thisBubble.id) {
             case 'p1':
-              theseCoords[0] = thisX.toFixed();
-              theseCoords[1] = thisY.toFixed();
+              theseCoords[0] = thisX.toFixed(3);
+              theseCoords[1] = thisY.toFixed(3);
               break;
             case 'p2':
-              theseCoords[6] = thisX.toFixed();
-              theseCoords[7] = thisY.toFixed();
+              theseCoords[6] = thisX.toFixed(3);
+              theseCoords[7] = thisY.toFixed(3);
               break;
             case 'c1':
-              theseCoords[2] = thisX.toFixed();
-              theseCoords[3] = thisY.toFixed();
+              theseCoords[2] = thisX.toFixed(3);
+              theseCoords[3] = thisY.toFixed(3);
               break;
             case 'c2':
-              theseCoords[4] = thisX.toFixed();
-              theseCoords[5] = thisY.toFixed();
+              theseCoords[4] = thisX.toFixed(3);
+              theseCoords[5] = thisY.toFixed(3);
               break;
           }
           if (thisCurveQuadratic) {
@@ -1881,15 +1893,15 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         let dy = thisY1 - thisY2;
         let theseControlPoints = theseCurvePoints[1].split(', ');              // get array of x,y,x,y(,x,y)
         if (thisPathType == ' Q ') {
-          theseControlPoints[0] = (thisX1 - 0.4 * dx).toFixed();   // single control point
-          theseControlPoints[1] = (thisY1 - 0.4 * dy).toFixed();   // for quadratic
+          theseControlPoints[0] = (thisX1 - 0.4 * dx).toFixed(3);   // single control point
+          theseControlPoints[1] = (thisY1 - 0.4 * dy).toFixed(3);   // for quadratic
           thisD = theseCurvePoints[0] + thisPathType + curvePoint(theseControlPoints[0], theseControlPoints[1]);
         } else {
           // if (cursorMode == 'cubic')
-          theseControlPoints[0] = (thisX1 - 0.4 * dx).toFixed();
-          theseControlPoints[1] = (thisY1 - 0.4 * dy).toFixed();
-          theseControlPoints[2] = (thisX1 - 0.6 * dx).toFixed();
-          theseControlPoints[3] = (thisY1 - 0.6 * dy).toFixed();
+          theseControlPoints[0] = (thisX1 - 0.4 * dx).toFixed(3);
+          theseControlPoints[1] = (thisY1 - 0.4 * dy).toFixed(3);
+          theseControlPoints[2] = (thisX1 - 0.6 * dx).toFixed(3);
+          theseControlPoints[3] = (thisY1 - 0.6 * dy).toFixed(3);
           thisD = theseCurvePoints[0] + thisPathType + curvePoint(theseControlPoints[0], theseControlPoints[1]);
           thisD += curvePoint(theseControlPoints[2], theseControlPoints[3]);
           thisD += curvePoint(thisX2, thisY2);
