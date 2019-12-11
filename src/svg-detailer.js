@@ -339,16 +339,16 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
 
         group.appendChild(element);
         thisElement = group.children[0];
-        element.setAttributeNS(null, 'points', thisSVGpoints[0][0].toFixed(2).toString()
-          + ',' + thisSVGpoints[0][1].toFixed(2).toString() + ' '
-          + thisSVGpoints[0][0].toFixed(2).toString()
-          + ',' + thisSVGpoints[0][1].toFixed(2).toString() + ' ');      // start x,y for both points initially
+        element.setAttributeNS(null, 'points', thisSVGpoints[0][0].toFixed(3).toString()
+          + ',' + thisSVGpoints[0][1].toFixed(3).toString() + ' '
+          + thisSVGpoints[0][0].toFixed(3).toString()
+          + ',' + thisSVGpoints[0][1].toFixed(3).toString() + ' ');      // start x,y for both points initially
         svgInProgress = cursorMode;     // mark in progress
       } else {      // this is the fixation of this last point, so DON'T dissociate mouse move handler
         self.updateMousePosition(event);
         let thesePoints = thisElement.attributes['points'].value;   // to trim or not to trim?  if so, multiple implications here
-        let thisPoint = ((lastMouseX - xC) / zoom).toFixed(2).toString()
-          + ',' + ((lastMouseY - yC) / zoom).toFixed(2).toString() + ' ';
+        let thisPoint = ((lastMouseX - xC) / zoom).toFixed(3).toString()
+          + ',' + ((lastMouseY - yC) / zoom).toFixed(3).toString() + ' ';
         thisElement.attributes['points'].value = thesePoints.concat(thisPoint);
       }
     }
@@ -367,16 +367,16 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         group.appendChild(element);
         thisElement = group.children[0];
         element.setAttributeNS(null, 'stroke-linecap', 'round');
-        element.setAttributeNS(null, 'points', thisSVGpoints[0][0].toFixed(2).toString()
-          + ',' + thisSVGpoints[0][1].toFixed(2).toString() + ' '
-          + thisSVGpoints[0][0].toFixed(2).toString()
-          + ',' + thisSVGpoints[0][1].toFixed(2).toString() + ' ');      // start x,y for both points initially
+        element.setAttributeNS(null, 'points', thisSVGpoints[0][0].toFixed(3).toString()
+          + ',' + thisSVGpoints[0][1].toFixed(3).toString() + ' '
+          + thisSVGpoints[0][0].toFixed(3).toString()
+          + ',' + thisSVGpoints[0][1].toFixed(3).toString() + ' ');      // start x,y for both points initially
         svgInProgress = cursorMode;     // mark in progress
       } else {      // this is the fixation of this last point, so DON'T dissociate mouse move handler
         self.updateMousePosition(event);
         let thesePoints = thisElement.attributes['points'].value;
-        let thisPoint = ((lastMouseX - xC) / zoom).toFixed(2).toString()
-          + ',' + ((lastMouseY - yC) / zoom).toFixed(2).toString() + ' ';
+        let thisPoint = ((lastMouseX - xC) / zoom).toFixed(3).toString()
+          + ',' + ((lastMouseY - yC) / zoom).toFixed(3).toString() + ' ';
         thisElement.attributes['points'].value = thesePoints.concat(thisPoint);
       }
     }
@@ -516,8 +516,8 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
 
         group.appendChild(element);
         thisElement = group.children[0];
-        element.setAttributeNS(null, 'points', thisSVGpoints[0][0].toFixed(2).toString()
-          + ',' + thisSVGpoints[0][1].toFixed(2).toString() + ' ');      // start x,y
+        element.setAttributeNS(null, 'points', thisSVGpoints[0][0].toFixed(3).toString()
+          + ',' + thisSVGpoints[0][1].toFixed(3).toString() + ' ');      // start x,y
         //}
         svgInProgress = cursorMode;     // mark in progress
       } else {      // this is the terminus of this instance, so dissociate mouse move handler
@@ -780,12 +780,17 @@ function checkElementConflict(group) {  // only invoked by mouseenter listeners
     return true;
   }
   if (!svgInProgress) {
-    console.log('checkElementConflict2: svgInProgress=' + svgInProgress)
+    console.log('checkElementConflict2: svgInProgress=' + svgInProgress + 'thisGroup=' + group.id)
     return false;     // if no active element
   }
   if(svgInProgress == 'SHIFT') {
-    console.log('checkElementConflict3: svgInProgress=' + svgInProgress)
-    return false
+    console.log('checkElementConflict3: svgInProgress=' + svgInProgress + 'thisGroup=' + group.id)
+    if (thisGroup.id != group.id) {
+      return true
+    }
+  else {
+      return false
+    }
   }
   if (svgInProgress != group.firstChild.tagName) {
     console.log('checkElementConflict4: svgInProgress=' + svgInProgress + ', thisElement=' + thisElement + ', group element=' +group.firstChild.tagName)
@@ -1379,8 +1384,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       }     // could be POINT or NEW or polygon
       this.updateMousePosition(event);
       if (svgInProgress == 'SHIFT') {
-        let shiftPoint = ((lastMouseX - xC) / zoom).toFixed(2).toString()
-          + ',' + ((lastMouseY - yC) / zoom).toFixed(2).toString();
+        let shiftPoint = ((lastMouseX - xC) / zoom).toFixed(3).toString()
+          + ',' + ((lastMouseY - yC) / zoom).toFixed(3).toString();
         let shiftingPoints = thisElement.attributes['points'].value.trim();
         let splitShiftPoints = shiftingPoints.split(' ');
         if (thisBubble != null) {       // thisBubble set on mousedown
@@ -1401,8 +1406,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           let yPoints = [];
           for (j = 0; j < splitShiftPoints.length; j++) {
             let thisXY = splitShiftPoints[j].split(',');
-            xPoints[j] = (parseFloat(thisXY[0]) + dx).toFixed(2);
-            yPoints[j] = (parseFloat(thisXY[1]) + dy).toFixed(2);
+            xPoints[j] = (parseFloat(thisXY[0]) + dx).toFixed(3);
+            yPoints[j] = (parseFloat(thisXY[1]) + dy).toFixed(3);
             shiftedPoints += xPoints[j] + ',' + yPoints[j] + ' '
           }
           for (let k = 0; k < splitShiftPoints.length; k++) {
@@ -1411,8 +1416,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           thisElement.attributes['points'].value = shiftedPoints
         }
       } else {
-        let thisPoint = ((lastMouseX - xC) / zoom).toFixed(2).toString()
-          + ',' + ((lastMouseY - yC) / zoom).toFixed(2).toString();
+        let thisPoint = ((lastMouseX - xC) / zoom).toFixed(3).toString()
+          + ',' + ((lastMouseY - yC) / zoom).toFixed(3).toString();
         let thesePoints = thisElement.attributes['points'].value.trim();
         let splitPoints = thesePoints.split(' ');
         if (thisBubble != null) {       // look for bubble to denote just move THIS point only
@@ -1443,8 +1448,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       }
       this.updateMousePosition(event);
       if(svgInProgress == 'SHIFT') {
-        let shiftPoint = ((lastMouseX - xC) / zoom).toFixed(2).toString()
-          + ',' + ((lastMouseY - yC) / zoom).toFixed(2).toString();
+        let shiftPoint = ((lastMouseX - xC) / zoom).toFixed(3).toString()
+          + ',' + ((lastMouseY - yC) / zoom).toFixed(3).toString();
         let shiftingPoints = thisElement.attributes['points'].value.trim();
         let splitShiftPoints = shiftingPoints.split(' ');
         if (thisBubble != null) {       // thisBubble set on mousedown
@@ -1465,8 +1470,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           let yPoints = [];
           for (j=0; j < splitShiftPoints.length; j++) {
             let thisXY = splitShiftPoints[j].split(',');
-            xPoints[j] = (parseFloat(thisXY[0]) + dx).toFixed(2);
-            yPoints[j] = (parseFloat(thisXY[1]) + dy).toFixed(2);
+            xPoints[j] = (parseFloat(thisXY[0]) + dx).toFixed(3);
+            yPoints[j] = (parseFloat(thisXY[1]) + dy).toFixed(3);
             shiftedPoints += xPoints[j] + ',' + yPoints[j] + ' '
           }
           for (let k = 0; k < splitShiftPoints.length; k++) {
@@ -1476,8 +1481,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         }
       }
       else {
-        let thisPoint = ((lastMouseX - xC) / zoom).toFixed(2).toString()
-          + ',' + ((lastMouseY - yC) / zoom).toFixed(2).toString();
+        let thisPoint = ((lastMouseX - xC) / zoom).toFixed(3).toString()
+          + ',' + ((lastMouseY - yC) / zoom).toFixed(3).toString();
         let thesePoints = thisElement.attributes['points'].value.trim();
         let splitPoints = thesePoints.split(' ');
         if (thisBubble != null) {       // look for bubble to denote just move THIS point only
@@ -1767,8 +1772,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       }
       this.updateMousePosition(event);
       let thesePoints = thisElement.attributes['points'].value;
-      let thisPoint = ((lastMouseX - xC) / zoom).toFixed(2).toString()
-        + ',' + ((lastMouseY - yC) / zoom).toFixed(2).toString() + ' ';
+      let thisPoint = ((lastMouseX - xC) / zoom).toFixed(3).toString()
+        + ',' + ((lastMouseY - yC) / zoom).toFixed(3).toString() + ' ';
       thisElement.attributes['points'].value = thesePoints.concat(thisPoint);
     }
 
