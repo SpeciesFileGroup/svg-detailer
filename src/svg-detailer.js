@@ -632,7 +632,7 @@ function getCurveCoords(d) {
   return coords;
 }
 
-function getCurvePoints(coords) {   // special bounding poly for curve
+function getCurvePoints(coords) {   // special bounding poly for curve element
   return curvePoint(coords[0], coords[1]) + ' ' + curvePoint(coords[2], coords[3]) + ' '
     + curvePoint(coords[4], coords[5]) + ' ' + curvePoint(coords[6], coords[7]);
 }
@@ -1051,23 +1051,17 @@ function createBubbleGroup(group) {
         theseCoords[4] = theseCoords[2];          // for both control points
         theseCoords[5] = theseCoords[3];          // for control lines
       }
-      //# TODO: calculate centroid fot shift bubble
-      let xn = parseFloat(theseCoords[0]) + parseFloat(theseCoords[2]) + parseFloat(theseCoords[4])
-      let yn = parseFloat(theseCoords[1]) + parseFloat(theseCoords[3]) + parseFloat(theseCoords[5])
-      if(thisCurveTypeQuadratic) {
-        xn = (xn / 3).toFixed(3);
-        yn = (yn / 3).toFixed(3);
-      }
-      else {
-        xn = ((xn + parseFloat(theseCoords[6])) / 4).toFixed(3)
-        yn = ((yn + parseFloat(theseCoords[7])) / 4).toFixed(3)
-      }
-      bubbleGroup.appendChild(createShiftBubble(xn, yn, 'shift'));    // this is the move point
+      // calculate centroid for shift bubble
+      let xn = parseFloat(theseCoords[0]) + parseFloat(theseCoords[2]) + parseFloat(theseCoords[4]) + parseFloat(theseCoords[6])
+      let yn = parseFloat(theseCoords[1]) + parseFloat(theseCoords[3]) + parseFloat(theseCoords[5]) + parseFloat(theseCoords[7])
+      xn = ((xn) / 4).toFixed(3)
+      yn = ((yn) / 4).toFixed(3)
+      // create the "bounding" polygon  'poly'
+      bubbleGroup.appendChild(createBoundsPoly(theseCoords));
+      bubbleGroup.appendChild(createShiftBubble(xn, yn, 'shift'));    // this is the move element bubble
       // create the lines between the control point(s) and the endpoints
       bubbleGroup.appendChild(createControlLine(theseCoords[0], theseCoords[1], theseCoords[2], theseCoords[3], 'l1'));
       bubbleGroup.appendChild(createControlLine(theseCoords[4], theseCoords[5], theseCoords[6], theseCoords[7], 'l2'));
-      // create the "bounding" polygon  'poly'
-      bubbleGroup.appendChild(createBoundsPoly(theseCoords, 'poly'));
       bubbleGroup.appendChild(createCurveBubble(theseCoords[0], theseCoords[1], 'p1'));   // first endpoint
       bubbleGroup.appendChild(createCurveBubble(theseCoords[6], theseCoords[7], 'p2'));   // second endpoint
       bubbleGroup.appendChild(createCurveBubble(theseCoords[2], theseCoords[3], 'c1'));   // first control point
