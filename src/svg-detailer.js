@@ -257,6 +257,7 @@ function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
       thisButton = document.createElement('input');
       thisButton.setAttribute('type', 'button');
       thisButton.setAttribute('value', buttons[i].function.charAt(0).toUpperCase() + buttons[i].function.slice(1));
+      thisButton.setAttribute('id', 'b_'+ buttons[i].function.toLowerCase());
       // thisButton.setAttribute('onclick', "this.blur(); setCursorMode('" + buttons[i].function + "');");
       svgMenu.appendChild(thisButton);
       let thisMode = buttons[i].function;
@@ -2655,6 +2656,7 @@ function buildSVGmenu() {
   //thisButton.setAttribute('id', 'btn_' + buttons[i].function);
   thisButton.setAttribute('type', 'button');
   thisButton.setAttribute('value', 'MOVE');
+  thisButton.setAttribute('id', 'b_move')
   // thisButton.setAttribute('onclick', "setCursorMode('MOVE');");
   svgMenu.appendChild(thisButton);
   thisButton.addEventListener('click', (event) => {
@@ -2669,6 +2671,7 @@ function buildSVGmenu() {
   thisButton = document.createElement('input');     // default ZOOM IN button
   thisButton.setAttribute('type', 'button');
   thisButton.setAttribute('value', 'Zoom IN');
+  thisButton.setAttribute('id', 'b_zoomin')
   // thisButton.setAttribute('onclick', "this.blur(); zoomIn();");
   svgMenu.appendChild(thisButton);
   thisButton.addEventListener('click', (event) => {
@@ -2684,6 +2687,7 @@ function buildSVGmenu() {
   thisButton = document.createElement('input');     // default ZOOM OUT button
   thisButton.setAttribute('type', 'button');
   thisButton.setAttribute('value', 'Zoom OUT');
+  thisButton.setAttribute('id', 'b_zoomout')
   // thisButton.setAttribute('onclick', "this.blur(); zoomOut();");
   svgMenu.appendChild(thisButton);
   thisButton.addEventListener('click', (event) => {
@@ -2694,6 +2698,7 @@ function buildSVGmenu() {
   thisButton = document.createElement('input');     // default ZOOM OUT button
   thisButton.setAttribute('type', 'button');
   thisButton.setAttribute('value', 'Reset');
+  thisButton.setAttribute('id', 'b_reset')
   // thisButton.setAttribute('onclick', "this.blur(); zoom_trans(0, 0, baseZoom);");
   svgMenu.appendChild(thisButton);
   thisButton.addEventListener('click', (event) => {

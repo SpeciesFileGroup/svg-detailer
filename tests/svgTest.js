@@ -16,24 +16,22 @@
 const { Builder, By, Key, until} = require('selenium-webdriver');
 (async function example() {
   let driver = await new Builder().forBrowser('firefox').build();
+  driver.manage().setTimeouts({implicit: 20000});
   try {
     await driver.get('http://localhost:8081/');
     console.log('page');
     driver.sleep(10000);
     await driver.findElement(By.id('image_file')).sendKeys('/Users/jrichardflood/RubymineProjects/svg-detailer/tests/images/testImage.jpg');
   //     await driver.findElement(By.css('#auto_file')).click();
+    driver.sleep(10000);
+    console.log('click line?');
+    await driver.findElement(By.css('#b_line')).click();
 
     }
   finally {
     driver.sleep(10000);
     // driver.quit();
     console.log('end of finally block')
-  }
-  try {
-    await driver.findElement(By.linkText('Line')).click();
-  }
-  finally {
-    console.log('line clisked?')
   }
 })();
 // filename.click();
