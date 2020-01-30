@@ -18,13 +18,22 @@ const { Builder, By, Key, until} = require('selenium-webdriver');
   let driver = await new Builder().forBrowser('firefox').build();
   try {
     await driver.get('http://localhost:8081/');
-    // await driver.findElement(By.css('#image_file')).sendKeys(Key.ENTER);
-    await driver.findElement(By.css('#image_file'));
-  }
+    console.log('page');
+    driver.sleep(10000);
+    await driver.findElement(By.id('image_file')).sendKeys('/Users/jrichardflood/RubymineProjects/svg-detailer/tests/images/testImage.jpg');
+  //     await driver.findElement(By.css('#auto_file')).click();
+
+    }
   finally {
     driver.sleep(10000);
-    driver.quit();
+    // driver.quit();
     console.log('end of finally block')
+  }
+  try {
+    await driver.findElement(By.linkText('Line')).click();
+  }
+  finally {
+    console.log('line clisked?')
   }
 })();
 // filename.click();
