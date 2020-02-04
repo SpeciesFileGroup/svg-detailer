@@ -42,27 +42,26 @@ const { Builder, By, Key, until} = require('selenium-webdriver'),
     await driver.findElement(By.css('#b_ellipse')).click();
     await driver.findElement(By.css('#b_quadratic')).click();
     // await driver.findElement(By.id, "mode");
-    ////// ((JavascriptExecutor)driver).executeScript("function simulate(f,c,d,e){var b,a=null;for(b in eventMatchers)if(eventMatchers[b].test(c)){a=b;break}if(!a)return!1;document.createEvent?(b=document.createEvent(a),a==\"HTMLEvents\"?b.initEvent(c,!0,!0):b.initMouseEvent(c,!0,!0,document.defaultView,0,d,e,d,e,!1,!1,!1,!1,0,null),f.dispatchEvent(b)):(a=document.createEventObject(),a.detail=0,a.screenX=d,a.screenY=e,a.clientX=d,a.clientY=e,a.ctrlKey=!1,a.altKey=!1,a.shiftKey=!1,a.metaKey=!1,a.button=1,f.fireEvent(\"on\"+c,a));return!0} var eventMatchers={HTMLEvents:/^(?:load|unload|abort|error|select|change|submit|reset|focus|blur|resize|scroll)$/,MouseEvents:/^(?:click|dblclick|mouse(?:down|up|over|move|out))$/}; " +
-    //////   "simulate(arguments[0],\"mousemove\",arguments[1],arguments[2]);",LocatorFrom,xto,yto);
-    // await driver.moveByOffset(100,100);
-    // await driver.clickAndHold();
-    // await driver.moveByOffset(300,300);
-    // await driver.release();
     await driver.findElement(By.css('#b_line')).click();
-    await actions.move({ x:300, y:300}).press().perform();
-    await driver.sleep(2000);
-    await actions.move({ x:400, y:100}).perform();
-    await driver.sleep(2000);
-    await actions.move({ x:400, y:400}).release().perform();
-    // await driver.sleep(10000);
-    // await driver.findElement(By.css('#b_circle')).click();
+    await actions.move({ x:300, y:300, duration: 1000}).press().perform();
+    // await actions.pause(2000).perform();
+    await actions.move({ x:400, y:100, duration: 1000}).perform();
+    // await actions.pause(2000).perform();
+    await actions.move({ x:400, y:400, duration: 1000}).release().perform();
+    // console.log('line drawn');
+    // await actions.mouse().release().perform();
+    await driver.findElement(By.css('#b_circle')).click();
+    console.log('click circle button');
     // await actions.move({ x:200, y:200}).perform();
-    // await driver.sleep(2000);
-    // await driver.sleep(2000);
-    // await actions.move({ x:200, y:200}).press().perform();
-    // await actions.move({ x:400, y:100}).perform();
-    // await driver.sleep(2000);
-    // await actions.move({ x:300, y:200}).release().perform();
+    // await actions.pause(2000).perform();
+    await actions.move({ x:200, y:200, duration: 500}).press().perform();
+    console.log('pressed circle center point');
+    // await actions.pause(2000).perform();
+    await actions.move({ x:400, y:200, duration: 500}).perform();
+    console.log('dragged circle size point');
+    // await actions.pause(2000).perform();
+    await actions.move({ x:300, y:200, duration: 500}).release().perform();
+    console.log('released circle final point');
     }
   catch(error) {
     console.log('catch ' + error.toString())
