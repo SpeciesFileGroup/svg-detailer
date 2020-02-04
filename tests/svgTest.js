@@ -22,6 +22,7 @@ const { Builder, By, Key, until} = require('selenium-webdriver'),
   // let line_sequence = new actions(driver);
   // let mode = driver.findElement(By.id, 'mode');
   driver.manage().setTimeouts({implicit: 20000});
+  const actions = driver.actions();
   try {
     await driver.get('http://localhost:8081/');
     console.log('page');
@@ -47,6 +48,21 @@ const { Builder, By, Key, until} = require('selenium-webdriver'),
     // await driver.clickAndHold();
     // await driver.moveByOffset(300,300);
     // await driver.release();
+    await driver.findElement(By.css('#b_line')).click();
+    await actions.move({ x:300, y:300}).press().perform();
+    await driver.sleep(2000);
+    await actions.move({ x:400, y:100}).perform();
+    await driver.sleep(2000);
+    await actions.move({ x:400, y:400}).release().perform();
+    // await driver.sleep(10000);
+    // await driver.findElement(By.css('#b_circle')).click();
+    // await actions.move({ x:200, y:200}).perform();
+    // await driver.sleep(2000);
+    // await driver.sleep(2000);
+    // await actions.move({ x:200, y:200}).press().perform();
+    // await actions.move({ x:400, y:100}).perform();
+    // await driver.sleep(2000);
+    // await actions.move({ x:300, y:200}).release().perform();
     }
   catch(error) {
     console.log('catch ' + error.toString())
