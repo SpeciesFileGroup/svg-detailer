@@ -17,12 +17,12 @@
 const { Builder, By, Key, until} = require('selenium-webdriver'),
 { describe, it, after, before } = require('selenium-webdriver/testing');
 (async function example() {
+  let drawnElement;
   let driver = await new Builder().forBrowser('firefox').build();
-  // const actions = driver.actions();
-  // let line_sequence = new actions(driver);
   // let mode = driver.findElement(By.id, 'mode');
-  driver.manage().setTimeouts({implicit: 20000});
+  driver.manage().setTimeouts({implicit: 40000});
   const actions = driver.actions();
+  const mouse = actions.mouse();
   try {
     await driver.get('http://localhost:8081/');
     console.log('page');
@@ -31,7 +31,8 @@ const { Builder, By, Key, until} = require('selenium-webdriver'),
   //     await driver.findElement(By.css('#auto_file')).click();
     driver.sleep(10000);
     console.log('click line?');
-    await driver.findElement(By.css('#b_line')).click();
+    // let lineBtn = await driver.findElement(By.id('b_line')).click();
+    // console.log(lineBtn.attributes);
     // await driver.findElement(By.id, "mode");
     // console.log(driver.toString());
     await driver.findElement(By.css('#b_rectangle')).click();
@@ -45,12 +46,15 @@ const { Builder, By, Key, until} = require('selenium-webdriver'),
     await driver.findElement(By.css('#b_line')).click();
     await actions.move({ x:300, y:300, duration: 1000}).press().perform();
     // await actions.pause(2000).perform();
-    await actions.move({ x:400, y:100, duration: 1000}).perform();
+    // await actions.move({ x:400, y:100, duration: 1000}).perform();
     // await actions.pause(2000).perform();
-    await actions.move({ x:400, y:400, duration: 1000}).release().perform();
-    // console.log('line drawn');
+    await actions.move({ x:400, y:400, duration: 1000}).perform();
+    await actions.release().perform();
+    console.log('line drawn');
+    // await actions.pause(mouse);
+/*    await actions.move({ x:500, y:500, duration: 3000}).perform();
     // await actions.mouse().release().perform();
-    await driver.findElement(By.css('#b_circle')).click();
+   await driver.findElement(By.css('#b_circle')).click();
     console.log('click circle button');
     // await actions.move({ x:200, y:200}).perform();
     // await actions.pause(2000).perform();
@@ -62,6 +66,14 @@ const { Builder, By, Key, until} = require('selenium-webdriver'),
     // await actions.pause(2000).perform();
     await actions.move({ x:300, y:200, duration: 500}).release().perform();
     console.log('released circle final point');
+
+ */
+try {
+  drawnElement = console.log('element type = ' + await driver.findElement(By.id('g1')).getAttribute('type'))
+}
+finally {
+    console.log('undefined: ' + (drawnElement == undefined).toString()) //+ 'value =' + drawnElement.id + ' ' + drawnElement.value)
+  }
     }
   catch(error) {
     console.log('catch ' + error.toString())
