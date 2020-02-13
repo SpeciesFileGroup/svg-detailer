@@ -23,7 +23,7 @@ describe('Line creation', () => {
   it('Should create an svg element with id "g1" and type "line"', async () => {
     await driver.get('http://localhost:8081/');
     // console.log('page');
-    await driver.findElement(By.id('image_file')).sendKeys('/Users/jrichardflood/RubymineProjects/svg-detailer/tests/images/testImage.jpg');
+    await driver.findElement(By.id('image_file')).sendKeys('/Users/jrichardflood/RubymineProjects/svg-detailer/test/images/testImage.jpg');
     let element, type, id, zoom, transform, xoff, yoff, x1, x2, y1, y2;
     try {
       element = await driver.findElement(By.id('container'));
@@ -85,5 +85,6 @@ describe('Line creation', () => {
       expect(y2).to.equal(((400)/zoom).toString(), 'y2');
       }
     let mode = await driver.findElement(By.id('b_move')).click();
+    driver.quit();
   });
 });

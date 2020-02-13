@@ -8,7 +8,7 @@ describe('Ellipse creation', () => {
 
   it('Should create an element with id g1 and type ellipse', async () => {
     await driver.get('http://localhost:8081/');
-    await driver.findElement(By.id('image_file')).sendKeys('/Users/jrichardflood/RubymineProjects/svg-detailer/tests/images/testImage1.png');
+    await driver.findElement(By.id('image_file')).sendKeys('/Users/jrichardflood/RubymineProjects/svg-detailer/test/images/testImage1.png');
     let element, type, id, xoff, yoff, zoom, transform, cx, cy;
     try {
       element = await driver.findElement(By.id('container'));
@@ -37,7 +37,7 @@ describe('Ellipse creation', () => {
       element = await driver.findElement(By.id('g1'));
       id = await element.getAttribute('id').then(function (x) {return x});
       type = await element.getAttribute('type').then(function (x) {return x});
-      console.log('id: ' + id + ' | type: ' + type);
+      // console.log('id: ' + id + ' | type: ' + type);
       element = await driver.findElement(By.css('ellipse'));
       cx = await element.getAttribute('cx').then(function (x) {return x});
       cy = await element.getAttribute('cy').then(function (x) {return x});
@@ -53,5 +53,6 @@ describe('Ellipse creation', () => {
       expect(cy).to.equal((300/zoom).toString(), 'cy');
     }
     let mode = await driver.findElement(By.id('b_move')).click();
+    driver.quit();
   })
 });
