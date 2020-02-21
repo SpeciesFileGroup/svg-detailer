@@ -29,22 +29,21 @@ describe('Polyline creation', () => {
     }
     try {
       points = [[ 48, 128], [ 48, 214], [ 263, 214], [ 263, 128]];
-      console.log(points);
+      // console.log(points);
       await driver.findElement(By.css('#b_polyline')).click();
       for(i=0; i<points.length-1; i++) {
-        console.log(points[i]);
-        console.log(points[i][0]);
-        console.log(points[i][1]);
+        // console.log(points[i]);
+        // console.log(points[i][0]);
+        // console.log(points[i][1]);
         px = points[i][0] + xoff;
         py = points[i][1] + yoff;
-        console.log('x: ' + px + ', y: ' + py);
+        // console.log('x: ' + px + ', y: ' + py);
         await actions.move({x: px, y: py, duration: 1000}).press().release();
       }
       px = points[points.length-1][0] + xoff;
       py = points[points.length-1][1] + yoff;
-      console.log('px: ' + px + ', py: ' + py);
+      // console.log('px: ' + px + ', py: ' + py);
       await actions.move({x: px, y: py, duration: 1000}).doubleClick().perform();
-      // this.dblClick(); // indirectly invoked through Selenium action
 
       element = await driver.findElement(By.id('g1'));
       id = await element.getAttribute('id').then(function (x) {return x});
@@ -59,16 +58,17 @@ describe('Polyline creation', () => {
       expect(type).to.equal('polyline', 'type');
       expect(id).to.equal('g1', 'id');
       let coords = await element.getAttribute('points').then(function (x) {return x});
-      console.log(coords);
+      // console.log(coords);
       coords = coords.split(' ');
-      console.log(coords);    // points created through move/click
-      console.log(points);    // non-offset rendered screen pixel points
-      for(i=0; i<points.length; i++) {
+      coords.length -= 1;   // compensate for extra space artifact of poly- creation
+      // console.log(coords);    // points created through move/click
+      // console.log(points);    // non-offset rendered screen pixel points
+      for(i=0; i<points.length; i++) {    // mutate original points to zoom-scaled and then to strings
         points[i][0] = ((points[i][0])/zoom).toFixed(3);
         points[i][1] = ((points[i][1])/zoom).toFixed(3);
-        console.log('coords[' + i + ']: ' + coords[i] + ' | x: ' + px + ', y: ' + py);
+        // console.log('coords[' + i + ']: ' + coords[i] + ' | x: ' + px + ', y: ' + py);
         idealPoints[i] = points[i][0].toString() + ',' + points[i][1].toString();
-        console.log(idealPoints);
+        // console.log(idealPoints);
       }
       // xoff=0;
       // yoff=0;
@@ -79,13 +79,11 @@ describe('Polyline creation', () => {
       //   expect(coords[i]).to.equal(px.toString() + ',' +py.toString(), 'x,y ' + i);
       //   expect(coords).to.equal(idealPoints, 'array comparison');
       // }
-      for(i=0; i<points.length; i++) {
-        px = points[i][0];
-        py = points[i][1];
-        console.log('coords[' + i + ']: ' + coords[i] + ' | x: ' + px + ', y: ' + py);
-        expect(coords[i]).to.equal(px.toString() + ',' +py.toString(), 'x,y ' + i);
-        expect(coords).to.equal(idealPoints, 'array comparison');
-      }
+      // console.log('coords: ' +  coords.constructor );
+      // console.log(coords );
+      // console.log( 'idealPoints: ' +  idealPoints.constructor );
+      // console.log(idealPoints);
+        expect(coords).to.deep.equal(idealPoints, 'array comparison');
     }
     let mode = await driver.findElement(By.id('b_move')).click();
     // driver.quit();
