@@ -57,28 +57,17 @@ describe('Rectangle creation', () => {
       expect(id).to.equal('g1', 'id');
       px = parseFloat(await element.getAttribute('x').then(function (x) {return x}));
       py = parseFloat(await element.getAttribute('y').then(function (x) {return x}));
-      width = await element.getAttribute('width').then(function (x) {return x});
-      height = await element.getAttribute('height').then(function (x) {return x});
+      width = parseFloat(await element.getAttribute('width').then(function (x) {return x}));
+      height = parseFloat(await element.getAttribute('height').then(function (x) {return x}));
       // console.log(points);    // non-offset rendered screen pixel points
       for(i=0; i<points.length; i++) {    // mutate original points to zoom-scaled and then to strings
-        // points[i][0] = ((points[i][0])/zoom).toFixed(3);
-        // points[i][1] = ((points[i][1])/zoom).toFixed(3);
         points[i][0] = ((points[i][0])/zoom);
         points[i][1] = ((points[i][1])/zoom);
       }
-      console.log(typeof px);
-      console.log(typeof points[0][0]);
-      console.log(px + ' | ' + points[0][0] + ' | ' + py + ' | ' + points[0][1] );
-      let zx = parseFloat(points[0][0]);
-      let zy = parseFloat(points[0][1]);
-      console.log(zx + ' ' + zy);
-      assert.approximately(zx+zy, zy+zx, 10, 'zzzz');
-      // assert.approximately(px, (points[0][0]), 0.1*px, 'x origin');
-      // assert.approximately(py, (points[0][1]), 0.1*py, 'y origin');
-      expect(px).to.equal(points[0][0], 'x origin');
-      expect(py.to.equal(points[0][1]), 'y origin');
-      expect(width).to.equal(points[1][0] - points[0][0], 'width');
-      expect(height).to.equal(points[0][1] - points[1][1], 'height');
+      expect(px).to.be.approximately(points[0][0], 0.01*points[0][0], 'x origin');
+      expect(py).to.be.approximately(points[0][1], 0.01*points[0][1], 'y origin');
+      expect(width).to.be.approximately(points[1][0] - points[0][0], 0.01*width, 'width');
+      expect(height).to.be.approximately(points[1][1] - points[0][1], 0.01*height, 'height');
     }
     let mode = await driver.findElement(By.id('b_move')).click();
     // driver.quit();
