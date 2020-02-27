@@ -1,7 +1,7 @@
 {
   "name": "@sfgrp/svg-detailer",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "main": "./dist/svg-detailer.common.js",
   "keywords": [
     "species file group",
