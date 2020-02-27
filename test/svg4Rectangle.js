@@ -1,5 +1,5 @@
 const { Builder, By, Key, until} = require('selenium-webdriver');
-const {assert} = require('assert');
+// const {assert} = require('assert');
 const {expect} = require('chai');
 describe('Rectangle creation', () => {
   const driver = new Builder().forBrowser('firefox').build();
@@ -65,7 +65,7 @@ describe('Rectangle creation', () => {
         points[i][1] = ((points[i][1])/zoom);
       }
       expect(px).to.be.approximately(points[0][0], 0.01*points[0][0], 'x origin');
-      expect(py).to.be.approximately(points[0][1], 0.01*points[0][1], 'y origin');
+      expect(py).to.be.approximately(points[0][1], 0.01*points[0][1], 'y origin');              // within 1%
       expect(width).to.be.approximately(points[1][0] - points[0][0], 0.01*width, 'width');
       expect(height).to.be.approximately(points[1][1] - points[0][1], 0.01*height, 'height');
     }
