@@ -11,7 +11,7 @@
       mocha --no-timeouts executes all tests in ./test/ from .../svg-detailer/
     individually:
       mocha --no-timeouts ./test/svg3Line (when executed from .../svg-detailer/)
-      mocha --no-timeouts ./svg3Line (when executed from .../svg-detailer/test/)
+      mocha --no-timeouts svg3Line (when executed from .../svg-detailer/test/)
 
   NOTE: action drawing coordinates are translated by the offsets of the container <div>
  */
@@ -90,6 +90,6 @@ describe('Line creation', () => {
       expect(y2).to.equal(((400)/zoom).toString(), 'y2');
       }
     let mode = await driver.findElement(By.id('b_move')).click();
-    driver.quit();
+    // driver.quit();
   });
 });
