@@ -49,7 +49,7 @@ refinement of the shape.  Each such insertion offers new insertion points, none 
 
 ## Demo
 
-[Here.](http://speciesfilegroup.org/svg-detailer)
+[Here.](https://speciesfilegroup.org/svg-detailer)
 
 ## Funding 
 
