@@ -11,7 +11,7 @@
       mocha --no-timeouts executes all tests in ./test/ from .../svg-detailer/
     individually:
       mocha --no-timeouts ./test/svg3Line (when executed from .../svg-detailer/)
-      mocha --no-timeouts ./svg3Line (when executed from .../svg-detailer/test/)
+      mocha --no-timeouts svg3Line (when executed from .../svg-detailer/test/)
 
   NOTE: action drawing coordinates are translated by the offsets of the container <div>
  */
@@ -29,6 +29,14 @@ describe('Cubic creation', () => {
     // console.log('page');
     await driver.findElement(By.id('image_file')).sendKeys('/Users/jrichardflood/RubymineProjects/svg-detailer/test/images/testImage.jpg');
     let container, element, type, id, zoom, transform, xoff, yoff, mode, x1, x2, y1, y2, d, points, c1x, c1y, c2x, c2y;
+    x1 = 300;
+    y1 = 300;   // failsafe to
+    x2 = 400;   // non-offset values
+    y2 = 400;
+    // x1 = 400;
+    // y1 = 400;    // offset into svgLayer
+    // x2 = 300;    // alternate version for positive slope
+    // y2 = 300;
     try {
       element = await driver.findElement(By.id('container'));
       xoff = parseInt(await element.getAttribute('offsetLeft').then(function (x) {return x}));
@@ -43,52 +51,35 @@ describe('Cubic creation', () => {
       // console.log(zoom[0]);
       zoom = parseFloat(zoom[0]);  //((transform.toString()).split('(')[3]).split(')')[0]);
       console.log('xoff: ' + xoff + ' | yoff: ' + yoff + ' | zoom: ' + zoom);
-      x1 = 300 + xoff;
-      y1 = 300 + yoff;
-      x2 = 400 + xoff;
-      y2 = 400 + yoff;
+      x1 += xoff;
+      y1 += yoff;    // offset into svgLayer
+      x2 += xoff;
+      y2 += yoff;
       // a cubic will have four ordered points
+      // Notes on coordinates
+      // coordinates simulated by selenium are referenced to the browser document body in hardware pixels.
+      // SVG elements are rendered in image pixels according to the XLT, referenced to the container.
+      // The container is offset from the top and the left of the body.  The (initial) zoom ratio is calculated
+      // from the container dimensions and the image dimensions.
     }
     catch (event){
       console.log(event);
-      x1 = 300;
-      y1 = 300;   // failsafe to
-      x2 = 400;   // non-offset values
-      y2 = 400;
     }
     // console.log('x1: ' + x1 + ' | y1: ' + y1 + ' | x2: ' + x2 + ' | y2: ' + y2);
     await driver.findElement(By.css('#b_cubic')).click();
     await actions.move({ x: x1, y: y1, duration: 100}).press();
     await actions.move({ x: x2, y: y2, duration: 1000});
     await actions.release().perform();
-    // await container.sendkeys(13);
-    // await new actions.LegacyActions(driver).mouseup().perform();
     console.log('create');
     element = await driver.findElement(By.id('c1'));
-    c1x = parseInt(zoom * parseFloat(await element.getAttribute('cx').then(function (x) {return x})) - xoff);
-    c1y = parseInt(zoom * parseFloat(await element.getAttribute('cy').then(function (x) {return x})) - yoff);
+    c1x = parseInt(parseFloat(await element.getAttribute('cx').then(function (x) {return x})));
+    c1y = parseInt(parseFloat(await element.getAttribute('cy').then(function (x) {return x})));
     element = await driver.findElement(By.id('c2'));
-    c2x = parseInt(zoom * parseFloat(await element.getAttribute('cx').then(function (x) {return x})) - xoff);
-    c2y = parseInt(zoom * parseFloat(await element.getAttribute('cy').then(function (x) {return x})) - yoff);
-    console.log( c1x + ' | ' + c1y + ' | ' + c2x+ ' | ' + c2y);
-    console.log( x1 + ' | ' + y1 + ' | ' + x2+ ' | ' + y2);
-/*    await driver.findElement(By.id('c1')).click();
-    // mode = await driver.findElement(By.id('b_move')).click();
-    await driver.sleep(2000);
-    await actions.move({ x: c1x, y: c1y, duration: 2000}).press();
-    // await driver.sleep(2000);
-    // await actions.move({ x: c1x, y: c1y, duration: 1000});
-    console.log('hover 1');
-    await actions.move({ x: x2, y: y1, duration: 2000});
-    console.log('drag 1');
-    await actions.release().perform();                              // .perform()
-    console.log('release 1');
-    // mode = await driver.findElement(By.id('b_move')).click();
-    // await actions.move({ x: c2x, y: c2y, duration: 100}).press();
-    // console.log('hover 2');
-    // await actions.move({ x: c1x, y: y1, duration: 1000});
-    // console.log('drag 2');
-    // await actions.release().perform(); */
+    c2x = parseInt(parseFloat(await element.getAttribute('cx').then(function (x) {return x})));
+    c2y = parseInt(parseFloat(await element.getAttribute('cy').then(function (x) {return x})));
+    console.log('bubbles: ' + c1x + ' | ' + c1y + ' | ' + c2x + ' | ' + c2y);
+    console.log('offset endpoints: ' + x1 + ' | ' + y1 + ' | ' + x2 + ' | ' + y2);
+
     try {
       element = await driver.findElement(By.id('g1'));
       id = await element.getAttribute('id').then(function (x) {return x});
@@ -98,31 +89,23 @@ describe('Cubic creation', () => {
     catch (event) {
       console.log(event);
     }
-     try {
-      element = await driver.findElement(By.tagName('path'));
-      // console.log( await element.getAttribute('tagname'));
-      // x1 = await element.getAttribute('x1').then(function (x) {return x});
-      // y1 = await element.getAttribute('y1').then(function (x) {return x});
-      // x2 = await element.getAttribute('x2').then(function (x) {return  x});
-      // y2 = await element.getAttribute('y2').then(function (x) {return  x});
-      // // console.log('x1: ' + x1 + ' | y1: ' + y1 + ' | x2: ' + x2 + ' | y2: ' + y2);
-    }
-    catch (event) {
-      console.log(event);
-    }
     finally {
       expect(type).to.equal('cubic', 'type:cubic');
       expect(id).to.equal('g1', 'id: g1');
-       expect(c1x).to.be.approximately(0.4*(2.0*x1 - x2)/zoom - xoff, 0.01*Math.abs(x1 - x2)/zoom, 'control 1x');
-       expect(c1y).to.be.approximately(0.4*(2.0*y1 - y2)/zoom - yoff, 0.01*Math.abs(y1 - y2)/zoom, 'control 1y');
-       expect(c2x).to.be.approximately(0.4*(2.0*x1 - x2)/zoom - xoff, 0.01*Math.abs(x1 - x2)/zoom, 'control 2x');
-       expect(c2y).to.be.approximately(0.6*(2.0*y1 - y2)/zoom - yoff, 0.01*Math.abs(y1 - y2)/zoom, 'control 2y');
-      // expect(x1).to.equal(((300)/zoom).toString(), 'x1');
-      // expect(y1).to.equal(((300)/zoom).toString(), 'y1');
-      // expect(x2).to.equal(((400)/zoom).toString(), 'x2');
-      // expect(y2).to.equal(((400)/zoom).toString(), 'y2');
+      let c1_x = (x1 - xoff - 0.4*(x1 - x2))/zoom;      // de-offset from body coords
+      let c1_y = (y1 - yoff - 0.4*(y1 - y2))/zoom;      // 'add' percentage of 'line' length
+      let c2_x = (x1 - xoff - 0.6*(x1 - x2))/zoom;      // and scale to zoom
+      let c2_y = (y1 - yoff - 0.6*(x1 - x2))/zoom;      // to image coords
+      console.log('c1x: ' + c1x + ' ' + c1_x);
+      console.log('c1y: ' + c1y + ' ' + c1_y);
+      console.log('c2x: ' + c2x + ' ' + c2_x);
+      console.log('c2y: ' + c2y + ' ' + c2_y);
+      expect(c1x).to.be.approximately(c1_x, 0.01*c1x, 'control 1x');
+      expect(c1y).to.be.approximately(c1_y, 0.01*c1y, 'control 1y');
+      expect(c2x).to.be.approximately(c2_x, 0.01*Math.abs(c2x), 'control 2x');
+      expect(c2y).to.be.approximately(c2_y, 0.01*Math.abs(c2y), 'control 2y');
     }
     mode = await driver.findElement(By.id('b_move')).click();
-    driver.quit();
+    // driver.quit();
   });
 });
