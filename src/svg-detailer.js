@@ -1,54 +1,8 @@
 // construct svgLayer from container's attributes and data-attributes
 
 /*
- Discussion/tradeoff issues with SVGDraw as of 03MAR2016 \\ was 17FEB2016:
 
- Priorities (JRF):
- 0. FIXED BUG New text element eats last line of prior text element (?!?!?!?)!
- 0.5 incorrect action on mouseleave: always reverts to MOVE through exitEditGroup
- 0.7 repurpose ESC to remove last point vs whole element.
- 1. FIXED BUG: polyline end point sometimes glitches to create new point.
- 2. DONE-ish text shortcut/hotkey modification
- 3. DONE mouseover on text for repositioning
- 4. DONE text broken after integration of Mousetrap (just discovered in testing)
- 5. DONE need encapsulated listener for image load complete, otherwise scaling faults, etc.
- 6. DONE (a) below
- 7. DONE (e) below -- crude straight replication of previous button-ology
- 8. (f) below, f.v implemented; f.i/ii, f.vi
- 9. (l) below
- 10. (g) below
- 11. DONE (o) below
- Features/Issues:
- a. DONE Scale and normalize image to container (only partially correct now)
- (aspect ratio compensation source to target svg)
- b. Explicit edit mode versus auto mouseenter
- c. Specific style parameters per svg element type
- d. DONE "Semantic" zoom applied to bubbles on creation (vis a vis real-time)
- e. DONE Tableau of function mode buttons/indicators
- (auto-build controls on invocation from div data- element)
- f. HOT-KEYS for: abort last individual point (e.g., escape)
- i. return cursor to previous point (what key/combination?)
- ii. escape at initial point aborts element? combine with (i)?
- iii. on edit of poly-element, only allow one reversion of currently edited point
- (use same mechanism?  i.e., stash reversion point on creation - no, this is a sequenced element)
- iv. abort last/current element (e.g., delete)
- v. finish current element (e.g., enter)
- vi. DONE: ^B to move current element to "bottom"; ^T to move current element to "top"
- (or Move [element] to the top function - harder to make sure it works)
- vii. enter/inhibit mouse"over" editing
- viii. SPACE held down to drag-pan
- g. DONE: Export svg markup (currently elements are partially corrupted - i.e., incomplete end tag)
- Packaging:
- verbatim
- style vs element segregation
- h. "Stacking" issues - tokenize elements for selection outside the image.
- i. After the fact grouping
- j. DONE Eliminate jQuery
- k. Color picker
- l. Measurement specifier and tool (caliper)
- m. +/- 90 degree text orientation
- n. DONE: ARROW super-element
- o. DONE: more graceful handling of text to screen input; e.g., hidden textbox
+Revised version of svg-detailer/svgDraw 06MAR2020
  */
 var xC = 0;
 var yC = 0;
