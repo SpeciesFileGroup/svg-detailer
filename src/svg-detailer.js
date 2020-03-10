@@ -2581,7 +2581,7 @@ function jsonSVG(verbatim) {      // package SVG into JSON object
   let clonedSVG = collectSVG(false).firstChild;     // strip off <svg...> </svg>
   clonedSVG.removeAttribute('id');
   clonedSVG.removeAttribute('transform');
-  clonedSVG.childNodes[0].remove();
+  // clonedSVG.childNodes[0].remove();    // this was originally the image, now removed if !verbatim
   let JSONsvg = {
     "data": {
       "type": "svg",
@@ -2844,7 +2844,7 @@ function buildSVGmenu() {
   svgMenu.appendChild(thisButton);
   // thisButton.addEventListener('click', (event) => { this.blur(); showSVG(false); });
   thisButton.addEventListener('click', (event) => {
-    showSVG(false);
+    jsonSVG(false);
   });
 
   svgMenu.appendChild(document.createElement('br'))
