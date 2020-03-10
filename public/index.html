@@ -5,13 +5,29 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <link rel="icon" href="<%= BASE_URL %>favicon.ico">
-    <title>svg</title>
+    <title>SVG-Detailer</title>
   </head>
   <body>
-    <noscript>
-      <strong>We're sorry but svg doesn't work properly without JavaScript enabled. Please enable it to continue.</strong>
-    </noscript>
-    <div id="app"></div>
-    <!-- built files will be auto injected -->
+    <div>
+      <label id="choose">Choose file to annotate: </label>
+      <input id="image_file" type="file">
+    </div>
+      <div id="container" style="overflow: hidden; left: 50px; top: 175px; position: inherit;" tabindex="0"
+                          data-height="600"
+                          data-width="600"
+                          data-image=""
+                          data-buttons='{"buttons": [
+                          {"function": "polygon", "color": "FF0000"},
+                          {"function": "polyline", "color": "FF0000"},
+                          {"function": "line", "color": "FF0000"},
+                          {"function": "rectangle", "color": "FF0000"},
+                          {"function": "circle", "color": "FF0000"},
+                          {"function": "ellipse", "color": "FF0000"},
+                          {"function": "cubic", "color": "FF0000"},
+                          {"function": "quadratic", "color": "FF0000"},
+                          {"function": "draw", "color": "FF0000"},
+                          {"function": "text", "color": "0000FF"}
+                          ]}'>
+      </div>
   </body>
 </html>

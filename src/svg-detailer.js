@@ -742,7 +742,7 @@ function checkElementConflict(group) {  // only invoked by mouseenter listeners
     if (thisGroup.id != group.id) {
       return true
     }
-    else {
+  else {
       return false
     }
   }
@@ -802,12 +802,12 @@ function setSizeElement(bubble) {    // end of SHIFT leaves single bubble; shoul
   thisBubble = group.lastChild.firstChild;      // this is the center/first bubble
   cursorMode = thisElement.tagName;
   if ((cursorMode == 'circle') || (cursorMode == 'ellipse'))
-  {
-    let endK = group.lastChild.childElementCount;        // total bubbles, leave the first one (thisElement)
-    for (let k = endK; k > 0; k--) {
+    {
+      let endK = group.lastChild.childElementCount;        // total bubbles, leave the first one (thisElement)
+      for (let k = endK; k > 0; k--) {
       group.lastChild.lastChild.remove();      // remove resize bubbles from the end
+      }
     }
-  }
   svgInProgress = 'SIZE';
   console.log('svgInProgress = SIZE, cursorMode = ' + cursorMode + ' ' + thisElement.tagName)
   group.removeEventListener('mouseenter', mouseEnterFunction)
@@ -1411,8 +1411,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         let thesePoints = thisElement.attributes['points'].value.trim();
         let splitPoints = thesePoints.split(' ');
         if (thisBubble != null) {       // look for bubble to denote just move THIS point only
-          // currently, no distinction is made between existing vertex and new point
-          // however, this may change in the future JRF 23NOV15
+                                        // currently, no distinction is made between existing vertex and new point
+                                        // however, this may change in the future JRF 23NOV15
           thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom;     // translate the bubble
           thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
           if (isNumeric(thisBubble.id)) {       // presume integer for now
@@ -2537,6 +2537,7 @@ function collectSVG(verbatim) {   // verbatim true includes all markup, false me
     clonedSVG.removeAttribute('height');
     clonedSVG.removeAttribute('width');
     clonedSVG.firstChild.attributes['transform'].value = 'translate(0, 0)scale(1)';
+    thisXLT.children['xltImage'].remove();
   }
   let innerElement;
   let thisG;
@@ -2580,7 +2581,7 @@ function jsonSVG(verbatim) {      // package SVG into JSON object
   let clonedSVG = collectSVG(false).firstChild;     // strip off <svg...> </svg>
   clonedSVG.removeAttribute('id');
   clonedSVG.removeAttribute('transform');
-  clonedSVG.childNodes[0].remove();
+  // clonedSVG.childNodes[0].remove();    // this was originally the image, now removed if !verbatim
   let JSONsvg = {
     "data": {
       "type": "svg",
@@ -2843,10 +2844,9 @@ function buildSVGmenu() {
   svgMenu.appendChild(thisButton);
   // thisButton.addEventListener('click', (event) => { this.blur(); showSVG(false); });
   thisButton.addEventListener('click', (event) => {
-    showSVG(false);
+    jsonSVG(false);
   });
 
-  //svgMenu.innerHTML += '<br>'; <--- This breaks EVERYTHING and it will destroy DOM objects converting it in string.
   svgMenu.appendChild(document.createElement('br'))
 
   let thisTextArea = document.createElement('textarea');
@@ -2858,4 +2858,4 @@ function setTextHeight() {
   textHeight = document.getElementById('textSize').value
 }
 
-//export default SVGDraw
+export default SVGDraw

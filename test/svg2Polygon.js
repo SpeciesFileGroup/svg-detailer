@@ -1,14 +1,14 @@
-const enable_log = false;
 const { Builder, By, Key, until} = require('selenium-webdriver');
 const {expect} = require('chai');
+const enable_log = false;
 describe('Polygon creation', () => {
   const driver = new Builder().forBrowser('firefox').build();
   driver.manage().setTimeouts({implicit: 40000});
   const actions = driver.actions();
 
   it('Should create an element with id g1 and type polygon', async () => {
-    // await driver.get('http://localhost:8081/');
-    await driver.get('file:///Users/jrichardflood/RubyMineProjects/svg-detailer/demo/index.html');
+    await driver.get('http://localhost:8081/');
+    // await driver.get('file:///Users/jrichardflood/RubyMineProjects/svg-detailer/demo/index.html');
     await driver.findElement(By.id('image_file')).sendKeys('/Users/jrichardflood/RubymineProjects/svg-detailer/test/images/testImage.jpg');
     let element, type, id, xoff, yoff, zoom, transform, i, points, px, py, coords, idealPoints = [];
     try {
@@ -79,7 +79,7 @@ describe('Polygon creation', () => {
     }
     let mode = await driver.findElement(By.id('b_move')).click();
     await driver.quit();
-  })
+  });
   function console_log(object) {
     if(enable_log) console.log(object)
   }
