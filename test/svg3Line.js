@@ -16,33 +16,34 @@
   NOTE: action drawing coordinates are translated by the offsets of the container <div>
  */
 const { Builder, By, Key, until} = require('selenium-webdriver');
-// const {before, after} = require('selenium-webdriver/testing');
-// const assert = require('assert');
-// const dummy = require('mocha');
+const enable_log = false;
 const {expect} = require('chai');
 describe('Line creation', () => {
   const driver = new Builder().forBrowser('firefox').build();
   driver.manage().setTimeouts({implicit: 40000});
   const actions = driver.actions();
-  // const mouse = actions.mouse();
   it('Should create an svg element with id "g1" and type "line"', async () => {
     await driver.get('http://localhost:8081/');
-    // console.log('page');
+    // await driver.get('file:///Users/jrichardflood/RubyMineProjects/svg-detailer/demo/index.html');
     await driver.findElement(By.id('image_file')).sendKeys('/Users/jrichardflood/RubymineProjects/svg-detailer/test/images/testImage.jpg');
     let element, type, id, zoom, transform, xoff, yoff, x1, x2, y1, y2;
+    x1 = 300;
+    y1 = 300;   // failsafe to
+    x2 = 400;   // non-offset values
+    y2 = 400;
     try {
       element = await driver.findElement(By.id('container'));
       xoff = parseInt(await element.getAttribute('offsetLeft').then(function (x) {return x}));
       yoff = parseInt(await element.getAttribute('offsetTop').then(function (x) {return x}));
-      // console.log('xoff: ' + xoff + ' | yoff: ' + yoff);
+      console_log('xoff: ' + xoff + ' | yoff: ' + yoff);
       element = await driver.findElement(By.id('xlt'));
       transform = await element.getAttribute('transform');
-      // console.log(transform, typeof transform);
+      console_log(transform, typeof transform);
       zoom = transform.split('(');
       zoom = zoom[2].split(')');
-      // console.log(zoom[0]);
+      console_log(zoom[0]);
       zoom = parseFloat(zoom[0]);  //((transform.toString()).split('(')[3]).split(')')[0]);
-      // console.log('xoff: ' + xoff + ' | yoff: ' + yoff + ' | zoom: ' + zoom);
+      console_log('xoff: ' + xoff + ' | yoff: ' + yoff + ' | zoom: ' + zoom);
       x1 = 300 + xoff;
       y1 = 300 + yoff;
       x2 = 400 + xoff;
@@ -50,12 +51,8 @@ describe('Line creation', () => {
     }
     catch (event){
       console.log(event);
-      x1 = 300;
-      y1 = 300;   // failsafe to
-      x2 = 400;   // non-offset values
-      y2 = 400;
     }
-    // console.log('x1: ' + x1 + ' | y1: ' + y1 + ' | x2: ' + x2 + ' | y2: ' + y2);
+    console_log('x1: ' + x1 + ' | y1: ' + y1 + ' | x2: ' + x2 + ' | y2: ' + y2);
     await driver.findElement(By.css('#b_line')).click();
     await actions.move({ x: x1, y: y1, duration: 100}).press();
     await actions.move({ x: x2, y: y2, duration: 1000});
@@ -64,19 +61,18 @@ describe('Line creation', () => {
       element = await driver.findElement(By.id('g1'));
       id = await element.getAttribute('id').then(function (x) {return x});
       type = await element.getAttribute('type').then(function (x) {return x});
-      // console.log('id: ' + id + ' | type: ' + type);
+      console_log('id: ' + id + ' | type: ' + type);
     }
     catch (event) {
       console.log(event);
     }
     try {
       element = await driver.findElement(By.tagName('line'));
-      // console.log( await element.getAttribute('tagname'));
       x1 = await element.getAttribute('x1').then(function (x) {return x});
       y1 = await element.getAttribute('y1').then(function (x) {return x});
       x2 = await element.getAttribute('x2').then(function (x) {return  x});
       y2 = await element.getAttribute('y2').then(function (x) {return  x});
-      // console.log('x1: ' + x1 + ' | y1: ' + y1 + ' | x2: ' + x2 + ' | y2: ' + y2);
+      console_log('x1: ' + x1 + ' | y1: ' + y1 + ' | x2: ' + x2 + ' | y2: ' + y2);
     }
     catch (event) {
       console.log(event);
@@ -90,6 +86,9 @@ describe('Line creation', () => {
       expect(y2).to.equal(((400)/zoom).toString(), 'y2');
       }
     let mode = await driver.findElement(By.id('b_move')).click();
-    // driver.quit();
+    await driver.quit();
   });
+  function console_log(object) {
+    if(enable_log) console.log(object)
+  }
 });

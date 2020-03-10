@@ -1020,10 +1020,19 @@ function createBubbleGroup(group) {
         theseCoords[5] = theseCoords[3];          // for control lines
       }
       // calculate centroid for shift bubble
-      let xn = parseFloat(theseCoords[0]) + parseFloat(theseCoords[2]) + parseFloat(theseCoords[4]) + parseFloat(theseCoords[6])
-      let yn = parseFloat(theseCoords[1]) + parseFloat(theseCoords[3]) + parseFloat(theseCoords[5]) + parseFloat(theseCoords[7])
-      xn = ((xn) / 4).toFixed(3)
-      yn = ((yn) / 4).toFixed(3)
+      let xn, yn;
+      if (thisCurveTypeQuadratic) {
+        xn = parseFloat(theseCoords[0]) + parseFloat(theseCoords[2]) + parseFloat(theseCoords[6]);
+        yn = parseFloat(theseCoords[1]) + parseFloat(theseCoords[3]) + parseFloat(theseCoords[7]);
+        xn = ((xn) / 3).toFixed(3);
+        yn = ((yn) / 3).toFixed(3);   // this calculation is less wrong for quadratic ...
+      }
+      else {
+        xn = parseFloat(theseCoords[0]) + parseFloat(theseCoords[2]) + parseFloat(theseCoords[4]) + parseFloat(theseCoords[6])
+        yn = parseFloat(theseCoords[1]) + parseFloat(theseCoords[3]) + parseFloat(theseCoords[5]) + parseFloat(theseCoords[7])
+        xn = ((xn) / 4).toFixed(3);
+        yn = ((yn) / 4).toFixed(3);
+      }
       // create the "bounding" polygon  'poly'
       bubbleGroup.appendChild(createBoundsPoly(theseCoords));
       bubbleGroup.appendChild(createShiftBubble(xn, yn, 'shift'));    // this is the move element bubble
@@ -1064,9 +1073,9 @@ function createBubbleGroup(group) {
 
       // insert new point bubbles in separate parallel group
       let newBubbleGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        thisX = parseFloat(thisPoint[0]);
-        thisY = parseFloat(thisPoint[1]);
-        for (let k = 0; k < splitPoints.length; k++) {    // append this point and an intermediary point
+      thisX = parseFloat(thisPoint[0]);
+      thisY = parseFloat(thisPoint[1]);
+      for (let k = 0; k < splitPoints.length; k++) {    // append this point and an intermediary point
         //thisPoint  = splitPoints[k].split(',');
         bubbleGroup.appendChild(createPointBubble(thisX, thisY, k.toString()));   // add the vertex point
         if (k < splitPoints.length - 1) {     // since we are looking ahead one point
@@ -1695,12 +1704,12 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         }
         let bubbles = event.target.parentElement.children
         if(bubbles['E']) {      // translate editing circle's bubbles
-        bubbles['E'].attributes['cx'].value = parseFloat(thisCircX) + radius
-        bubbles['S'].attributes['cy'].value = parseFloat(thisCircY) + radius
-        bubbles['W'].attributes['cx'].value = parseFloat(thisCircX) - radius
-        bubbles['N'].attributes['cy'].value = parseFloat(thisCircY) - radius
-      }
-      //thisElement.attributes['stroke'].value = cursorColor;   ///// disabled due to unwanted side effects
+          bubbles['E'].attributes['cx'].value = parseFloat(thisCircX) + radius
+          bubbles['S'].attributes['cy'].value = parseFloat(thisCircY) + radius
+          bubbles['W'].attributes['cx'].value = parseFloat(thisCircX) - radius
+          bubbles['N'].attributes['cy'].value = parseFloat(thisCircY) - radius
+        }
+        //thisElement.attributes['stroke'].value = cursorColor;   ///// disabled due to unwanted side effects
       }
     }
 
@@ -2064,21 +2073,11 @@ SVGDraw.prototype.keyHandler = function () {
       default:
         secondKey = null;
         firstKey = thisKey;
-      //thisKey = event.key;
-      //if (thisKey == 'Shift' || thisKey == 'Meta') {
-      //  secondKey = firstKey;
-      //  firstKey = thisKey;
-      //  return;
     }
     if ((cursorMode == 'text') && ((inFocus.tagName == 'BODY') || (inFocus.id == svgLayer.parentElement.id))) {
       updateSvgText(event);             // pass event or key
       return;
     }
-    //thisKey = event.key;
-    //if (thisKey == 'Shift' || thisKey == 'Meta') {
-    //secondKey = firstKey;
-    //firstKey = thisKey;
-    //}
 
     if ((event.key == 'Enter') || thisKeyCode == 13) {    // added literal decimal value for chrome/safari
       switch (cursorMode) {
@@ -2444,18 +2443,6 @@ function updateSvgText(event) {                       // modified to eliminate m
   let thisKeyCode = event.keyCode;
   //if (thisKey == undefined) {                   // undefined if not FireFox
   thisKey = lookUpKey(event);     // consolidate
-  //if (cursorMode != 'text') {     // redundant, since we only get here from keyDown handler
-  //  switch (event.keyCode) {
-  //    case 13:                    // Enter
-  //      dblClick();
-  //      break;
-  //  }
-  //  if (thisKeyCode == 8) {       // prevent Backspace from invoking BACK browser function
-  //    event.preventDefault();
-  //  }
-  //  return false;
-  //}
-  //var text4svg = document.getElementById("text4svg");   // this control eliminated
   if (thisElement == null) {      // this can occur if <text> element just completed and no new one started
     if (thisKeyCode == 8) {       // prevent Backspace from invoking BACK browser function
       event.preventDefault();

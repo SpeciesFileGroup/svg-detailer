@@ -1,28 +1,29 @@
 const { Builder, By, Key, until} = require('selenium-webdriver');
 const {expect} = require('chai');
+const enable_log = false;
 describe('Circle creation', () => {
   const driver = new Builder().forBrowser('firefox').build();
-  // let mode = driver.findElement(By.id, 'mode');
   driver.manage().setTimeouts({implicit: 40000});
   const actions = driver.actions();
 
   it('Should create an element with id g1 and type circle', async () => {
     await driver.get('http://localhost:8081/');
+    // await driver.get('file:///Users/jrichardflood/RubyMineProjects/svg-detailer/demo/index.html');
     await driver.findElement(By.id('image_file')).sendKeys('/Users/jrichardflood/RubymineProjects/svg-detailer/test/images/testImage.jpg');
     let element, type, id, xoff, yoff, zoom, transform, cx, cy, r;
     try {
       element = await driver.findElement(By.id('container'));
       xoff = parseInt(await element.getAttribute('offsetLeft').then(function (x) {return x}));
       yoff = parseInt(await element.getAttribute('offsetTop').then(function (x) {return x}));
-      // console.log('xoff: ' + xoff + ' | yoff: ' + yoff);
+      console_log('xoff: ' + xoff + ' | yoff: ' + yoff);
       element = await driver.findElement(By.id('xlt'));
       transform = await element.getAttribute('transform');
-      // console.log(transform, typeof transform);
+      console_log(transform, typeof transform);
       zoom = transform.split('(');
       zoom = zoom[2].split(')');
-      // console.log(zoom[0]);
+      console_log(zoom[0]);
       zoom = parseFloat(zoom[0]);  //((transform.toString()).split('(')[2]).split(')')[0]);
-      // console.log('xoff: ' + xoff + ' | yoff: ' + yoff + ' | zoom: ' + zoom);
+      console_log('xoff: ' + xoff + ' | yoff: ' + yoff + ' | zoom: ' + zoom);
     }
     catch (event) {
       console.log(event);
@@ -38,12 +39,12 @@ describe('Circle creation', () => {
       element = await driver.findElement(By.id('g1'));
       id = await element.getAttribute('id').then(function (x) {return x});
       type = await element.getAttribute('type').then(function (x) {return x});
-      // console.log('id: ' + id + ' | type: ' + type);
+      // console_log('id: ' + id + ' | type: ' + type);
       element = await driver.findElement(By.css('circle'));
       cx = await element.getAttribute('cx').then(function (x) {return x});
       cy = await element.getAttribute('cy').then(function (x) {return x});
       r = await element.getAttribute('r').then(function (x) {return x});
-      // console.log('cx: ' + cx + ' | cy: ' + cy);
+      console_log('cx: ' + cx + ' | cy: ' + cy);
     }
     catch (event) {
       console.log(event);
@@ -56,6 +57,9 @@ describe('Circle creation', () => {
       expect(r).to.equal((200/zoom).toString(), 'r')
     }
     let mode = await driver.findElement(By.id('b_move')).click();
-    driver.quit();
-  })
+    await driver.quit();
+  });
+  function console_log(object) {
+    if(enable_log) console.log(object)
+  }
 });

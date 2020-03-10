@@ -10,72 +10,76 @@
     batch/suite (from .../svg-detailer/):
       mocha --no-timeouts executes all tests in ./test/ from .../svg-detailer/
     individually:
-      mocha --no-timeouts ./test/svg3Line (when executed from .../svg-detailer/)
-      mocha --no-timeouts ./svg3Line (when executed from .../svg-detailer/test/)
+      mocha --no-timeouts ./test/svg8Quadratic (when executed from .../svg-detailer/)
+      mocha --no-timeouts svg8Quadratic (when executed from .../svg-detailer/test/)
 
   NOTE: action drawing coordinates are translated by the offsets of the container <div>
  */
-
+const enable_log = false;
 const { Builder, By, Key, until} = require('selenium-webdriver');
 const {expect} = require('chai');
 describe('Quadratic creation', () => {
   const driver = new Builder().forBrowser('firefox').build();
   driver.manage().setTimeouts({implicit: 40000});
   const actions = driver.actions();
-  // const actionChains = ActionChains(driver);
-  // const mouse = actions.mouse();
   it('Should create an svg element with id "g1" and type "quadratic"', async () => {
     await driver.get('http://localhost:8081/');
-    // console.log('page');
+    // await driver.get('file:///Users/jrichardflood/RubymineProjects/svg-detailer/demo/index.html');
     await driver.findElement(By.id('image_file')).sendKeys('/Users/jrichardflood/RubymineProjects/svg-detailer/test/images/testImage.jpg');
-    let container, element, type, id, zoom, transform, xoff, yoff, mode, x1, x2, y1, y2, d, points, c1x, c1y, c2x, c2y;
-    x1 = 300;
-    y1 = 300;   // failsafe to
-    x2 = 400;   // non-offset values
-    y2 = 400;
+    let container, element, type, id, zoom, transform, xoff, yoff, mode, p1x, p2x, p1y, p2y, d, points, c1x, c1y, c2x, c2y;
+    p1x = 300;
+    p1y = 300;   // failsafe to
+    p2x = 400;   // non-offset values
+    p2y = 400;
     try {
       element = await driver.findElement(By.id('container'));
       xoff = parseInt(await element.getAttribute('offsetLeft').then(function (x) {return x}));
       yoff = parseInt(await element.getAttribute('offsetTop').then(function (x) {return x}));
-      // console.log('xoff: ' + xoff + ' | yoff: ' + yoff);
+      console_log('xoff: ' + xoff + ' | yoff: ' + yoff);
       container = element;
       element = await driver.findElement(By.id('xlt'));
       transform = await element.getAttribute('transform');
-      // console.log(transform, typeof transform);
+      console_log(transform, typeof transform);
       zoom = transform.split('(');
       zoom = zoom[2].split(')');
-      // console.log(zoom[0]);
+      console_log(zoom[0]);
       zoom = parseFloat(zoom[0]);
-      // console.log('xoff: ' + xoff + ' | yoff: ' + yoff + ' | zoom: ' + zoom);
-      x1 += xoff;
-      y1 += yoff;    // offset into svgLayer
-      x2 += xoff;
-      y2 += yoff;
-      // a quadratic will have four ordered points
+      console_log('xoff: ' + xoff + ' | yoff: ' + yoff + ' | zoom: ' + zoom);
+      p1x += xoff;
+      p1y += yoff;    // offset into svgLayer
+      p2x += xoff;
+      p2y += yoff;
+      // a quadratic will have three ordered points
     }
     catch (event){
       console.log(event);
     }
-    // console.log('x1: ' + x1 + ' | y1: ' + y1 + ' | x2: ' + x2 + ' | y2: ' + y2);
+    console_log('p1x: ' + p1x + ' | p1y: ' + p1y + ' | p2x: ' + p2x + ' | p2y: ' + p2y);
     await driver.findElement(By.css('#b_quadratic')).click();
-    await actions.move({ x: x1, y: y1, duration: 100}).press();
-    await actions.move({ x: x2, y: y2, duration: 1000});
+    await actions.move({ x: p1x, y: p1y, duration: 100}).press();
+    await actions.move({ x: p2x, y: p2y, duration: 1000});
     await actions.release().perform();
-    console.log('create');
+    // extract pixel coordinates of the quadratic's edit points
+    element = await driver.findElement(By.id('p1'));
+    let p1_x = parseInt(parseFloat(await element.getAttribute('cx').then(function (x) {return x})));
+    let p1_y = parseInt(parseFloat(await element.getAttribute('cy').then(function (x) {return x})));
     element = await driver.findElement(By.id('c1'));
-    c1x = parseInt(parseFloat(await element.getAttribute('cx').then(function (x) {return x})) - xoff);
-    c1y = parseInt(parseFloat(await element.getAttribute('cy').then(function (x) {return x})) - yoff);
-    // element = await driver.findElement(By.id('c2'));
-    // c2x = parseInt(zoom * parseFloat(await element.getAttribute('cx').then(function (x) {return x})) - xoff);
-    // c2y = parseInt(zoom * parseFloat(await element.getAttribute('cy').then(function (x) {return x})) - yoff);
-    console.log('bubbles: ' + c1x + ' | ' + c1y + ' | ' + c2x + ' | ' + c2y);
-    console.log('offset endpoints: ' + x1 + ' | ' + y1 + ' | ' + x2 + ' | ' + y2);
-
+    let c1_x = parseInt(parseFloat(await element.getAttribute('cx').then(function (x) {return x})));
+    let c1_y = parseInt(parseFloat(await element.getAttribute('cy').then(function (x) {return x})));
+    element = await driver.findElement(By.id('shift'));
+    let shift_x = parseInt(parseFloat(await element.getAttribute('cx').then(function (x) {return x})));
+    let shift_y = parseInt(parseFloat(await element.getAttribute('cy').then(function (x) {return x})));
+    element = await driver.findElement(By.id('p2'));
+    let p2_x = parseInt(parseFloat(await element.getAttribute('cx').then(function (x) {return x})));
+    let p2_y = parseInt(parseFloat(await element.getAttribute('cy').then(function (x) {return x})));
+    console_log('control point: ' + c1_x + ' | ' + c1_y);
+    console_log('offset endpoints: ' + p1x + ' | ' + p1y + ' | ' + p2x + ' | ' + p2y);
+    console_log('pixel endpoints: ' + p1_x + ' | ' + p1_y + ' | ' + p2_x + ' | ' + p2_y);
     try {
       element = await driver.findElement(By.id('g1'));
       id = await element.getAttribute('id').then(function (x) {return x});
       type = await element.getAttribute('type').then(function (x) {return x});
-      // console.log('id: ' + id + ' | type: ' + type);
+      console_log('id: ' + id + ' | type: ' + type);
     }
     catch (event) {
       console.log(event);
@@ -83,20 +87,28 @@ describe('Quadratic creation', () => {
     finally {
       expect(type).to.equal('quadratic', 'type:quadratic');
       expect(id).to.equal('g1', 'id: g1');
-      let c1_x = (x1 - xoff - 0.4*(x1 - x2))/zoom;      // de-offset from body coords
-      let c1_y = (y1 - yoff - 0.4*(y1 - y2))/zoom;      // 'add' percentage of 'line' length
-      // let c2_x = (x1 - xoff - 0.6*(x1 - x2))/zoom;      // and scale to zoom
-      // let c2_y = (y1 - yoff - 0.6*(x1 - x2))/zoom;      // to image coords
-      console.log('c1x: ' + c1x + ' ' + c1_x);
-      console.log('c1y: ' + c1y + ' ' + c1_y);
-      // console.log('c2x: ' + c2x + ' ' + c2_x);
-      // console.log('c2y: ' + c2y + ' ' + c2_y);
-      expect(c1x).to.be.approximately(c1_x, 0.01*c1x, 'control 1x');
-      expect(c1y).to.be.approximately(c1_y, 0.01*c1y, 'control 1y');
-      // expect(c2x).to.be.approximately(c2_x, 0.01*Math.abs(c2x), 'control 2x');
-      // expect(c2y).to.be.approximately(c2_y, 0.01*Math.abs(c2y), 'control 2y');
+      let dx = (p1x - p2x)/zoom;      // signed values
+      let dy = (p1y - p2y)/zoom;      // in pixel coords
+      c1x = (p1x - xoff)/zoom - 0.4*dx;      // de-offset from body coords, 'add' percentage of 'line' length
+      c1y = (p1y - yoff)/zoom - 0.4*dy;      //  and scale to zoom to image coords
+      let shiftx = ((p1x - xoff + p2x - xoff)/zoom + c1x)/3;  // centroid
+      let shifty = ((p1y - yoff + p2y - yoff)/zoom + c1y)/3;
+      console_log('c1x: ' + c1x + ' ' + c1_x);
+      console_log('c1y: ' + c1y + ' ' + c1_y);
+      console_log([shift_x, shift_y, shiftx, shifty]);    // centroids extracted vs calculated
+      expect(p1_x).to.be.approximately((p1x - xoff)/zoom, 1, 'point 1x');
+      expect(p1_y).to.be.approximately((p1y - yoff)/zoom, 1, 'point 1y');   // accurate to one pixel?
+      expect(c1_x).to.be.approximately(c1x, 1, 'control 1x');
+      expect(c1_y).to.be.approximately(c1y, 1, 'control 1y');
+      expect(shift_x).to.be.approximately(shiftx, 1, 'shift 1x');
+      expect(shift_y).to.be.approximately(shifty, 1, 'shift 1y');
+      expect(p2_x).to.be.approximately((p2x - xoff)/zoom, 1, 'point 1x');
+      expect(p2_y).to.be.approximately((p2y - yoff)/zoom, 1, 'point 1y');
     }
     mode = await driver.findElement(By.id('b_move')).click();
-    driver.quit();
+    await driver.quit();
   });
+  function console_log(object) {
+    if(enable_log) console.log(object)
+  }
 });
