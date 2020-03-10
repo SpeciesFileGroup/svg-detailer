@@ -42,10 +42,11 @@ Editing is enabled through mouseover events on the &lt;g&gt; groups containing e
 type of the form &lt;g1 type="polyline"&gt; for convenience in analysis and debugging. Similarly to Google map editing 
 of drawing elements, "bubbles" appear at control points appropriate to the given element. On mouse-down on these bubbles,
 dragging the point relocates it for the element.  Due to the definition of rectangle, circle, ellipse, and text,
-moving their base-point effectively relocates the element.  Recently, an element-shift-point bubble, slightly larger and 
-dark real-colored, has been introduced to relocate all points of an SVG graphic element.
-Polyline, polygon, and "draw" elements have "insertion" points depicted at the midpoint of each segment to allow
-refinement of the shape.  Each such insertion offers new insertion points, none of which persist unless used.
+moving their base-point effectively relocates the element.  Recently, a centroidal element-shift-point bubble, slightly 
+larger and dark teal-colored (as with rectangle, circle, ellipse and text), has been introduced to relocate all points 
+of an SVG graphic element.  Polyline, polygon, and "draw" elements have "insertion" points depicted at the midpoint of 
+each segment to allow refinement of the shape.  Each such insertion offers new insertion points, none of which persist 
+unless used.
 
 ### Hot keys:
 
@@ -62,4 +63,5 @@ entire element can be backtracked to nothing. The intention is to extend this to
 
 ## Funding 
 
-This project was funded in part by NSF-ABI-1356381.  Any opinions, findings and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of the National Science Foundation. 
+This project was funded in part by NSF-ABI-1356381.  Any opinions, findings and conclusions or recommendations expressed 
+in this material are those of the author(s) and do not necessarily reflect the views of the National Science Foundation. 
