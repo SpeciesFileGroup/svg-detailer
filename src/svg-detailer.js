@@ -2859,3 +2859,9 @@ function setTextHeight() {
 }
 
 export default SVGDraw
+module.exports = {
+  SVGDraw,
+  buildSVGmenu,
+  showSVG,
+  jsonSVG,
+};
