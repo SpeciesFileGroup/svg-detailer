@@ -219,7 +219,7 @@ function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
         setCursorMode(thisMode)
       })
     }
-    buildSVGmenu();       // populate the button-ology from the data element description (mostly)
+    SVGDraw.prototype.buildSVGmenu();       // populate the button-ology from the data element description (mostly)
 
     document.onkeydown = self.keyHandler();   /////////////// This is probably tooo broad   /////////////////
     document.onkeyup = self.keyUpHandler();
@@ -2593,8 +2593,8 @@ SVGDraw.prototype.jsonSVG = function (verbatim) {      // package SVG into JSON 
   return JSONsvg;
 }
 
-function buildSVGmenu() {
-//  SVGDraw.prototype.buildSVGmenu = function() {
+// function buildSVGmenu() {
+ SVGDraw.prototype.buildSVGmenu = function() {
   let thisButton;
   thisButton = document.createElement('input');     // default MOVE button
   //thisButton.setAttribute('id', 'btn_' + buttons[i].function);
@@ -2823,7 +2823,7 @@ function buildSVGmenu() {
   svgMenu.appendChild(thisButton);
   thisButton.addEventListener('click', (event) => {
     thisButton.blur();
-    showSVG(true);
+    SVGDraw.prototype.showSVG(true);
   });
 
   thisButton = document.createElement('input');
@@ -2835,18 +2835,16 @@ function buildSVGmenu() {
   svgMenu.appendChild(thisButton);
   thisButton.addEventListener('click', (event) => {
     thisButton.blur();
-    showSVG(false);
+    SVGDraw.prototype.showSVG(false);
   });
 
   thisButton = document.createElement('input');
   thisButton.setAttribute('id', 'svgJSON');
   thisButton.setAttribute('type', 'button');
   thisButton.setAttribute('value', 'JSON SVG');
-  // thisButton.setAttribute('onclick', 'this.blur(); jsonSVG(false);');
   svgMenu.appendChild(thisButton);
-  // thisButton.addEventListener('click', (event) => { this.blur(); showSVG(false); });
   thisButton.addEventListener('click', (event) => {
-    jsonSVG(false);
+    SVGDraw.prototype.jsonSVG(false);
   });
 
   svgMenu.appendChild(document.createElement('br'))
