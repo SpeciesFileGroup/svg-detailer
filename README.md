@@ -59,7 +59,9 @@ entire element can be backtracked to nothing. The intention is to extend this to
 
 ## Demo
 
-[Here.](https://speciesfilegroup.org/svg-detailer)
+[Here.](https://speciesfilegroup.org/svg-detailer)  With the implementation of the npm package version of svg-detailer, 
+                                                  use of the program without using npm (and having no dependencies) only requires removing the final statement in the file 
+                                                  svg-detailer.js.  That is "export default SVGDraw".
 
 ## Funding 
 
