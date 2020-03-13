@@ -2,7 +2,6 @@
   config: npm install
           npm install -g selenium-webdriver
           npm install -g geckodriver
-      XX  npm install -g selenium-webdriver/testing  XX this seems to now be obsolete
           npm install -g mocha
           npm install -g chai
           npm run serve

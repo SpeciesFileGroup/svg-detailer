@@ -2,7 +2,6 @@
   config: npm install
           npm install -g selenium-webdriver
           npm install -g geckodriver
-          npm install -g selenium-webdriver/testing
           npm run serve
  */
 
