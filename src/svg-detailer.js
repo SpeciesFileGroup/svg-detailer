@@ -691,7 +691,7 @@ function clearEditElement(group) {   // given containing group; invoked by mouse
     console.log('clearEditElement: waitElement')
     return;
   }
-  if((thisGroup) && thisGroup != group) {   // collision
+  if((thisGroup) && (thisGroupID != group.id)) {   // collision
     console.log('clearEditElement: group conflict')
     return
   }
@@ -813,32 +813,6 @@ function setSizeElement(bubble) {    // end of SHIFT leaves single bubble; shoul
   group.removeEventListener('mouseenter', mouseEnterFunction)
   group.removeEventListener('mouseleave', mouseLeaveFunction)
 }
-
-// function OldsetSizeElement(bubble) {       // this sets up the single point functions
-//   //thisParent = element;                           // group containing real element and the bubbles group
-//   //thisElement = group.firstChild;    // this is the real element
-//   //cursorMode = group.firstChild.tagName;  // extract its tag
-//   thisBubble = bubble;
-//   let group = bubble.parentNode.parentNode;          // set group for mousemove
-//   thisGroup = group;
-//   thisElement = group.firstChild;    // this is the real element
-//   if (!((cursorMode == 'cubic') || (cursorMode == 'quadratic'))) {      // tagName will be 'path'
-//     cursorMode = thisElement.tagName;
-//   }
-// //////////////  group.attributes['onmouseenter'].value = ''; // disable mouseover on real element's containing group
-//   group.removeEventListener('mouseenter', mouseEnterFunction)
-// //////////////  group.attributes['onmouseleave'].value = ''; // disable mouseleave on real element's containing group
-//   group.removeEventListener('mouseleave', mouseLeaveFunction)
-//   // bubble.removeEventListener('mousedown', setSizeElement(bubble))
-//   if (!((cursorMode == 'cubic') || (cursorMode == 'quadratic'))) {      // tagName will be 'path'
-//     if (group.childElementCount > 1) {         // if more than one child, we have bubbles
-//       group.lastChild.remove();      // remove ALL bubbles, since we are going to drop into drag radius
-//     }
-//   }
-// //  eliminated savedCursorMode = 'MOVE';
-//   svgInProgress = 'SIZE';                     // so we have an active element, and it has been marked in progress
-//   // look for mousedown in handler for circle to transition to rubber band mode
-// }                                       // use mouseup or mousedown to terminate radius drag
 
 function setPointElement(bubble) {    // this performs the inline substitution of the selected bubble coordinates
   if (thisBubble == bubble) {   // this condition implies we mouseDowned on the point we are changing
