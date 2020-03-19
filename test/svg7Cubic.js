@@ -25,7 +25,7 @@ describe('Cubic creation', () => {
   const actions = driver.actions();
 
   it('Should create an svg element with id "g1" and type "cubic"', async () => {
-    await driver.get('http://localhost:8081/');
+    await driver.get('http://localhost:8080/');
     // await driver.get('file:///Users/jrichardflood/RubyMineProjects/svg-detailer/demo/index.html');
     await driver.findElement(By.id('image_file')).sendKeys('/Users/jrichardflood/RubymineProjects/svg-detailer/test/images/testImage.jpg');
     let container, element, type, id, zoom, transform, xoff, yoff, mode, p1x, p2x, p1y, p2y, d, points, c1x, c1y, c2x, c2y;
