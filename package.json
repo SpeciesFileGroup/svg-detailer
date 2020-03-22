@@ -27,9 +27,10 @@
     "server": "node --version",
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
+    "build:lib": "vue-cli-service build --target lib --name svg-detailer src/svg-detailer.js",
     "lint": "vue-cli-service lint",
     "test:unit": "vue-cli-service test:unit",
-    "build:library": "vue-cli-service build --target lib --name svg-detailer src/svg-detailer.js"
+    "build:demo": "vue-cli-service build --target lib --name ../demo/svg-detailer src/demo.js"
   },
   "dependencies": {
     "core-js": "^2.6.5",

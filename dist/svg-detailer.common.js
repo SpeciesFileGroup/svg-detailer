@@ -1442,54 +1442,7 @@ var es6_date_to_string = __webpack_require__("87b3");
 // construct svgLayer from container's attributes and data-attributes
 
 /*
- Discussion/tradeoff issues with SVGDraw as of 03MAR2016 \\ was 17FEB2016:
-
- Priorities (JRF):
- 0. FIXED BUG New text element eats last line of prior text element (?!?!?!?)!
- 0.5 incorrect action on mouseleave: always reverts to MOVE through exitEditGroup
- 0.7 repurpose ESC to remove last point vs whole element.
- 1. FIXED BUG: polyline end point sometimes glitches to create new point.
- 2. DONE-ish text shortcut/hotkey modification
- 3. DONE mouseover on text for repositioning
- 4. DONE text broken after integration of Mousetrap (just discovered in testing)
- 5. DONE need encapsulated listener for image load complete, otherwise scaling faults, etc.
- 6. DONE (a) below
- 7. DONE (e) below -- crude straight replication of previous button-ology
- 8. (f) below, f.v implemented; f.i/ii, f.vi
- 9. (l) below
- 10. (g) below
- 11. DONE (o) below
- Features/Issues:
- a. DONE Scale and normalize image to container (only partially correct now)
- (aspect ratio compensation source to target svg)
- b. Explicit edit mode versus auto mouseenter
- c. Specific style parameters per svg element type
- d. DONE "Semantic" zoom applied to bubbles on creation (vis a vis real-time)
- e. DONE Tableau of function mode buttons/indicators
- (auto-build controls on invocation from div data- element)
- f. HOT-KEYS for: abort last individual point (e.g., escape)
- i. return cursor to previous point (what key/combination?)
- ii. escape at initial point aborts element? combine with (i)?
- iii. on edit of poly-element, only allow one reversion of currently edited point
- (use same mechanism?  i.e., stash reversion point on creation - no, this is a sequenced element)
- iv. abort last/current element (e.g., delete)
- v. finish current element (e.g., enter)
- vi. DONE: ^B to move current element to "bottom"; ^T to move current element to "top"
- (or Move [element] to the top function - harder to make sure it works)
- vii. enter/inhibit mouse"over" editing
- viii. SPACE held down to drag-pan
- g. DONE: Export svg markup (currently elements are partially corrupted - i.e., incomplete end tag)
- Packaging:
- verbatim
- style vs element segregation
- h. "Stacking" issues - tokenize elements for selection outside the image.
- i. After the fact grouping
- j. DONE Eliminate jQuery
- k. Color picker
- l. Measurement specifier and tool (caliper)
- m. +/- 90 degree text orientation
- n. DONE: ARROW super-element
- o. DONE: more graceful handling of text to screen input; e.g., hidden textbox
+Revised version of svg-detailer/svgDraw 06MAR2020
  */
 var xC = 0;
 var yC = 0;
@@ -1720,7 +1673,7 @@ function SVGDraw(containerID) {
       _loop();
     }
 
-    buildSVGmenu(); // populate the button-ology from the data element description (mostly)
+    SVGDraw.prototype.buildSVGmenu(); // populate the button-ology from the data element description (mostly)
 
     document.onkeydown = self.keyHandler(); /////////////// This is probably tooo broad   /////////////////
 
@@ -2408,7 +2361,7 @@ function clearEditElement(group) {
     return;
   }
 
-  if (thisGroup && thisGroup != group) {
+  if (thisGroup && thisGroupID != group.id) {
     // collision
     console.log('clearEditElement: group conflict');
     return;
@@ -2560,32 +2513,7 @@ function setSizeElement(bubble) {
   console.log('svgInProgress = SIZE, cursorMode = ' + cursorMode + ' ' + thisElement.tagName);
   group.removeEventListener('mouseenter', mouseEnterFunction);
   group.removeEventListener('mouseleave', mouseLeaveFunction);
-} // function OldsetSizeElement(bubble) {       // this sets up the single point functions
-//   //thisParent = element;                           // group containing real element and the bubbles group
-//   //thisElement = group.firstChild;    // this is the real element
-//   //cursorMode = group.firstChild.tagName;  // extract its tag
-//   thisBubble = bubble;
-//   let group = bubble.parentNode.parentNode;          // set group for mousemove
-//   thisGroup = group;
-//   thisElement = group.firstChild;    // this is the real element
-//   if (!((cursorMode == 'cubic') || (cursorMode == 'quadratic'))) {      // tagName will be 'path'
-//     cursorMode = thisElement.tagName;
-//   }
-// //////////////  group.attributes['onmouseenter'].value = ''; // disable mouseover on real element's containing group
-//   group.removeEventListener('mouseenter', mouseEnterFunction)
-// //////////////  group.attributes['onmouseleave'].value = ''; // disable mouseleave on real element's containing group
-//   group.removeEventListener('mouseleave', mouseLeaveFunction)
-//   // bubble.removeEventListener('mousedown', setSizeElement(bubble))
-//   if (!((cursorMode == 'cubic') || (cursorMode == 'quadratic'))) {      // tagName will be 'path'
-//     if (group.childElementCount > 1) {         // if more than one child, we have bubbles
-//       group.lastChild.remove();      // remove ALL bubbles, since we are going to drop into drag radius
-//     }
-//   }
-// //  eliminated savedCursorMode = 'MOVE';
-//   svgInProgress = 'SIZE';                     // so we have an active element, and it has been marked in progress
-//   // look for mousedown in handler for circle to transition to rubber band mode
-// }                                       // use mouseup or mousedown to terminate radius drag
-
+}
 
 function setPointElement(bubble) {
   // this performs the inline substitution of the selected bubble coordinates
@@ -2776,10 +2704,20 @@ function createBubbleGroup(group) {
       } // calculate centroid for shift bubble
 
 
-      var xn = parseFloat(theseCoords[0]) + parseFloat(theseCoords[2]) + parseFloat(theseCoords[4]) + parseFloat(theseCoords[6]);
-      var yn = parseFloat(theseCoords[1]) + parseFloat(theseCoords[3]) + parseFloat(theseCoords[5]) + parseFloat(theseCoords[7]);
-      xn = (xn / 4).toFixed(3);
-      yn = (yn / 4).toFixed(3); // create the "bounding" polygon  'poly'
+      var xn, yn;
+
+      if (thisCurveTypeQuadratic) {
+        xn = parseFloat(theseCoords[0]) + parseFloat(theseCoords[2]) + parseFloat(theseCoords[6]);
+        yn = parseFloat(theseCoords[1]) + parseFloat(theseCoords[3]) + parseFloat(theseCoords[7]);
+        xn = (xn / 3).toFixed(3);
+        yn = (yn / 3).toFixed(3); // this calculation is less wrong for quadratic ...
+      } else {
+        xn = parseFloat(theseCoords[0]) + parseFloat(theseCoords[2]) + parseFloat(theseCoords[4]) + parseFloat(theseCoords[6]);
+        yn = parseFloat(theseCoords[1]) + parseFloat(theseCoords[3]) + parseFloat(theseCoords[5]) + parseFloat(theseCoords[7]);
+        xn = (xn / 4).toFixed(3);
+        yn = (yn / 4).toFixed(3);
+      } // create the "bounding" polygon  'poly'
+
 
       bubbleGroup.appendChild(createBoundsPoly(theseCoords));
       bubbleGroup.appendChild(createShiftBubble(xn, yn, 'shift')); // this is the move element bubble
@@ -4089,23 +4027,13 @@ SVGDraw.prototype.keyHandler = function () {
       default:
         secondKey = null;
         firstKey = thisKey;
-      //thisKey = event.key;
-      //if (thisKey == 'Shift' || thisKey == 'Meta') {
-      //  secondKey = firstKey;
-      //  firstKey = thisKey;
-      //  return;
     }
 
     if (cursorMode == 'text' && (inFocus.tagName == 'BODY' || inFocus.id == svgLayer.parentElement.id)) {
       updateSvgText(event); // pass event or key
 
       return;
-    } //thisKey = event.key;
-    //if (thisKey == 'Shift' || thisKey == 'Meta') {
-    //secondKey = firstKey;
-    //firstKey = thisKey;
-    //}
-
+    }
 
     if (event.key == 'Enter' || thisKeyCode == 13) {
       // added literal decimal value for chrome/safari
@@ -4558,18 +4486,6 @@ function updateSvgText(event) {
   var thisKeyCode = event.keyCode; //if (thisKey == undefined) {                   // undefined if not FireFox
 
   thisKey = lookUpKey(event); // consolidate
-  //if (cursorMode != 'text') {     // redundant, since we only get here from keyDown handler
-  //  switch (event.keyCode) {
-  //    case 13:                    // Enter
-  //      dblClick();
-  //      break;
-  //  }
-  //  if (thisKeyCode == 8) {       // prevent Backspace from invoking BACK browser function
-  //    event.preventDefault();
-  //  }
-  //  return false;
-  //}
-  //var text4svg = document.getElementById("text4svg");   // this control eliminated
 
   if (thisElement == null) {
     // this can occur if <text> element just completed and no new one started
@@ -4752,6 +4668,7 @@ function collectSVG(verbatim) {
     clonedSVG.removeAttribute('height');
     clonedSVG.removeAttribute('width');
     clonedSVG.firstChild.attributes['transform'].value = 'translate(0, 0)scale(1)';
+    thisXLT.children['xltImage'].remove();
   }
 
   var innerElement;
@@ -4796,13 +4713,15 @@ function collectSVG(verbatim) {
   }
 
   return clonedSVG; //  oops, this was too easy
-}
+} // function showSVG(verbatim) {
 
-function showSVG(verbatim) {
+
+SVGDraw.prototype.showSVG = function (verbatim) {
   svgMenu.children['textSVGorJSON'].textContent = collectSVG(verbatim).outerHTML;
-}
+}; // function jsonSVG(verbatim) {      // package SVG into JSON object
 
-function jsonSVG(verbatim) {
+
+SVGDraw.prototype.jsonSVG = function (verbatim) {
   // package SVG into JSON object
   // specification is to return elements within a single group as text
   // { "data": {
@@ -4811,8 +4730,8 @@ function jsonSVG(verbatim) {
   var clonedSVG = collectSVG(false).firstChild; // strip off <svg...> </svg>
 
   clonedSVG.removeAttribute('id');
-  clonedSVG.removeAttribute('transform');
-  clonedSVG.childNodes[0].remove();
+  clonedSVG.removeAttribute('transform'); // clonedSVG.childNodes[0].remove();    // this was originally the image, now removed if !verbatim
+
   var JSONsvg = {
     "data": {
       "type": "svg",
@@ -4821,9 +4740,10 @@ function jsonSVG(verbatim) {
   };
   svgMenu.children['textSVGorJSON'].textContent = JSON.stringify(JSONsvg);
   return JSONsvg;
-}
+}; // function buildSVGmenu() {
 
-function buildSVGmenu() {
+
+SVGDraw.prototype.buildSVGmenu = function () {
   var thisButton;
   thisButton = document.createElement('input'); // default MOVE button
   //thisButton.setAttribute('id', 'btn_' + buttons[i].function);
@@ -5064,7 +4984,7 @@ function buildSVGmenu() {
   svgMenu.appendChild(thisButton);
   thisButton.addEventListener('click', function (event) {
     thisButton.blur();
-    showSVG(true);
+    SVGDraw.prototype.showSVG(true);
   });
   thisButton = document.createElement('input');
   thisButton.setAttribute('id', 'plainSVG');
@@ -5075,24 +4995,21 @@ function buildSVGmenu() {
   svgMenu.appendChild(thisButton);
   thisButton.addEventListener('click', function (event) {
     thisButton.blur();
-    showSVG(false);
+    SVGDraw.prototype.showSVG(false);
   });
   thisButton = document.createElement('input');
   thisButton.setAttribute('id', 'svgJSON');
   thisButton.setAttribute('type', 'button');
-  thisButton.setAttribute('value', 'JSON SVG'); // thisButton.setAttribute('onclick', 'this.blur(); jsonSVG(false);');
-
-  svgMenu.appendChild(thisButton); // thisButton.addEventListener('click', (event) => { this.blur(); showSVG(false); });
-
+  thisButton.setAttribute('value', 'JSON SVG');
+  svgMenu.appendChild(thisButton);
   thisButton.addEventListener('click', function (event) {
-    showSVG(false);
-  }); //svgMenu.innerHTML += '<br>'; <--- This breaks EVERYTHING and it will destroy DOM objects converting it in string.
-
+    SVGDraw.prototype.jsonSVG(false);
+  });
   svgMenu.appendChild(document.createElement('br'));
   var thisTextArea = document.createElement('textarea');
   thisTextArea.setAttribute('id', 'textSVGorJSON');
   svgMenu.appendChild(thisTextArea);
-}
+};
 
 function setTextHeight() {
   textHeight = document.getElementById('textSize').value;

@@ -1,20 +1,17 @@
+
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <title>svg-detailer demo</title>
-    <script src="../src/svg-detailer.js"></script>
   </head>
   <body>
-  <div>
-    <label>Choose file to annotate: </label>
-    <input id="image_file" type="file" onchange="getImage(event)">
-  </div>
+    <a href="https://github.com/SpeciesFileGroup/svg-detailer">Source</a> 
     <div id="container" style="overflow: hidden; left: 50px; top: 175px; position: inherit;" tabindex="0"
-                        data-height="600"
+                        data-height="600" 
                         data-width="600"
-                        data-image=""
+                        data-image="http://placekitten.com/1024/768"
                         data-buttons='{"buttons": [
                         {"function": "polygon", "color": "FF0000"},
                         {"function": "polyline", "color": "FF0000"},
@@ -28,26 +25,6 @@
                         {"function": "text", "color": "0000FF"}
                         ]}'>
     </div>
-    <script>
-      var svgDraw;
-      function getImage(event) {
-        let files = event.target.files;
-        let svg_container = document.getElementById("container");
-        let svg_element = svg_container.children[0];
-        if(svg_element) {svg_element.parentNode.removeChild(svg_element)}  // remove any previously created svg element
-        let svg_menu = document.getElementById("svgMenu");
-        if(svg_menu) {svg_menu.parentNode.removeChild(svg_menu)}      // force removal of any created peer menu element
-
-        if (FileReader && files && files.length) {
-          var fileReader = new FileReader();
-          fileReader.onload = (image) => {
-            svg_container.attributes["data-image"].value = fileReader.result;
-            svgDraw = new SVGDraw(svg_container);
-          };
-          fileReader.readAsDataURL(files[0])
-        }
-      }
-    </script>
+    <script src="svg-detailer.umd.min.js"></script>
   </body>
 </html>
-
