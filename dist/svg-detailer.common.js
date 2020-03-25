@@ -4713,8 +4713,7 @@ function collectSVG(verbatim) {
   }
 
   return clonedSVG; //  oops, this was too easy
-} // function showSVG(verbatim) {
-
+}
 
 SVGDraw.prototype.showSVG = function (verbatim) {
   svgMenu.children['textSVGorJSON'].textContent = collectSVG(verbatim).outerHTML;
@@ -4740,8 +4739,7 @@ SVGDraw.prototype.jsonSVG = function (verbatim) {
   };
   svgMenu.children['textSVGorJSON'].textContent = JSON.stringify(JSONsvg);
   return JSONsvg;
-}; // function buildSVGmenu() {
-
+};
 
 SVGDraw.prototype.buildSVGmenu = function () {
   var thisButton;
