@@ -942,7 +942,7 @@ module.exports = function (exec) {
 /***/ "8378":
 /***/ (function(module, exports) {
 
-var core = module.exports = { version: '2.6.9' };
+var core = module.exports = { version: '2.6.11' };
 if (typeof __e == 'number') __e = core; // eslint-disable-line no-undef
 
 
@@ -4722,13 +4722,13 @@ function collectSVG(verbatim) {
   }
 
   return clonedSVG; //  oops, this was too easy
-} // function showSVG(verbatim) {
+}
 
+;
 
 SVGDraw.prototype.showSVG = function (verbatim) {
   svgMenu.children['textSVGorJSON'].textContent = collectSVG(verbatim).outerHTML;
-}; // function jsonSVG(verbatim) {      // package SVG into JSON object
-
+};
 
 SVGDraw.prototype.jsonSVG = function (verbatim) {
   // package SVG into JSON object
@@ -4749,8 +4749,7 @@ SVGDraw.prototype.jsonSVG = function (verbatim) {
   };
   svgMenu.children['textSVGorJSON'].textContent = JSON.stringify(JSONsvg);
   return JSONsvg;
-}; // function buildSVGmenu() {
-
+};
 
 SVGDraw.prototype.buildSVGmenu = function () {
   var thisButton;
