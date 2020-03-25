@@ -1,7 +1,5 @@
 // construct svgLayer from container's attributes and data-attributes
-
 /*
-
 Revised version of svg-detailer/svgDraw 06MAR2020
  */
 var xC = 0;
