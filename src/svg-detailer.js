@@ -2539,13 +2539,12 @@ function collectSVG(verbatim) {   // verbatim true includes all markup, false me
     thisXLT.firstChild.outerHTML = innerElement;    // this is done AFTER the other depopulation so accounting is easier
   }
   return clonedSVG;        //  oops, this was too easy
-}
-// function showSVG(verbatim) {
+};
+
 SVGDraw.prototype.showSVG = function(verbatim) {
   svgMenu.children['textSVGorJSON'].textContent = collectSVG(verbatim).outerHTML;
-}
+};
 
-// function jsonSVG(verbatim) {      // package SVG into JSON object
 SVGDraw.prototype.jsonSVG = function (verbatim) {      // package SVG into JSON object
 // specification is to return elements within a single group as text
 // { "data": {
@@ -2563,9 +2562,8 @@ SVGDraw.prototype.jsonSVG = function (verbatim) {      // package SVG into JSON 
   };
   svgMenu.children['textSVGorJSON'].textContent = JSON.stringify(JSONsvg);
   return JSONsvg;
-}
+};
 
-// function buildSVGmenu() {
  SVGDraw.prototype.buildSVGmenu = function() {
   let thisButton;
   thisButton = document.createElement('input');     // default MOVE button
