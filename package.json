@@ -29,7 +29,7 @@
     "build": "vue-cli-service build",
     "build:lib": "vue-cli-service build --target lib --name svg-detailer src/svg-detailer.js",
     "lint": "vue-cli-service lint",
-    "test:unit": "vue-cli-service test:unit",
+    "test": "mocha",
     "build:demo": "vue-cli-service build --target lib --name ../demo/svg-detailer src/demo.js"
   },
   "dependencies": {
