@@ -24,7 +24,6 @@
     "*.js"
   ],
   "scripts": {
-    "server": "node --version",
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "build:lib": "vue-cli-service build --target lib --name svg-detailer src/svg-detailer.js",
