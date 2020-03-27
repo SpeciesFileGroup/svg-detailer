@@ -1,10 +1,9 @@
 import SVGDraw from './svg-detailer'
 
-// var svgDraw = new SVGDraw(document.getElementById("container"));
+var svgDraw = new SVGDraw(document.getElementById("container"));
 
 const svgContainer = document.getElementById('container');
 const imageInput = document.getElementById('image_file');
-var svg;
 
 imageInput.addEventListener('change', (event) => {
   getImage(event);
@@ -20,7 +19,7 @@ function getImage(event) {
     var fileReader = new FileReader();
     fileReader.onload = (image) => {
       svgContainer.attributes["data-image"].value = fileReader.result;
-      svg = new SVGDraw(svgContainer)
+      svgDraw = new SVGDraw(svgContainer)
     };
     fileReader.readAsDataURL(files[0])
   }
