@@ -2829,4 +2829,3 @@ function setTextHeight() {
 }
 
 export default SVGDraw
-
