@@ -14,9 +14,9 @@
 
   NOTE: action drawing coordinates are translated by the offsets of the container <div>
  */
-var path = require('path')
+var path = require('path');
 
-const testPath = path.dirname(__filename)
+const testPath = path.dirname(__filename);
 const { Builder, By, Key, until} = require('selenium-webdriver');
 const enable_log = false;
 const {expect} = require('chai');
@@ -26,7 +26,6 @@ describe('Line creation', () => {
   const actions = driver.actions();
   it('Should create an svg element with id "g1" and type "line"', async () => {
     await driver.get('http://localhost:8080/');
-    // await driver.get('file:///Users/jrichardflood/RubyMineProjects/svg-detailer/demo/index.html');
     await driver.findElement(By.id('image_file')).sendKeys(testPath + '/images/testImage.jpg');
     let element, type, id, zoom, transform, xoff, yoff, x1, x2, y1, y2;
     x1 = 300;

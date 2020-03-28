@@ -4,9 +4,9 @@
           npm install -g geckodriver
           npm run serve
  */
-var path = require('path')
+var path = require('path');
 
-const testPath = path.dirname(__filename)
+const testPath = path.dirname(__filename);
 const enable_log = false;
 const { Builder, By, Key, until} = require('selenium-webdriver');
 const {expect} = require('chai');
@@ -19,7 +19,6 @@ describe('Buttonology', () => {
   it('should select the mode according to the buttons', async () => {
     try {
       await driver.get('http://localhost:8080/');
-      // await driver.get('file:///Users/jrichardflood/RubyMineProjects/svg-detailer/demo/index.html');
       await driver.findElement(By.id('image_file')).sendKeys(testPath + '/images/testImage.jpg');
       await driver.findElement(By.css('#b_polygon')).click();
       polygon = (await driver.findElement(By.id('mode')).getAttribute('textContent')).toLowerCase();
