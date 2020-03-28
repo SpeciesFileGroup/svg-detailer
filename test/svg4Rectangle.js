@@ -1,3 +1,6 @@
+var path = require('path');
+
+const testPath = path.dirname(__filename);
 const { Builder, By, Key, until} = require('selenium-webdriver');
 const {expect} = require('chai');
 const enable_log = false;
@@ -8,9 +11,8 @@ describe('Rectangle creation', () => {
   const actions = driver.actions();
 
   it('Should create an element with id g1 and type rectangle', async () => {
-    await driver.get('http://localhost:8081/');
-    // await driver.get('file:///Users/jrichardflood/RubyMineProjects/svg-detailer/demo/index.html');
-    await driver.findElement(By.id('image_file')).sendKeys('/Users/jrichardflood/RubymineProjects/svg-detailer/test/images/testImage.jpg');
+    await driver.get('http://localhost:8080/');
+    await driver.findElement(By.id('image_file')).sendKeys(testPath + '/images/testImage.jpg');
     let element, type, id, xoff, yoff, zoom, transform, i, points, px, py, width, height;
     try {
       element = await driver.findElement(By.id('container'));

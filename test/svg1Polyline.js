@@ -1,3 +1,6 @@
+var path = require('path');
+
+const testPath = path.dirname(__filename);
 const { Builder, By, Key, until} = require('selenium-webdriver');
 const {expect} = require('chai');
 const enable_log = false;
@@ -7,9 +10,8 @@ describe('Polyline creation', () => {
   const actions = driver.actions();
 
   it('Should create an element with id g1 and type polyline', async () => {
-    await driver.get('http://localhost:8081/');
-    // await driver.get('file:///Users/jrichardflood/RubyMineProjects/svg-detailer/demo/index.html');
-    await driver.findElement(By.id('image_file')).sendKeys('/Users/jrichardflood/RubymineProjects/svg-detailer/test/images/testImage.jpg');
+    await driver.get('http://localhost:8080/');
+    await driver.findElement(By.id('image_file')).sendKeys(testPath + '/images/testImage.jpg');
     let element, type, id, xoff, yoff, zoom, transform, i, points, px, py, coords, idealPoints = [];
     try {
       element = await driver.findElement(By.id('container'));
@@ -22,7 +24,7 @@ describe('Polyline creation', () => {
       zoom = transform.split('(');
       zoom = zoom[2].split(')');
       console_log(zoom[0]);
-      zoom = parseFloat(zoom[0]);  //((transform.toString()).split('(')[2]).split(')')[0]);
+      zoom = parseFloat(zoom[0]);
       console_log('xoff: ' + xoff + ' | yoff: ' + yoff + ' | zoom: ' + zoom);
     }
     catch (event) {
