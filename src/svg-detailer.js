@@ -191,32 +191,6 @@ function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
     xltImage.setAttributeNS('http://www.w3.org/1999/xlink', 'href', svgImage.src);
     xlt.appendChild(xltImage);
 
-    // svgMenu = document.createElement('div');        // this lengthy, tedious section generates the controls needed
-    // svgMenu.setAttribute('id', 'svgMenu');
-    // containerID.parentElement.appendChild(svgMenu);
-    // let thisButton;
-    // thisButton = document.createElement('input');       // for now, inject the un-listed Delete Last Element button
-    // thisButton.setAttribute('type', 'button');
-    // thisButton.setAttribute('value', 'Clear Last Element');
-    // // thisButton.setAttribute('onclick', "clearLastGroup()");
-    // svgMenu.appendChild(thisButton);
-    // thisButton.addEventListener('click', (event) => {
-    //   clearLastGroup()
-    // })
-    // let buttons = JSON.parse(containerID.attributes['data-buttons'].value).buttons;
-    // let i;
-    // for (i = 0; i < buttons.length; i++) {                // these buttons explicitly enumerated in data-buttons
-    //   thisButton = document.createElement('input');
-    //   thisButton.setAttribute('type', 'button');
-    //   thisButton.setAttribute('value', buttons[i].function.charAt(0).toUpperCase() + buttons[i].function.slice(1));
-    //   thisButton.setAttribute('id', 'b_'+ buttons[i].function.toLowerCase());
-    //   // thisButton.setAttribute('onclick', "this.blur(); setCursorMode('" + buttons[i].function + "');");
-    //   svgMenu.appendChild(thisButton);
-    //   let thisMode = buttons[i].function;
-    //   thisButton.addEventListener('click', (event) => {
-    //     setCursorMode(thisMode)
-    //   })
-    // }
     SVGDraw.prototype.buildSVGmenu(containerID);       // populate the button-ology from the data element description (mostly)
 
     document.onkeydown = self.keyHandler();   /////////////// This is probably tooo broad   /////////////////
@@ -2565,13 +2539,13 @@ SVGDraw.prototype.jsonSVG = function (verbatim) {      // package SVG into JSON 
   return JSONsvg;
 }
 
-// function buildSVGmenu() {
+// buildSVGmenu refactored into standalone integrated function
  SVGDraw.prototype.buildSVGmenu = function(containerID) {
    svgMenu = document.createElement('div');        // this lengthy, tedious section generates the controls needed
    svgMenu.setAttribute('id', 'svgMenu');
    containerID.parentElement.appendChild(svgMenu);
    let thisButton;
-   thisButton = document.createElement('input');       // for now, inject the un-listed Delete Last Element button
+   thisButton = document.createElement('input');       // inject the un-listed Delete Last Element button
    thisButton.setAttribute('type', 'button');
    thisButton.setAttribute('value', 'Clear Last Element');
    // thisButton.setAttribute('onclick', "clearLastGroup()");
