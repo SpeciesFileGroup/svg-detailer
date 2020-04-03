@@ -126,7 +126,7 @@ var _drawModes = [
   'rectangle', 'circle', 'ellipse', 'cubic', 'quadratic',
   'draw', 'text', 'MOVE'
 ];
-// TODO: Fix up clear button; Fix Reset button; Fix shift text GROUP <tspan>?
+// TODO: Provide constructors for attributesFix shift text GROUP <tspan>?
 
 function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
 
@@ -2216,6 +2216,10 @@ function setCursorMode(mode) {      // detect current mode not completed prior t
     }
     if(mode == 'clear') {
       clearLastGroup();
+      cursorMode = 'MOVE';
+    }
+    if(mode == 'reset') {
+      zoom_trans(0, 0, baseZoom);
       cursorMode = 'MOVE';
     }
   }
