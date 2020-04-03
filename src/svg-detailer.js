@@ -126,7 +126,7 @@ var _drawModes = [
   'rectangle', 'circle', 'ellipse', 'cubic', 'quadratic',
   'draw', 'text', 'MOVE'
 ];
-// TODO: Fix shift text GROUP <tspan>?
+// TODO: Fix shift text GROUP <tspan>?; Entry points for Arrow attributes, color setting
 
 function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
 
@@ -2582,6 +2582,7 @@ SVGDraw.prototype.jsonSVG = function (verbatim) {      // package SVG into JSON 
          case 'polyline':
          case 'line':
          case 'arrow':
+         case 'rectangle':
          case 'circle':
          case 'ellipse':
          case 'quadratic':
