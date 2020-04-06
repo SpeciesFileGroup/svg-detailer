@@ -31,8 +31,10 @@ var secondKey;
 var text4svg = '_';         // buffer replacing HTML input control previously used for text, prime with underscore cursor
 var textHeight = 75;
 var textFont = 'Verdana';
-var arrowSize = 10;         // defalt arrow head size
-
+var arrowPercent = 10;        // defalt arrow head size 10$
+var arrowheadLength = 50;     // or 50 pixels
+var arrowFixed = false;       // paired with above
+var arrowClosed = false;
 var waitElement = false;   // interlock flag to prevent mouseenter mode change after selecting a create mode
 
 var thisGroup;              // should be the parent of the current element
@@ -1528,7 +1530,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       if (document.getElementById('arrowHeadPixels').checked) {
         barbLength = document.getElementById('arrowHeadLength').value;
       } else {
-        barbLength = lineLength * arrowSize / 100;
+        barbLength = lineLength * arrowPercent / 100;
       }
       let pctX = parseFloat(thisX2) - (dx * barbLength);   //  baseline for barb trailing end
       let pctY = parseFloat(thisY2) - (dy * barbLength);
@@ -2638,16 +2640,16 @@ SVGDraw.prototype.jsonSVG = function (verbatim) {      // package SVG into JSON 
              zoomOut();
            });
            break;
-         case 'textsize':
+         case 'textheight':
            thisSpan = document.createElement('span');      // TEXT display area
            thisSpan.setAttribute('id', 'textBlock');
            //thisSpan.textContent = 'Text Size: ';
            svgMenu.appendChild(thisSpan);
-           let thisTextsizeTitle = document.createElement('span');
-           thisTextsizeTitle.innerHTML = ' Text Size: ';
-           thisSpan.appendChild(thisTextsizeTitle);
+           let thistextHeightTitle = document.createElement('span');
+           thistextHeightTitle.innerHTML = ' Text Size: ';
+           thisSpan.appendChild(thistextHeightTitle);
            thisButton = document.createElement('input');     // default TEXT SIZE input
-           thisButton.setAttribute('id', 'textSize');
+           thisButton.setAttribute('id', 'textHeight');
            thisButton.setAttribute('type', 'number');
            thisButton.setAttribute('min', '5');
            thisButton.setAttribute('step', '5');
@@ -2743,7 +2745,8 @@ SVGDraw.prototype.jsonSVG = function (verbatim) {      // package SVG into JSON 
            // thisButton.setAttribute('onclick', "this.blur();");
            thisSpan.appendChild(thisButton);
            thisButton.addEventListener('click', (event) => {
-             thisButton.blur();
+             // thisButton.blur();
+             arrowClosed = document.getElementById('arrowHeadClosed').checked
            });
 
            thisSpan.innerHTML += ' &nbsp; Fixed:';
@@ -2753,7 +2756,8 @@ SVGDraw.prototype.jsonSVG = function (verbatim) {      // package SVG into JSON 
            // thisButton.setAttribute('onclick', "this.blur();");
            thisSpan.appendChild(thisButton);
            thisButton.addEventListener('click', (event) => {
-             thisButton.blur();
+             // thisButton.blur();
+             arrowFixed = document.getElementById('arrowHeadPixels').checked
            });
 
            thisSpan.innerHTML += ' &nbsp; Length:';
@@ -2768,7 +2772,8 @@ SVGDraw.prototype.jsonSVG = function (verbatim) {      // package SVG into JSON 
            // thisButton.setAttribute('onchange', 'this.blur();');
            thisSpan.appendChild(thisButton);
            thisButton.addEventListener('change', (event) => {
-             thisButton.blur();
+             // thisButton.blur();
+             arrowheadLength = parseFloat(document.getElementById('arrowHeadLength').value)
            })
 
            thisSpan.innerHTML += ' &nbsp; Percent:';
@@ -2780,11 +2785,10 @@ SVGDraw.prototype.jsonSVG = function (verbatim) {      // package SVG into JSON 
            thisButton.setAttribute('max', '30');
            thisButton.setAttribute('style', 'width: 4em');
            thisButton.setAttribute('value', '10');
-           // thisButton.setAttribute('onchange', 'this.blur(); arrowSize=this.value;');
            thisSpan.appendChild(thisButton);
            thisSpan.addEventListener('change', (event) => {
-             thisButton.blur();
-             arrowSize = parseFloat(document.getElementById('arrowHeadPercent').value);
+             // thisButton.blur();
+             arrowPercent = parseFloat(document.getElementById('arrowHeadPercent').value);
            });
            svgMenu.appendChild(thisSpan);
            break;
@@ -2830,262 +2834,26 @@ SVGDraw.prototype.jsonSVG = function (verbatim) {      // package SVG into JSON 
        }
      }
   }
-     //  // let thisButton;
-     // thisButton = document.createElement('input');     // default MOVE button
-     // //thisButton.setAttribute('id', 'btn_' + buttons[i].function);
-     // thisButton.setAttribute('type', 'button');
-     // thisButton.setAttribute('value', 'MOVE');
-     // thisButton.setAttribute('id', 'b_move');
-     // // thisButton.setAttribute('onclick', "setCursorMode('MOVE');");
-     // svgMenu.appendChild(thisButton);
-     // thisButton.addEventListener('click', (event) => {
-     //   setCursorMode('MOVE')
-     // })
 
-     // let thisSpan;
-     // thisSpan = document.createElement('span');      // mode/status display area
-     // thisSpan.setAttribute('id', 'mode');
-     // svgMenu.appendChild(thisSpan);
-
-     // thisButton = document.createElement('input');     // default ZOOM IN button
-     // thisButton.setAttribute('type', 'button');
-     // thisButton.setAttribute('value', 'Zoom IN');
-     // thisButton.setAttribute('id', 'b_zoomin');
-     // // thisButton.setAttribute('onclick', "this.blur(); zoomIn();");
-     // svgMenu.appendChild(thisButton);
-     // thisButton.addEventListener('click', (event) => {
-     //   thisButton.blur();
-     //   zoomIn();
-     // })
-
-     // thisButton = document.createElement('span');      // ZOOM display area
-     // thisButton.setAttribute('id', 'zoom');
-     // thisButton.setAttribute('innerHTML', ' Zoom:  ----');
-     // svgMenu.appendChild(thisButton);
-
-     // thisButton = document.createElement('input');     // default ZOOM OUT button
-     // thisButton.setAttribute('type', 'button');
-     // thisButton.setAttribute('value', 'Zoom OUT');
-     // thisButton.setAttribute('id', 'b_zoomout');
-     // // thisButton.setAttribute('onclick', "this.blur(); zoomOut();");
-     // svgMenu.appendChild(thisButton);
-     // thisButton.addEventListener('click', (event) => {
-     //   thisButton.blur();
-     //   zoomOut();
-     // })
-
-     // thisButton = document.createElement('input');     // reset button
-     // thisButton.setAttribute('type', 'button');
-     // thisButton.setAttribute('value', 'Reset');
-     // thisButton.setAttribute('id', 'b_reset');
-     // // thisButton.setAttribute('onclick', "this.blur(); zoom_trans(0, 0, baseZoom);");
-     // svgMenu.appendChild(thisButton);
-     // thisButton.addEventListener('click', (event) => {
-     //   thisButton.blur();
-     //   zoom_trans(0, 0, baseZoom);
-     // })
-
-     // thisSpan = document.createElement('span');      // TEXT display area
-     // thisSpan.setAttribute('id', 'textBlock');
-     // //thisSpan.textContent = 'Text Size: ';
-     // svgMenu.appendChild(thisSpan);
-     // let thisTextsizeTitle = document.createElement('span');
-     // thisTextsizeTitle.innerHTML = 'Text Size: ';
-     // thisSpan.appendChild(thisTextsizeTitle);
-     // thisButton = document.createElement('input');     // default TEXT SIZE input
-     // thisButton.setAttribute('id', 'textSize');
-     // thisButton.setAttribute('type', 'number');
-     // thisButton.setAttribute('min', '5');
-     // thisButton.setAttribute('step', '5');
-     // thisButton.setAttribute('max', '300');
-     // thisButton.setAttribute('style', 'width: 4em');
-     // thisButton.setAttribute('value', '75');
-     // // thisButton.setAttribute('onchange', 'textHeight=this.value; this.blur();');
-     // thisSpan.appendChild(thisButton);
-     // // thisButton.addEventListener('change', (event) => { textHeight = thisButton.value; thisButton.blur(); })
-     // thisButton.addEventListener('change', (event) => {
-     //   setTextHeight()
-     // });
-
-     // svgMenu.appendChild(document.createElement('br'));
-     // thisSpan = document.createElement('span');
-     // thisSpan.innerHTML = 'Select color: ';
-     // svgMenu.appendChild(thisSpan);
-     // let colorSelect = {
-     //   "buttons": [     // select this color buttons: Red/Green/Blue/Black/UserDefined/Selected
-     //     {"color": "#FF0000"},
-     //     {"color": "#00FF00"},
-     //     {"color": "#0000FF"},
-     //     {"color": "#000000"},
-     //     {"color": "#666666"},
-     //     {"color": "#FF0000"}
-     //   ]
-     // };
-     // // let i;
-     // for (i = 0; i < colorSelect.buttons.length; i++) {                // buttons explicitly enumerated in data-buttons
-     //   if (i == 4) {                                  // insert the text area input after the first 4 color select buttons
-     //     thisButton = document.createElement('input');
-     //     thisButton.setAttribute('id', 'userColor');
-     //     thisButton.setAttribute('type', 'text');
-     //     thisButton.setAttribute('value', colorSelect.buttons[i].color);
-     //     thisButton.setAttribute('style', 'width: 5em');
-     //     // thisButton.setAttribute('onchange', "setUserColor(this.value); this.blur();");
-     //     svgMenu.appendChild(thisButton);
-     //     thisButton.addEventListener('change', (event) => {
-     //       setUserColor(getUserColor());
-     //       thisButton.blur();
-     //     });
-     //
-     //     thisButton = document.createElement('input');   // add the user-defined color select button
-     //     thisButton.setAttribute('id', 'selectUserColor');
-     //     thisButton.setAttribute('type', 'button');
-     //     thisButton.setAttribute('style', 'background-color: ' + colorSelect.buttons[i].color);
-     //     // thisButton.setAttribute('onclick', "setCursorColor(getUserColor()); this.blur();");
-     //     svgMenu.appendChild(thisButton);
-     //     thisButton.addEventListener('click', (event) => {
-     //       setCursorColor(getUserColor());
-     //       thisButton.blur();
-     //     })
-     //   }
-     //   if (i < colorSelect.buttons.length - 2) {       // for the first four (0:3) color select buttons, just set table color
-     //     thisButton = document.createElement('input');
-     //     thisButton.setAttribute('type', 'button');
-     //     thisButton.setAttribute('style', 'background-color: ' + colorSelect.buttons[i].color);
-     //     // thisButton.setAttribute('onclick', "setCursorColor('" + colorSelect.buttons[i].color + "'); this.blur();");
-     //     svgMenu.appendChild(thisButton);
-     //     let thisColor = colorSelect.buttons[i].color;
-     //     thisButton.addEventListener('click', (event) => {
-     //       setCursorColor(thisColor);
-     //       thisButton.blur();
-     //     })
-     //   }
-     //   if (i > colorSelect.buttons.length - 2) {   // insert the selected color block (5) (indicator only) as last
-     //     let thisColorTitle = document.createElement('span');
-     //     thisColorTitle.innerHTML = ' Selected Color >';
-     //     svgMenu.appendChild(thisColorTitle);
-     //     thisButton = document.createElement('input');
-     //     thisButton.setAttribute('id', 'cursorColor');
-     //     thisButton.setAttribute('type', 'button');
-     //     // thisButton.setAttribute('style', 'this.blur(); background-color: ' + colorSelect.buttons[i].color);
-     //     thisButton.setAttribute('style', 'background-color: ' + colorSelect.buttons[i].color);
-     //     svgMenu.appendChild(thisButton);
-     //     // let thisColor = colorSelect.buttons[i].color;
-     //     // thisButton.addEventListener('click', (event) => { setUserColor(thisColor); this.blur(); });
-     //     cursorColor = colorSelect.buttons[i].color;   // set the cursorColor from the nominal button arrangement
-     //   }
-     // }
-     //thisSpan = document.createElement('span');    // removed control for cursor position indication
-     //thisSpan.setAttribute('id', 'coords');
-     //svgMenu.appendChild(thisSpan);
-
-     // thisButton = document.createElement('input');
-     // thisButton.setAttribute('id', 'svgArrow');
-     // thisButton.setAttribute('type', 'button');
-     // thisButton.setAttribute('value', 'Arrow line');
-     // // thisButton.setAttribute('onclick', "setCursorMode('arrow'); this.blur();");
-     // svgMenu.appendChild(thisButton);
-     // thisButton.addEventListener('click', (event) => {
-     //   setCursorMode('arrow');
-     //   thisButton.blur();
-     // })   //
-
-     // thisSpan = document.createElement('span');      // arrow display area
-     // thisSpan.setAttribute('id', 'arrowBlock');
-     //
-     // thisSpan.innerHTML += ' Arrowhead &nbsp; Fixed:';
-     // thisButton = document.createElement('input');
-     // thisButton.setAttribute('id', 'arrowHeadPixels');
-     // thisButton.setAttribute('type', 'checkbox');
-     // // thisButton.setAttribute('onclick', "this.blur();");
-     // thisSpan.appendChild(thisButton);
-     // thisButton.addEventListener('click', (event) => {
-     //   thisButton.blur();
-     // })
-     //
-     // thisSpan.innerHTML += ' &nbsp; Closed:';
-     // thisButton = document.createElement('input');
-     // thisButton.setAttribute('id', 'arrowHeadClosed');
-     // thisButton.setAttribute('type', 'checkbox');
-     // // thisButton.setAttribute('onclick', "this.blur();");
-     // thisSpan.appendChild(thisButton);
-     // thisButton.addEventListener('click', (event) => {
-     //   thisButton.blur();
-     // })
-     //
-     // thisSpan.innerHTML += ' &nbsp; Length:';
-     // thisButton = document.createElement('input');
-     // thisButton.setAttribute('id', 'arrowHeadLength');
-     // thisButton.setAttribute('type', 'number');
-     // thisButton.setAttribute('value', '50');
-     // // thisButton.setAttribute('min', '5');
-     // // thisButton.setAttribute('step', '10');
-     // // thisButton.setAttribute('max', '150');
-     // thisButton.setAttribute('style', 'width: 4em');
-     // // thisButton.setAttribute('onchange', 'this.blur();');
-     // thisSpan.appendChild(thisButton);
-     // thisButton.addEventListener('change', (event) => {
-     //   thisButton.blur();
-     // })
-     //
-     // thisSpan.innerHTML += ' &nbsp; Percent:';
-     // thisButton = document.createElement('input');     // default TEXT SIZE input
-     // thisButton.setAttribute('id', 'arrowHeadPercent');
-     // thisButton.setAttribute('type', 'number');
-     // thisButton.setAttribute('min', '5');
-     // thisButton.setAttribute('step', '1');
-     // thisButton.setAttribute('max', '30');
-     // thisButton.setAttribute('style', 'width: 4em');
-     // thisButton.setAttribute('value', '10');
-     // // thisButton.setAttribute('onchange', 'this.blur(); arrowSize=this.value;');
-     // thisSpan.appendChild(thisButton);
-     // thisSpan.addEventListener('change', (event) => {
-     //   thisButton.blur();
-     //   arrowSize = parseFloat(document.getElementById('arrowHeadPercent').value);
-     // });
-     // svgMenu.appendChild(thisSpan);
-
-     // thisButton = document.createElement('input');
-     // thisButton.setAttribute('id', 'saveSVG');
-     // thisButton.setAttribute('type', 'button');
-     // thisButton.setAttribute('value', 'Extract SVG');
-     // // thisButton.setAttribute('onclick', 'this.blur(); showSVG(true);');
-     // svgMenu.appendChild(thisButton);
-     // thisButton.addEventListener('click', (event) => {
-     //   thisButton.blur();
-     //   SVGDraw.prototype.showSVG(true);
-     // });
-     //
-     // thisButton = document.createElement('input');
-     // thisButton.setAttribute('id', 'plainSVG');
-     // thisButton.setAttribute('type', 'button');
-     // thisButton.setAttribute('value', 'Plain SVG');
-     // // thisButton.setAttribute('onclick', 'this.blur(); showSVG(false);');
-     // // thisButton.setAttribute('onclick', 'showSVG(false);');
-     // svgMenu.appendChild(thisButton);
-     // thisButton.addEventListener('click', (event) => {
-     //   thisButton.blur();
-     //   SVGDraw.prototype.showSVG(false);
-     // });
-     //
-     // thisButton = document.createElement('input');
-     // thisButton.setAttribute('id', 'svgJSON');
-     // thisButton.setAttribute('type', 'button');
-     // thisButton.setAttribute('value', 'JSON SVG');
-     // svgMenu.appendChild(thisButton);
-     // thisButton.addEventListener('click', (event) => {
-     //   SVGDraw.prototype.jsonSVG(false);
-     // });
-     //
-     // svgMenu.appendChild(document.createElement('br'))
-     //
-     // let thisTextArea = document.createElement('textarea');
-     // thisTextArea.setAttribute('id', 'textSVGorJSON');
-     // svgMenu.appendChild(thisTextArea);
-
- }
+ };
 function setTextHeight() {
-  textHeight = document.getElementById('textSize').value
+  textHeight = document.getElementById('textHeight').value
 }
+SVGDraw.prototype.apiTextHeight = function(height) {
+  if(isNumeric(height)) textHeight = height
+};
+SVGDraw.prototype.apiArrowClosed = function(checked) {
+  arrowClosed = checked
+};
+SVGDraw.prototype.apiArrowFixed = function(checked) {
+  arrowFixed = checked
+};
+SVGDraw.prototype.apiArrowLength = function(length) {
+  if((length)) arrowheadLength = length
+};
+SVGDraw.prototype.apiArrowPercentt = function(percent) {
+  if(isNumeric(percent)) arrowPercent = percent
+};
 
 export default SVGDraw
 
