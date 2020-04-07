@@ -2849,9 +2849,9 @@ SVGDraw.prototype.apiArrowFixed = function(checked) {
   arrowFixed = checked
 };
 SVGDraw.prototype.apiArrowLength = function(length) {
-  if((length)) arrowheadLength = length
+  if(isNumeric(length)) arrowheadLength = length
 };
-SVGDraw.prototype.apiArrowPercentt = function(percent) {
+SVGDraw.prototype.apiArrowPercent = function(percent) {
   if(isNumeric(percent)) arrowPercent = percent
 };
 
