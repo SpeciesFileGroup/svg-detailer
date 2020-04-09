@@ -267,7 +267,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         let newGroupID = 'g' + (document.getElementById("xlt").childElementCount).toString();
         group.setAttributeNS(null, 'id', newGroupID);
-        group.setAttributeNS(null, 'type', cursorMode);
+        group.setAttributeNS(null, 'class', cursorMode);
         thisGroup = group;
         document.getElementById("xlt").appendChild(group);
         let element = createElement('polyline');        //YES, I KNOW... polyline behavior mimics google maps better
@@ -295,7 +295,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         thisGroup = group;
         let newGroupID = 'g' + (document.getElementById("xlt").childElementCount).toString();
         group.setAttributeNS(null, 'id', newGroupID);
-        group.setAttributeNS(null, 'type', cursorMode);
+        group.setAttributeNS(null, 'class', cursorMode);
         document.getElementById("xlt").appendChild(group);
         let element = createElement('polyline');
 
@@ -322,7 +322,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         let newGroupID = 'g' + (document.getElementById("xlt").childElementCount).toString();
         group.setAttributeNS(null, 'id', newGroupID);
-        group.setAttributeNS(null, 'type', cursorMode);
+        group.setAttributeNS(null, 'class', cursorMode);
         document.getElementById("xlt").appendChild(group);
         let element = createElement('rect');
 
@@ -345,7 +345,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         thisGroup = group;
         let newGroupID = 'g' + (document.getElementById("xlt").childElementCount).toString();
         group.setAttributeNS(null, 'id', newGroupID);
-        group.setAttributeNS(null, 'type', cursorMode);
+        group.setAttributeNS(null, 'class', cursorMode);
         document.getElementById("xlt").appendChild(group);
         let element = createElement('line');
 
@@ -370,7 +370,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         thisGroup = group;
         let newGroupID = 'g' + (document.getElementById("xlt").childElementCount).toString();
         group.setAttributeNS(null, 'id', newGroupID);
-        group.setAttributeNS(null, 'type', cursorMode);
+        group.setAttributeNS(null, 'class', cursorMode);
         document.getElementById("xlt").appendChild(group);
         let element = createElement('line');
 
@@ -397,7 +397,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         let newGroupID = 'g' + (document.getElementById("xlt").childElementCount).toString();
         group.setAttributeNS(null, 'id', newGroupID);
-        group.setAttributeNS(null, 'type', cursorMode);
+        group.setAttributeNS(null, 'class', cursorMode);
         document.getElementById("xlt").appendChild(group);
         let element = createElement(cursorMode);      // new generalized method
 
@@ -419,7 +419,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         thisGroup = group;
         let newGroupID = 'g' + (document.getElementById("xlt").childElementCount).toString();
         group.setAttributeNS(null, 'id', newGroupID);
-        group.setAttributeNS(null, 'type', cursorMode);
+        group.setAttributeNS(null, 'class', cursorMode);
         document.getElementById("xlt").appendChild(group);
         let element = createElement('ellipse');
 
@@ -444,7 +444,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         thisGroup = group;
         let newGroupID = 'g' + (document.getElementById("xlt").childElementCount).toString();
         group.setAttributeNS(null, 'id', newGroupID);
-        group.setAttributeNS(null, 'type', cursorMode);
+        group.setAttributeNS(null, 'class', cursorMode);
         document.getElementById("xlt").appendChild(group);
         //for (j = 0; j < thisSVGpoints.length; j++) {              // for text mode there is only one
         let element = createElement('polyline');
@@ -474,7 +474,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         thisGroup = group;
         let newGroupID = 'g' + (document.getElementById("xlt").childElementCount).toString();
         group.setAttributeNS(null, 'id', newGroupID);
-        group.setAttributeNS(null, 'type', cursorMode);
+        group.setAttributeNS(null, 'class', cursorMode);
         document.getElementById("xlt").appendChild(group);
         let element = createElement('path');
 
@@ -502,7 +502,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         thisGroup = group;
         let newGroupID = 'g' + (document.getElementById("xlt").childElementCount).toString();
         group.setAttributeNS(null, 'id', newGroupID);
-        group.setAttributeNS(null, 'type', cursorMode);
+        group.setAttributeNS(null, 'class', cursorMode);
         document.getElementById("xlt").appendChild(group);
         //for (j = 0; j < thisSVGpoints.length; j++) {              // for text mode there is only one
         let element;
@@ -613,7 +613,7 @@ function setElementMouseEnterLeave(group) {     // this actually sets the parent
 
 function setEditElement(group) {    // add bubble elements to the group containing this element
   if (checkElementConflict(group)) {    // returns true if conflict
-    console.log('Element conflict: ' + group.attributes['type'].value);
+    console.log('Element conflict: ' + group.attributes['class'].value);
     return;
   }
   console.log('setEditElement no conflict')
@@ -623,7 +623,7 @@ function setEditElement(group) {    // add bubble elements to the group containi
       msg += ', thisElement = ' + thisElement.toString()
     }
     ;
-    console.log(group.attributes['type'].value + ' ' + msg);
+    console.log(group.attributes['class'].value + ' ' + msg);
     thisGroup = group;        // there is probably no creation activity
   }
   //if (group.firstChild.tagName != cursorMode) {    // start editing an element not in the current mode
@@ -653,7 +653,7 @@ function setEditElement(group) {    // add bubble elements to the group containi
   }
   let bubbleGroup = createBubbleGroup(group);      // since bubble groups are heterogeneous in structure
   group.appendChild(bubbleGroup);             // make the new bubble group in a no-id <g>
-  console.log('setEditElement ' + group.id + ' ' + group.attributes['type'].value)
+  console.log('setEditElement ' + group.id + ' ' + group.attributes['class'].value)
   // group.removeEventListener('mouseleave', mouseLeaveFunction)
 }
 
@@ -2565,16 +2565,7 @@ SVGDraw.prototype.jsonSVG = function (verbatim) {      // package SVG into JSON 
      svgMenu = document.createElement('div');        // this lengthy, tedious section generates the controls needed
      svgMenu.setAttribute('id', 'svgMenu');
      containerID.parentElement.appendChild(svgMenu);
-     let thisButton, thisSpan;
-     // thisButton = document.createElement('input');       // inject the un-listed Delete Last Element button
-     // thisButton.setAttribute('type', 'button');
-     // thisButton.setAttribute('value', 'Clear Last Element');
-     // // thisButton.setAttribute('onclick', "clearLastGroup()");
-     // svgMenu.appendChild(thisButton);
-     // thisButton.addEventListener('click', (event) => {
-     //   clearLastGroup()
-     // })
-     let i;
+     let thisButton, thisSpan, i;
      for (i = 0; i < buttons.length; i++) {                // these buttons explicitly enumerated in data-buttons
        let thisFunction = buttons[i].function;
        let thisValue = buttons[i].value;
@@ -2773,7 +2764,8 @@ SVGDraw.prototype.jsonSVG = function (verbatim) {      // package SVG into JSON 
            thisSpan.appendChild(thisButton);
            thisButton.addEventListener('change', (event) => {
              // thisButton.blur();
-             arrowheadLength = parseFloat(document.getElementById('arrowHeadLength').value)
+             // arrowheadLength = parseFloat(document.getElementById('arrowHeadLength').value)
+             SVGDraw.prototype.apiArrowLength()
            })
 
            thisSpan.innerHTML += ' &nbsp; Percent:';
@@ -2787,7 +2779,7 @@ SVGDraw.prototype.jsonSVG = function (verbatim) {      // package SVG into JSON 
            thisButton.setAttribute('value', '10');
            thisSpan.appendChild(thisButton);
            thisSpan.addEventListener('change', (event) => {
-             // thisButton.blur();
+             thisButton.blur();
              arrowPercent = parseFloat(document.getElementById('arrowHeadPercent').value);
            });
            svgMenu.appendChild(thisSpan);
@@ -2849,11 +2841,17 @@ SVGDraw.prototype.apiArrowFixed = function(checked) {
   arrowFixed = checked
 };
 SVGDraw.prototype.apiArrowLength = function(length) {
-  if(isNumeric(length)) arrowheadLength = length
+  if(length) {
+    if(isNumeric(length)) {
+    arrowheadLength = length
+    }
+  }
+  else {
+    arrowheadLength = parseFloat(document.getElementById('arrowHeadLemgth').value);
+  }
 };
 SVGDraw.prototype.apiArrowPercent = function(percent) {
   if(isNumeric(percent)) arrowPercent = percent
 };
 
 export default SVGDraw
-

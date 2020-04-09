@@ -10,10 +10,10 @@ describe('Rectangle creation', () => {
   driver.manage().setTimeouts({implicit: 40000});
   const actions = driver.actions();
 
-  it('Should create an element with id g1 and type rectangle', async () => {
+  it('Should create an element with id g1 and class rectangle', async () => {
     await driver.get('http://localhost:8080/');
     await driver.findElement(By.id('image_file')).sendKeys(testPath + '/images/testImage.jpg');
-    let element, type, id, xoff, yoff, zoom, transform, i, points, px, py, width, height;
+    let element, _class, id, xoff, yoff, zoom, transform, i, points, px, py, width, height;
     try {
       element = await driver.findElement(By.id('container'));
       xoff = parseInt(await element.getAttribute('offsetLeft').then(function (x) {return x}));
@@ -48,15 +48,15 @@ describe('Rectangle creation', () => {
 
       element = await driver.findElement(By.id('g1'));
       id = await element.getAttribute('id').then(function (x) {return x});
-      type = await element.getAttribute('type').then(function (x) {return x});
-      console_log('id: ' + id + ' | type: ' + type);
+      _class = await element.getAttribute('class').then(function (x) {return x});
+      console_log('id: ' + id + ' | class: ' + _class);
       element = await driver.findElement(By.css('rect'));     // N.B. NOT rectangle
     }
     catch (event) {
       console.log(event);
     }
     finally {
-      expect(type).to.equal('rect', 'type');
+      expect(_class).to.equal('rect', 'class');
       expect(id).to.equal('g1', 'id');
       px = parseFloat(await element.getAttribute('x').then(function (x) {return x}));
       py = parseFloat(await element.getAttribute('y').then(function (x) {return x}));
