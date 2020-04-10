@@ -1482,8 +1482,13 @@ var text4svg = '_'; // buffer replacing HTML input control previously used for t
 
 var textHeight = 75;
 var textFont = 'Verdana';
-var arrowSize = 10; // defalt arrow head size
+var arrowPercent = 10; // defalt arrow head size 10$
 
+var arrowheadLength = 50; // or 50 pixels
+
+var arrowFixed = false; // paired with above
+
+var arrowClosed = false;
 var waitElement = false; // interlock flag to prevent mouseenter mode change after selecting a create mode
 
 var thisGroup; // should be the parent of the current element
@@ -1570,6 +1575,7 @@ var _SHIFTMAP = {
   '/': '?',
   '\\': '|'
 };
+var _drawModes = ['clear', 'polygon', 'polyline', 'line', 'arrow', 'rectangle', 'circle', 'ellipse', 'cubic', 'quadratic', 'draw', 'text', 'MOVE']; // TODO: Fix shift text GROUP <tspan>?; Entry points for Arrow attributes, color setting
 
 function SVGDraw(containerID) {
   // container:<svgLayer>:<xlt>:<svgImage>
@@ -1638,42 +1644,7 @@ function SVGDraw(containerID) {
     xltImage.setAttributeNS(null, 'preserveAspectRatio', "none");
     xltImage.setAttributeNS('http://www.w3.org/1999/xlink', 'href', svgImage.src);
     xlt.appendChild(xltImage);
-    svgMenu = document.createElement('div'); // this lengthy, tedious section generates the controls needed
-
-    svgMenu.setAttribute('id', 'svgMenu');
-    containerID.parentElement.appendChild(svgMenu);
-    var thisButton;
-    thisButton = document.createElement('input'); // for now, inject the un-listed Delete Last Element button
-
-    thisButton.setAttribute('type', 'button');
-    thisButton.setAttribute('value', 'Clear Last Element'); // thisButton.setAttribute('onclick', "clearLastGroup()");
-
-    svgMenu.appendChild(thisButton);
-    thisButton.addEventListener('click', function (event) {
-      clearLastGroup();
-    });
-    var buttons = JSON.parse(containerID.attributes['data-buttons'].value).buttons;
-    var i;
-
-    var _loop = function _loop() {
-      // these buttons explicitly enumerated in data-buttons
-      thisButton = document.createElement('input');
-      thisButton.setAttribute('type', 'button');
-      thisButton.setAttribute('value', buttons[i].function.charAt(0).toUpperCase() + buttons[i].function.slice(1));
-      thisButton.setAttribute('id', 'b_' + buttons[i].function.toLowerCase()); // thisButton.setAttribute('onclick', "this.blur(); setCursorMode('" + buttons[i].function + "');");
-
-      svgMenu.appendChild(thisButton);
-      var thisMode = buttons[i].function;
-      thisButton.addEventListener('click', function (event) {
-        setCursorMode(thisMode);
-      });
-    };
-
-    for (i = 0; i < buttons.length; i++) {
-      _loop();
-    }
-
-    SVGDraw.prototype.buildSVGmenu(); // populate the button-ology from the data element description (mostly)
+    SVGDraw.prototype.buildSVGmenu(containerID); // populate the button-ology from the data element description (mostly)
 
     document.onkeydown = self.keyHandler(); /////////////// This is probably tooo broad   /////////////////
 
@@ -1757,7 +1728,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
 
         _group.setAttributeNS(null, 'id', newGroupID);
 
-        _group.setAttributeNS(null, 'type', cursorMode);
+        _group.setAttributeNS(null, 'class', cursorMode);
 
         thisGroup = _group;
         document.getElementById("xlt").appendChild(_group);
@@ -1795,7 +1766,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
 
         _group2.setAttributeNS(null, 'id', _newGroupID);
 
-        _group2.setAttributeNS(null, 'type', cursorMode);
+        _group2.setAttributeNS(null, 'class', cursorMode);
 
         document.getElementById("xlt").appendChild(_group2);
 
@@ -1836,7 +1807,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
 
         _group3.setAttributeNS(null, 'id', _newGroupID2);
 
-        _group3.setAttributeNS(null, 'type', cursorMode);
+        _group3.setAttributeNS(null, 'class', cursorMode);
 
         document.getElementById("xlt").appendChild(_group3);
 
@@ -1880,7 +1851,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
 
         _group4.setAttributeNS(null, 'id', _newGroupID3);
 
-        _group4.setAttributeNS(null, 'type', cursorMode);
+        _group4.setAttributeNS(null, 'class', cursorMode);
 
         document.getElementById("xlt").appendChild(_group4);
 
@@ -1926,7 +1897,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
 
         _group5.setAttributeNS(null, 'id', _newGroupID4);
 
-        _group5.setAttributeNS(null, 'type', cursorMode);
+        _group5.setAttributeNS(null, 'class', cursorMode);
 
         document.getElementById("xlt").appendChild(_group5);
 
@@ -1975,7 +1946,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
 
         _group6.setAttributeNS(null, 'id', _newGroupID5);
 
-        _group6.setAttributeNS(null, 'type', cursorMode);
+        _group6.setAttributeNS(null, 'class', cursorMode);
 
         document.getElementById("xlt").appendChild(_group6);
 
@@ -2017,7 +1988,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
 
         _group7.setAttributeNS(null, 'id', _newGroupID6);
 
-        _group7.setAttributeNS(null, 'type', cursorMode);
+        _group7.setAttributeNS(null, 'class', cursorMode);
 
         document.getElementById("xlt").appendChild(_group7);
 
@@ -2063,7 +2034,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
 
         _group8.setAttributeNS(null, 'id', _newGroupID7);
 
-        _group8.setAttributeNS(null, 'type', cursorMode);
+        _group8.setAttributeNS(null, 'class', cursorMode);
 
         document.getElementById("xlt").appendChild(_group8); //for (j = 0; j < thisSVGpoints.length; j++) {              // for text mode there is only one
 
@@ -2106,7 +2077,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
 
         _group9.setAttributeNS(null, 'id', _newGroupID8);
 
-        _group9.setAttributeNS(null, 'type', cursorMode);
+        _group9.setAttributeNS(null, 'class', cursorMode);
 
         document.getElementById("xlt").appendChild(_group9);
 
@@ -2147,7 +2118,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
 
         _group10.setAttributeNS(null, 'id', _newGroupID9);
 
-        _group10.setAttributeNS(null, 'type', cursorMode);
+        _group10.setAttributeNS(null, 'class', cursorMode);
 
         document.getElementById("xlt").appendChild(_group10); //for (j = 0; j < thisSVGpoints.length; j++) {              // for text mode there is only one
 
@@ -2230,8 +2201,8 @@ function getCurvePoints(coords) {
   return curvePoint(coords[0], coords[1]) + ' ' + curvePoint(coords[2], coords[3]) + ' ' + curvePoint(coords[4], coords[5]) + ' ' + curvePoint(coords[6], coords[7]);
 }
 
-function createElement(type) {
-  var element = document.createElementNS('http://www.w3.org/2000/svg', type);
+function createElement(klass) {
+  var element = document.createElementNS('http://www.w3.org/2000/svg', klass);
   element.setAttributeNS(null, 'stroke', cursorColor);
   element.setAttributeNS(null, 'stroke-width', strokeWidth);
   element.setAttributeNS(null, 'stroke-opacity', '0.9');
@@ -2280,7 +2251,7 @@ function setEditElement(group) {
   // add bubble elements to the group containing this element
   if (checkElementConflict(group)) {
     // returns true if conflict
-    console.log('Element conflict: ' + group.attributes['type'].value);
+    console.log('Element conflict: ' + group.attributes.class.value);
     return;
   }
 
@@ -2295,7 +2266,7 @@ function setEditElement(group) {
     }
 
     ;
-    console.log(group.attributes['type'].value + ' ' + msg);
+    console.log(group.attributes.class.value + ' ' + msg);
     thisGroup = group; // there is probably no creation activity
   } //if (group.firstChild.tagName != cursorMode) {    // start editing an element not in the current mode
 
@@ -2304,14 +2275,14 @@ function setEditElement(group) {
 
   if (group.firstChild) {
     if (group.firstChild.tagName != 'path') {
-      if (group.attributes.type) {
-        // type atribute existence
-        cursorMode = group.attributes.type.value;
+      if (group.attributes.class) {
+        // class atribute existence
+        cursorMode = group.attributes.class.value;
       } else {
         cursorMode = group.firstChild.tagName;
       }
     } else {
-      // now that there are both cubic and quadratic curves, we must detect this one's type
+      // now that there are both cubic and quadratic curves, we must detect this one's class
       cursorMode = 'cubic'; // ///////// finesse path
 
       if (group.firstChild.attributes.d.value.indexOf('C ') == -1) {
@@ -2337,7 +2308,7 @@ function setEditElement(group) {
 
   group.appendChild(bubbleGroup); // make the new bubble group in a no-id <g>
 
-  console.log('setEditElement ' + group.id + ' ' + group.attributes['type'].value); // group.removeEventListener('mouseleave', mouseLeaveFunction)
+  console.log('setEditElement ' + group.id + ' ' + group.attributes.class.value); // group.removeEventListener('mouseleave', mouseLeaveFunction)
 }
 
 function clearEditElement(group) {
@@ -2453,7 +2424,7 @@ function exitEditPoint(group) {
 
   svgInProgress = false; ///////////////
 
-  thisBubble = null; //cursorMode = "MOVE";  //was savedCursorMode; ////////////// actually editing element unchains creation of this type
+  thisBubble = null; //cursorMode = "MOVE";  //was savedCursorMode; ////////////// actually editing element unchains creation of this class
 
   setCursorMode("MOVE");
   setElementMouseEnterLeave(group);
@@ -2472,8 +2443,8 @@ function setShiftElement(bubble) {
 
   cursorMode = thisElement.tagName;
 
-  if (thisGroup.attributes.type) {
-    cursorMode = thisGroup.attributes.type.value;
+  if (thisGroup.attributes.class) {
+    cursorMode = thisGroup.attributes.class.value;
   } //// presumption of ordering of shift bubble vs other bubbles: FIRST bubble is shift -- modified other code so TRUE
 
 
@@ -2536,8 +2507,8 @@ function setPointElement(bubble) {
     bubble.parentNode.lastChild.remove(); // /////////// this is the right place: remove insert point bubbles
   }
 
-  if (thisGroup.attributes.type) {
-    cursorMode = thisGroup.attributes.type.value;
+  if (thisGroup.attributes.class) {
+    cursorMode = thisGroup.attributes.class.value;
   } else {
     cursorMode = thisElement.tagName;
   }
@@ -3035,17 +3006,7 @@ function getModel(element) {
 
 function isNumeric(n) {
   return !isNaN(parseFloat(n)) && isFinite(n);
-} // function unbindMouseHandlers(self) {    //   /////////////  this routine and its usages should be excised
-//   if (event.type != 'mouseup') {
-//     return false;                 // ////// this is always happening
-//   }
-//   //$(document).unbind(self.mouseMoveEvent, self.mouseMoveHandler);   // unbinding on mouse UP
-//   //$(document).unbind(self.mouseUpEvent, self.mouseUpHandler);
-// // kill the linkage to the handler
-// //  self.mouseMoveHandler = null;
-// //  self.mouseUpHandler = null;
-// }
-
+}
 
 SVGDraw.prototype.onSvgMouseMove = function () {
   var self = this;
@@ -3495,7 +3456,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       if (document.getElementById('arrowHeadPixels').checked) {
         barbLength = document.getElementById('arrowHeadLength').value;
       } else {
-        barbLength = lineLength * arrowSize / 100;
+        barbLength = lineLength * arrowPercent / 100;
       }
 
       var pctX = parseFloat(thisX2) - _dx3 * barbLength; //  baseline for barb trailing end
@@ -4324,18 +4285,33 @@ function setCursorMode(mode) {
 
       console.log('@setCursorMode2 cursorMode = ' + cursorMode);
     }
-  }
+
+    if (mode == 'clear') {
+      clearLastGroup();
+      cursorMode = 'MOVE';
+    }
+
+    if (mode == 'reset') {
+      zoom_trans(0, 0, baseZoom);
+      cursorMode = 'MOVE';
+    }
+  } // cursorMode WILL BE set at this point
+
 
   savedCursorMode = 'MOVE'; ////////////// eliminated but reinstated
 
-  if (mode.toUpperCase() != 'MOVE') {
+  if (cursorMode.toUpperCase() != 'MOVE') {
     waitElement = true;
     console.log('@setCursorMode3 waitElement = ' + cursorMode);
   }
 
-  indicateMode(mode);
+  indicateMode(cursorMode);
   svgInProgress = false;
 }
+
+SVGDraw.prototype.setMode = function (mode) {
+  setCursorMode(mode);
+};
 
 function checkLeftoverElement() {
   // this function is only called when svgInProgress is false (?)
@@ -4690,7 +4666,7 @@ function collectSVG(verbatim) {
 
     if (!verbatim) {
       // new wrinkle for arrow and similar groups
-      if (thisG.attributes.type) {
+      if (thisG.attributes.class) {
         thisG.removeAttribute('id');
       } else {
         j--; // not verbatim, so back up to index the same <g>
@@ -4723,10 +4699,6 @@ SVGDraw.prototype.showSVG = function (verbatim) {
 
 SVGDraw.prototype.jsonSVG = function (verbatim) {
   // package SVG into JSON object
-  // specification is to return elements within a single group as text
-  // { "data": {
-  //      "type":  "svg",
-  //      "attributes": "<svg . . . the svg text . . . </svg>"
   var clonedSVG = collectSVG(false).firstChild; // strip off <svg...> </svg>
 
   clonedSVG.removeAttribute('id');
@@ -4740,279 +4712,342 @@ SVGDraw.prototype.jsonSVG = function (verbatim) {
   };
   svgMenu.children['textSVGorJSON'].textContent = JSON.stringify(JSONsvg);
   return JSONsvg;
-};
-
-SVGDraw.prototype.buildSVGmenu = function () {
-  var thisButton;
-  thisButton = document.createElement('input'); // default MOVE button
-  //thisButton.setAttribute('id', 'btn_' + buttons[i].function);
-
-  thisButton.setAttribute('type', 'button');
-  thisButton.setAttribute('value', 'MOVE');
-  thisButton.setAttribute('id', 'b_move'); // thisButton.setAttribute('onclick', "setCursorMode('MOVE');");
-
-  svgMenu.appendChild(thisButton);
-  thisButton.addEventListener('click', function (event) {
-    setCursorMode('MOVE');
-  });
-  var thisSpan;
-  thisSpan = document.createElement('span'); // mode/status display area
-
-  thisSpan.setAttribute('id', 'mode');
-  svgMenu.appendChild(thisSpan);
-  thisButton = document.createElement('input'); // default ZOOM IN button
-
-  thisButton.setAttribute('type', 'button');
-  thisButton.setAttribute('value', 'Zoom IN');
-  thisButton.setAttribute('id', 'b_zoomin'); // thisButton.setAttribute('onclick', "this.blur(); zoomIn();");
-
-  svgMenu.appendChild(thisButton);
-  thisButton.addEventListener('click', function (event) {
-    thisButton.blur();
-    zoomIn();
-  });
-  thisButton = document.createElement('span'); // ZOOM display area
-
-  thisButton.setAttribute('id', 'zoom');
-  thisButton.setAttribute('innerHTML', ' Zoom:  ----');
-  svgMenu.appendChild(thisButton);
-  thisButton = document.createElement('input'); // default ZOOM OUT button
-
-  thisButton.setAttribute('type', 'button');
-  thisButton.setAttribute('value', 'Zoom OUT');
-  thisButton.setAttribute('id', 'b_zoomout'); // thisButton.setAttribute('onclick', "this.blur(); zoomOut();");
-
-  svgMenu.appendChild(thisButton);
-  thisButton.addEventListener('click', function (event) {
-    thisButton.blur();
-    zoomOut();
-  });
-  thisButton = document.createElement('input'); // default ZOOM OUT button
-
-  thisButton.setAttribute('type', 'button');
-  thisButton.setAttribute('value', 'Reset');
-  thisButton.setAttribute('id', 'b_reset'); // thisButton.setAttribute('onclick', "this.blur(); zoom_trans(0, 0, baseZoom);");
-
-  svgMenu.appendChild(thisButton);
-  thisButton.addEventListener('click', function (event) {
-    thisButton.blur();
-    zoom_trans(0, 0, baseZoom);
-  });
-  thisSpan = document.createElement('span'); // TEXT display area
-
-  thisSpan.setAttribute('id', 'textBlock'); //thisSpan.textContent = 'Text Size: ';
-
-  svgMenu.appendChild(thisSpan);
-  var thisTextsizeTitle = document.createElement('span');
-  thisTextsizeTitle.innerHTML = 'Text Size: ';
-  thisSpan.appendChild(thisTextsizeTitle);
-  thisButton = document.createElement('input'); // default TEXT SIZE input
-
-  thisButton.setAttribute('id', 'textSize');
-  thisButton.setAttribute('type', 'number');
-  thisButton.setAttribute('min', '5');
-  thisButton.setAttribute('step', '5');
-  thisButton.setAttribute('max', '300');
-  thisButton.setAttribute('style', 'width: 4em');
-  thisButton.setAttribute('value', '75'); // thisButton.setAttribute('onchange', 'textHeight=this.value; this.blur();');
-
-  thisSpan.appendChild(thisButton); // thisButton.addEventListener('change', (event) => { textHeight = thisButton.value; thisButton.blur(); })
-
-  thisButton.addEventListener('change', function (event) {
-    setTextHeight();
-  }); //thisButton = document.createElement('input');     // default TEXT input
-  //thisButton.setAttribute('id', 'text4svg');        // this control eliminated
-  //thisButton.setAttribute('type', 'text');
-  //thisButton.setAttribute('disabled', 'true');
-  //thisSpan.appendChild(thisButton);
-  // thisSpan.innerHTML += '<br>Select color: ';
-
-  svgMenu.appendChild(document.createElement('br'));
-  thisSpan = document.createElement('span');
-  thisSpan.innerHTML = 'Select color: ';
-  svgMenu.appendChild(thisSpan);
-  var colorSelect = {
-    "buttons": [// select this color buttons: Red/Green/Blue/Black/UserDefined/Selected
-    {
-      "color": "#FF0000"
-    }, {
-      "color": "#00FF00"
-    }, {
-      "color": "#0000FF"
-    }, {
-      "color": "#000000"
-    }, {
-      "color": "#666666"
-    }, {
-      "color": "#FF0000"
-    }]
-  };
-  var i;
-
-  for (i = 0; i < colorSelect.buttons.length; i++) {
-    // buttons explicitly enumerated in data-buttons
-    if (i == 4) {
-      // insert the text area input after the first 4 color select buttons
-      thisButton = document.createElement('input');
-      thisButton.setAttribute('id', 'userColor');
-      thisButton.setAttribute('type', 'text');
-      thisButton.setAttribute('value', colorSelect.buttons[i].color);
-      thisButton.setAttribute('style', 'width: 5em'); // thisButton.setAttribute('onchange', "setUserColor(this.value); this.blur();");
-
-      svgMenu.appendChild(thisButton);
-      thisButton.addEventListener('change', function (event) {
-        setUserColor(getUserColor());
-        thisButton.blur();
-      });
-      thisButton = document.createElement('input'); // add the user-defined color select button
-
-      thisButton.setAttribute('id', 'selectUserColor');
-      thisButton.setAttribute('type', 'button');
-      thisButton.setAttribute('style', 'background-color: ' + colorSelect.buttons[i].color); // thisButton.setAttribute('onclick', "setCursorColor(getUserColor()); this.blur();");
-
-      svgMenu.appendChild(thisButton);
-      thisButton.addEventListener('click', function (event) {
-        setCursorColor(getUserColor());
-        thisButton.blur();
-      });
-    }
-
-    if (i < colorSelect.buttons.length - 2) {
-      (function () {
-        // for the first four (0:3) color select buttons, just set table color
-        thisButton = document.createElement('input');
-        thisButton.setAttribute('type', 'button');
-        thisButton.setAttribute('style', 'background-color: ' + colorSelect.buttons[i].color); // thisButton.setAttribute('onclick', "setCursorColor('" + colorSelect.buttons[i].color + "'); this.blur();");
-
-        svgMenu.appendChild(thisButton);
-        var thisColor = colorSelect.buttons[i].color;
-        thisButton.addEventListener('click', function (event) {
-          setCursorColor(thisColor);
-          thisButton.blur();
-        });
-      })();
-    }
-
-    if (i > colorSelect.buttons.length - 2) {
-      // insert the selected color block (5) (indicator only) as last
-      var thisColorTitle = document.createElement('span');
-      thisColorTitle.innerHTML = ' Selected Color >';
-      svgMenu.appendChild(thisColorTitle);
-      thisButton = document.createElement('input');
-      thisButton.setAttribute('id', 'cursorColor');
-      thisButton.setAttribute('type', 'button'); // thisButton.setAttribute('style', 'this.blur(); background-color: ' + colorSelect.buttons[i].color);
-
-      thisButton.setAttribute('style', 'background-color: ' + colorSelect.buttons[i].color);
-      svgMenu.appendChild(thisButton); // let thisColor = colorSelect.buttons[i].color;
-      // thisButton.addEventListener('click', (event) => { setUserColor(thisColor); this.blur(); });
-
-      cursorColor = colorSelect.buttons[i].color; // set the cursorColor from the nominal button arrangement
-    }
-  } //thisSpan = document.createElement('span');    // removed control for cursor position indication
-  //thisSpan.setAttribute('id', 'coords');
-  //svgMenu.appendChild(thisSpan);
+}; // buildSVGmenu refactored into standalone integrated function
 
 
-  thisButton = document.createElement('input');
-  thisButton.setAttribute('id', 'svgArrow');
-  thisButton.setAttribute('type', 'button');
-  thisButton.setAttribute('value', 'Arrow line'); // thisButton.setAttribute('onclick', "setCursorMode('arrow'); this.blur();");
+SVGDraw.prototype.buildSVGmenu = function (containerID) {
+  if (containerID.attributes['data-buttons']) {
+    (function () {
+      var buttons = JSON.parse(containerID.attributes['data-buttons'].value).buttons;
+      svgMenu = document.createElement('div'); // this lengthy, tedious section generates the controls needed
 
-  svgMenu.appendChild(thisButton);
-  thisButton.addEventListener('click', function (event) {
-    setCursorMode('arrow');
-    thisButton.blur();
-  });
-  thisSpan = document.createElement('span'); // arrow display area
+      svgMenu.setAttribute('id', 'svgMenu');
+      containerID.parentElement.appendChild(svgMenu);
+      var thisButton, thisSpan, i;
 
-  thisSpan.setAttribute('id', 'arrowBlock');
-  thisSpan.innerHTML += ' &nbsp; Fixed:';
-  thisButton = document.createElement('input');
-  thisButton.setAttribute('id', 'arrowHeadPixels');
-  thisButton.setAttribute('type', 'checkbox'); // thisButton.setAttribute('onclick', "this.blur();");
+      for (i = 0; i < buttons.length; i++) {
+        // these buttons explicitly enumerated in data-buttons
+        var thisFunction = buttons[i].function;
+        var thisValue = buttons[i].value;
 
-  thisSpan.appendChild(thisButton);
-  thisButton.addEventListener('click', function (event) {
-    thisButton.blur();
-  });
-  thisSpan.innerHTML += ' &nbsp; Closed:';
-  thisButton = document.createElement('input');
-  thisButton.setAttribute('id', 'arrowHeadClosed');
-  thisButton.setAttribute('type', 'checkbox'); // thisButton.setAttribute('onclick', "this.blur();");
+        (function () {
+          switch (thisFunction) {
+            case 'clear':
+            case 'polygon':
+            case 'polyline':
+            case 'line':
+            case 'arrow':
+            case 'rectangle':
+            case 'circle':
+            case 'ellipse':
+            case 'quadratic':
+            case 'cubic':
+            case 'draw':
+            case 'text':
+            case 'MOVE':
+            case 'reset':
+              thisButton = document.createElement('input');
+              thisButton.setAttribute('type', 'button');
 
-  thisSpan.appendChild(thisButton);
-  thisButton.addEventListener('click', function (event) {
-    thisButton.blur();
-  });
-  thisSpan.innerHTML += ' &nbsp; Length:';
-  thisButton = document.createElement('input');
-  thisButton.setAttribute('id', 'arrowHeadLength');
-  thisButton.setAttribute('type', 'number');
-  thisButton.setAttribute('value', '50'); // thisButton.setAttribute('min', '5');
-  // thisButton.setAttribute('step', '10');
-  // thisButton.setAttribute('max', '150');
+              if (thisValue) {
+                thisButton.setAttribute('value', thisValue);
+              } else {
+                thisButton.setAttribute('value', buttons[i].function.charAt(0).toUpperCase() + buttons[i].function.slice(1));
+              }
 
-  thisButton.setAttribute('style', 'width: 4em'); // thisButton.setAttribute('onchange', 'this.blur();');
+              thisButton.setAttribute('id', 'b_' + buttons[i].function.toLowerCase());
+              svgMenu.appendChild(thisButton);
+              var thisMode = buttons[i].function;
+              thisButton.addEventListener('click', function (event) {
+                setCursorMode(thisMode);
+              });
+              break;
 
-  thisSpan.appendChild(thisButton);
-  thisButton.addEventListener('change', function (event) {
-    thisButton.blur();
-  });
-  thisSpan.innerHTML += ' &nbsp; Percent:';
-  thisButton = document.createElement('input'); // default TEXT SIZE input
+            case 'mode':
+              thisSpan = document.createElement('span'); // mode/status display area
 
-  thisButton.setAttribute('id', 'arrowHeadPercent');
-  thisButton.setAttribute('type', 'number');
-  thisButton.setAttribute('min', '5');
-  thisButton.setAttribute('step', '1');
-  thisButton.setAttribute('max', '30');
-  thisButton.setAttribute('style', 'width: 4em');
-  thisButton.setAttribute('value', '10'); // thisButton.setAttribute('onchange', 'this.blur(); arrowSize=this.value;');
+              thisSpan.setAttribute('id', 'mode');
+              svgMenu.appendChild(thisSpan);
+              break;
 
-  thisSpan.appendChild(thisButton);
-  thisSpan.addEventListener('change', function (event) {
-    thisButton.blur();
-    arrowSize = parseFloat(document.getElementById('arrowHeadPercent').value);
-  });
-  svgMenu.appendChild(thisSpan);
-  thisButton = document.createElement('input');
-  thisButton.setAttribute('id', 'saveSVG');
-  thisButton.setAttribute('type', 'button');
-  thisButton.setAttribute('value', 'Extract SVG'); // thisButton.setAttribute('onclick', 'this.blur(); showSVG(true);');
+            case 'zoomin':
+              thisButton = document.createElement('input'); // default ZOOM OUT button
 
-  svgMenu.appendChild(thisButton);
-  thisButton.addEventListener('click', function (event) {
-    thisButton.blur();
-    SVGDraw.prototype.showSVG(true);
-  });
-  thisButton = document.createElement('input');
-  thisButton.setAttribute('id', 'plainSVG');
-  thisButton.setAttribute('type', 'button');
-  thisButton.setAttribute('value', 'Plain SVG'); // thisButton.setAttribute('onclick', 'this.blur(); showSVG(false);');
-  // thisButton.setAttribute('onclick', 'showSVG(false);');
+              thisButton.setAttribute('type', 'button');
+              thisButton.setAttribute('value', 'Zoom IN');
+              thisButton.setAttribute('id', 'b_zoomin');
+              svgMenu.appendChild(thisButton);
+              thisButton.addEventListener('click', function (event) {
+                thisButton.blur();
+                zoomIn();
+              });
+              break;
 
-  svgMenu.appendChild(thisButton);
-  thisButton.addEventListener('click', function (event) {
-    thisButton.blur();
-    SVGDraw.prototype.showSVG(false);
-  });
-  thisButton = document.createElement('input');
-  thisButton.setAttribute('id', 'svgJSON');
-  thisButton.setAttribute('type', 'button');
-  thisButton.setAttribute('value', 'JSON SVG');
-  svgMenu.appendChild(thisButton);
-  thisButton.addEventListener('click', function (event) {
-    SVGDraw.prototype.jsonSVG(false);
-  });
-  svgMenu.appendChild(document.createElement('br'));
-  var thisTextArea = document.createElement('textarea');
-  thisTextArea.setAttribute('id', 'textSVGorJSON');
-  svgMenu.appendChild(thisTextArea);
+            case 'zoom':
+              thisButton = document.createElement('span'); // ZOOM display area
+
+              thisButton.setAttribute('id', 'zoom');
+              thisButton.setAttribute('innerHTML', ' Zoom:  ----');
+              svgMenu.appendChild(thisButton);
+              break;
+
+            case 'zoomout':
+              thisButton = document.createElement('input'); // default ZOOM OUT button
+
+              thisButton.setAttribute('type', 'button');
+              thisButton.setAttribute('value', 'Zoom OUT');
+              thisButton.setAttribute('id', 'b_zoomout');
+              svgMenu.appendChild(thisButton);
+              thisButton.addEventListener('click', function (event) {
+                thisButton.blur();
+                zoomOut();
+              });
+              break;
+
+            case 'textheight':
+              thisSpan = document.createElement('span'); // TEXT display area
+
+              thisSpan.setAttribute('id', 'textBlock'); //thisSpan.textContent = 'Text Size: ';
+
+              svgMenu.appendChild(thisSpan);
+              var thistextHeightTitle = document.createElement('span');
+              thistextHeightTitle.innerHTML = ' Text Size: ';
+              thisSpan.appendChild(thistextHeightTitle);
+              thisButton = document.createElement('input'); // default TEXT SIZE input
+
+              thisButton.setAttribute('id', 'textHeight');
+              thisButton.setAttribute('type', 'number');
+              thisButton.setAttribute('min', '5');
+              thisButton.setAttribute('step', '5');
+              thisButton.setAttribute('max', '300');
+              thisButton.setAttribute('style', 'width: 4em');
+              thisButton.setAttribute('value', '75'); // thisButton.setAttribute('onchange', 'textHeight=this.value; this.blur();');
+
+              thisSpan.appendChild(thisButton); // thisButton.addEventListener('change', (event) => { textHeight = thisButton.value; thisButton.blur(); })
+
+              thisButton.addEventListener('change', function (event) {
+                setTextHeight();
+              });
+              break;
+
+            case 'newline':
+              svgMenu.appendChild(document.createElement('br'));
+              thisSpan = document.createElement('span');
+              thisSpan.innerHTML = 'Select color: ';
+              svgMenu.appendChild(thisSpan);
+              break;
+
+            case 'colorselect':
+              var colorSelect = {
+                "buttons": [// select this color buttons: Red/Green/Blue/Black/UserDefined/Selected
+                {
+                  "color": "#FF0000"
+                }, {
+                  "color": "#00FF00"
+                }, {
+                  "color": "#0000FF"
+                }, {
+                  "color": "#000000"
+                }, {
+                  "color": "#666666"
+                }, {
+                  "color": "#FF0000"
+                }]
+              };
+              var j = void 0;
+
+              for (j = 0; j < colorSelect.buttons.length; j++) {
+                // buttons explicitly enumerated in data-buttons
+                if (j == 4) {
+                  // insert the text area input after the first 4 color select buttons
+                  thisButton = document.createElement('input');
+                  thisButton.setAttribute('id', 'userColor');
+                  thisButton.setAttribute('type', 'text');
+                  thisButton.setAttribute('value', colorSelect.buttons[j].color);
+                  thisButton.setAttribute('style', 'width: 5em'); // thisButton.setAttribute('onchange', "setUserColor(this.value); this.blur();");
+
+                  svgMenu.appendChild(thisButton);
+                  thisButton.addEventListener('change', function (event) {
+                    setUserColor(getUserColor());
+                    thisButton.blur();
+                  });
+                  thisButton = document.createElement('input'); // add the user-defined color select button
+
+                  thisButton.setAttribute('id', 'selectUserColor');
+                  thisButton.setAttribute('type', 'button');
+                  thisButton.setAttribute('style', 'background-color: ' + colorSelect.buttons[j].color); // thisButton.setAttribute('onclick', "setCursorColor(getUserColor()); this.blur();");
+
+                  svgMenu.appendChild(thisButton);
+                  thisButton.addEventListener('click', function (event) {
+                    setCursorColor(getUserColor());
+                    thisButton.blur();
+                  });
+                }
+
+                if (j < colorSelect.buttons.length - 2) {
+                  (function () {
+                    // for the first four (0:3) color select buttons, just set table color
+                    thisButton = document.createElement('input');
+                    thisButton.setAttribute('type', 'button');
+                    thisButton.setAttribute('style', 'background-color: ' + colorSelect.buttons[j].color); // thisButton.setAttribute('onclick', "setCursorColor('" + colorSelect.buttons[j].color + "'); this.blur();");
+
+                    svgMenu.appendChild(thisButton);
+                    var thisColor = colorSelect.buttons[j].color;
+                    thisButton.addEventListener('click', function (event) {
+                      setCursorColor(thisColor);
+                      thisButton.blur();
+                    });
+                  })();
+                }
+
+                if (j > colorSelect.buttons.length - 2) {
+                  // insert the selected color block (5) (indicator only) as last
+                  var thisColorTitle = document.createElement('span');
+                  thisColorTitle.innerHTML = ' Selected Color >';
+                  svgMenu.appendChild(thisColorTitle);
+                  thisButton = document.createElement('input');
+                  thisButton.setAttribute('id', 'cursorColor');
+                  thisButton.setAttribute('type', 'button'); // thisButton.setAttribute('style', 'this.blur(); background-color: ' + colorSelect.buttons[j].color);
+
+                  thisButton.setAttribute('style', 'background-color: ' + colorSelect.buttons[j].color);
+                  svgMenu.appendChild(thisButton); // let thisColor = colorSelect.buttons[j].color;
+                  // thisButton.addEventListener('click', (event) => { setUserColor(thisColor); this.blur(); });
+
+                  cursorColor = colorSelect.buttons[j].color; // set the cursorColor from the nominal button arrangement
+                }
+              }
+
+              break;
+
+            case 'arrowspecs':
+              thisSpan = document.createElement('span'); // arrow display area
+
+              thisSpan.setAttribute('id', 'arrowBlock');
+              thisSpan.innerHTML += ' &nbsp;Arrowhead: Closed:';
+              thisButton = document.createElement('input');
+              thisButton.setAttribute('id', 'arrowHeadClosed');
+              thisButton.setAttribute('type', 'checkbox'); // thisButton.setAttribute('onclick', "this.blur();");
+
+              thisSpan.appendChild(thisButton);
+              thisButton.addEventListener('click', function (event) {
+                // thisButton.blur();
+                arrowClosed = document.getElementById('arrowHeadClosed').checked;
+              });
+              thisSpan.innerHTML += ' &nbsp; Fixed:';
+              thisButton = document.createElement('input');
+              thisButton.setAttribute('id', 'arrowHeadPixels');
+              thisButton.setAttribute('type', 'checkbox'); // thisButton.setAttribute('onclick', "this.blur();");
+
+              thisSpan.appendChild(thisButton);
+              thisButton.addEventListener('click', function (event) {
+                // thisButton.blur();
+                arrowFixed = document.getElementById('arrowHeadPixels').checked;
+              });
+              thisSpan.innerHTML += ' &nbsp; Length:';
+              thisButton = document.createElement('input');
+              thisButton.setAttribute('id', 'arrowHeadLength');
+              thisButton.setAttribute('type', 'number');
+              thisButton.setAttribute('value', '50'); // thisButton.setAttribute('min', '5');
+              // thisButton.setAttribute('step', '10');
+              // thisButton.setAttribute('max', '150');
+
+              thisButton.setAttribute('style', 'width: 4em'); // thisButton.setAttribute('onchange', 'this.blur();');
+
+              thisSpan.appendChild(thisButton);
+              thisButton.addEventListener('change', function (event) {
+                // thisButton.blur();
+                // arrowheadLength = parseFloat(document.getElementById('arrowHeadLength').value)
+                SVGDraw.prototype.apiArrowLength();
+              });
+              thisSpan.innerHTML += ' &nbsp; Percent:';
+              thisButton = document.createElement('input'); // default TEXT SIZE input
+
+              thisButton.setAttribute('id', 'arrowHeadPercent');
+              thisButton.setAttribute('type', 'number');
+              thisButton.setAttribute('min', '5');
+              thisButton.setAttribute('step', '1');
+              thisButton.setAttribute('max', '30');
+              thisButton.setAttribute('style', 'width: 4em');
+              thisButton.setAttribute('value', '10');
+              thisSpan.appendChild(thisButton);
+              thisSpan.addEventListener('change', function (event) {
+                thisButton.blur();
+                arrowPercent = parseFloat(document.getElementById('arrowHeadPercent').value);
+              });
+              svgMenu.appendChild(thisSpan);
+              break;
+
+            case 'json':
+              thisButton = document.createElement('input');
+              thisButton.setAttribute('id', 'saveSVG');
+              thisButton.setAttribute('type', 'button');
+              thisButton.setAttribute('value', 'Extract SVG'); // thisButton.setAttribute('onclick', 'this.blur(); showSVG(true);');
+
+              svgMenu.appendChild(thisButton);
+              thisButton.addEventListener('click', function (event) {
+                thisButton.blur();
+                SVGDraw.prototype.showSVG(true);
+              });
+              thisButton = document.createElement('input');
+              thisButton.setAttribute('id', 'plainSVG');
+              thisButton.setAttribute('type', 'button');
+              thisButton.setAttribute('value', 'Plain SVG'); // thisButton.setAttribute('onclick', 'this.blur(); showSVG(false);');
+              // thisButton.setAttribute('onclick', 'showSVG(false);');
+
+              svgMenu.appendChild(thisButton);
+              thisButton.addEventListener('click', function (event) {
+                thisButton.blur();
+                SVGDraw.prototype.showSVG(false);
+              });
+              thisButton = document.createElement('input');
+              thisButton.setAttribute('id', 'svgJSON');
+              thisButton.setAttribute('type', 'button');
+              thisButton.setAttribute('value', 'JSON SVG');
+              svgMenu.appendChild(thisButton);
+              thisButton.addEventListener('click', function (event) {
+                SVGDraw.prototype.jsonSVG(false);
+              });
+              svgMenu.appendChild(document.createElement('br'));
+              var thisTextArea = document.createElement('textarea');
+              thisTextArea.setAttribute('id', 'textSVGorJSON');
+              svgMenu.appendChild(thisTextArea);
+              break;
+          }
+        })();
+      }
+    })();
+  }
 };
 
 function setTextHeight() {
-  textHeight = document.getElementById('textSize').value;
+  textHeight = document.getElementById('textHeight').value;
 }
+
+SVGDraw.prototype.apiTextHeight = function (height) {
+  if (isNumeric(height)) textHeight = height;
+};
+
+SVGDraw.prototype.apiArrowClosed = function (checked) {
+  arrowClosed = checked;
+};
+
+SVGDraw.prototype.apiArrowFixed = function (checked) {
+  arrowFixed = checked;
+};
+
+SVGDraw.prototype.apiArrowLength = function (length) {
+  if (length) {
+    if (isNumeric(length)) {
+      arrowheadLength = length;
+    }
+  } else {
+    arrowheadLength = parseFloat(document.getElementById('arrowHeadLemgth').value);
+  }
+};
+
+SVGDraw.prototype.apiArrowPercent = function (percent) {
+  if (isNumeric(percent)) arrowPercent = percent;
+};
 
 /* harmony default export */ var svg_detailer = (SVGDraw);
 // CONCATENATED MODULE: ./node_modules/@vue/cli-service/lib/commands/build/entry-lib.js
