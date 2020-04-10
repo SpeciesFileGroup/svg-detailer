@@ -21,8 +21,9 @@ realized as degenerate cases of &lt;path&gt;.  For purposes of element organizat
 group, &lt;g&gt;, elements are used to contain graphic elements.
 
 Present limitations exist for element details, where only the "stroke" color attribute is controllable.  Other
-styling attributes such as "fill", "stroke-opacity", "fill-opacity", and "stroke-width" are fixed at this time.
-When a suitable editing framework is developed, these attributes will be changeable within the library's context.
+styling attributes (such as "fill", "fill-opacity", "stroke-opacity", and "stroke-width") are fixed at this time in the 
+data-buttons internally generated menu.  These functions are supported in API entry points, however, especially for 
+externally managed editing mode interfaces.
 
 Element editing is currently continuously active, effected through mouse events.
 
@@ -39,7 +40,7 @@ Some variation in mouse down vs click and double-click exists on an element-type
    not had any testing since the dependency was removed.  Text input is terminated by shift-Enter.
 
 Editing is enabled through mouseover events on the &lt;g&gt; groups containing elements.  These groups have an ID and 
-type of the form &lt;g1 type="polyline"&gt; for convenience in analysis and debugging. Similarly to Google map editing 
+class of the form &lt;g id="g1" class="polyline"&gt; for convenience in analysis and debugging. Similarly to Google map editing 
 of drawing elements, "bubbles" appear at control points appropriate to the given element. On mouse-down on these bubbles,
 dragging the point relocates it for the element.  Due to the definition of rectangle, circle, ellipse, and text,
 moving their base-point effectively relocates the element.  Recently, a centroidal element-shift-point bubble, slightly 

@@ -9,10 +9,10 @@ describe('Polyline creation', () => {
   driver.manage().setTimeouts({implicit: 40000});
   const actions = driver.actions();
 
-  it('Should create an element with id g1 and type polyline', async () => {
+  it('Should create an element with id g1 and class polyline', async () => {
     await driver.get('http://localhost:8080/');
     await driver.findElement(By.id('image_file')).sendKeys(testPath + '/images/testImage.jpg');
-    let element, type, id, xoff, yoff, zoom, transform, i, points, px, py, coords, idealPoints = [];
+    let element, _class, id, xoff, yoff, zoom, transform, i, points, px, py, coords, idealPoints = [];
     try {
       element = await driver.findElement(By.id('container'));
       xoff = parseInt(await element.getAttribute('offsetLeft').then(function (x) {return x}));
@@ -50,15 +50,15 @@ describe('Polyline creation', () => {
 
       element = await driver.findElement(By.id('g1'));
       id = await element.getAttribute('id').then(function (x) {return x});
-      type = await element.getAttribute('type').then(function (x) {return x});
-      console_log('id: ' + id + ' | type: ' + type);
+      _class = await element.getAttribute('class').then(function (x) {return x});
+      console_log('id: ' + id + ' | class: ' + _class);
       element = await driver.findElement(By.css('polyline'));
     }
     catch (event) {
       console.log(event);
     }
     finally {
-      expect(type).to.equal('polyline', 'type');
+      expect(_class).to.equal('polyline', 'class');
       expect(id).to.equal('g1', 'id');
       let coords = await element.getAttribute('points').then(function (x) {return x});
       console_log(coords);

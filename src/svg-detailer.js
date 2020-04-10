@@ -31,8 +31,10 @@ var secondKey;
 var text4svg = '_';         // buffer replacing HTML input control previously used for text, prime with underscore cursor
 var textHeight = 75;
 var textFont = 'Verdana';
-var arrowSize = 10;         // defalt arrow head size
-
+var arrowPercent = 10;        // defalt arrow head size 10$
+var arrowheadLength = 50;     // or 50 pixels
+var arrowFixed = false;       // paired with above
+var arrowClosed = false;
 var waitElement = false;   // interlock flag to prevent mouseenter mode change after selecting a create mode
 
 var thisGroup;              // should be the parent of the current element
@@ -121,6 +123,12 @@ var _SHIFTMAP = {
   '/': '?',
   '\\': '|'
 };
+var _drawModes = [
+  'clear', 'polygon', 'polyline', 'line', 'arrow',
+  'rectangle', 'circle', 'ellipse', 'cubic', 'quadratic',
+  'draw', 'text', 'MOVE'
+];
+// TODO: Fix shift text GROUP <tspan>?; Entry points for Arrow attributes, color setting
 
 function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
 
@@ -191,33 +199,7 @@ function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
     xltImage.setAttributeNS('http://www.w3.org/1999/xlink', 'href', svgImage.src);
     xlt.appendChild(xltImage);
 
-    svgMenu = document.createElement('div');        // this lengthy, tedious section generates the controls needed
-    svgMenu.setAttribute('id', 'svgMenu');
-    containerID.parentElement.appendChild(svgMenu);
-    let thisButton;
-    thisButton = document.createElement('input');       // for now, inject the un-listed Delete Last Element button
-    thisButton.setAttribute('type', 'button');
-    thisButton.setAttribute('value', 'Clear Last Element');
-    // thisButton.setAttribute('onclick', "clearLastGroup()");
-    svgMenu.appendChild(thisButton);
-    thisButton.addEventListener('click', (event) => {
-      clearLastGroup()
-    })
-    let buttons = JSON.parse(containerID.attributes['data-buttons'].value).buttons;
-    let i;
-    for (i = 0; i < buttons.length; i++) {                // these buttons explicitly enumerated in data-buttons
-      thisButton = document.createElement('input');
-      thisButton.setAttribute('type', 'button');
-      thisButton.setAttribute('value', buttons[i].function.charAt(0).toUpperCase() + buttons[i].function.slice(1));
-      thisButton.setAttribute('id', 'b_'+ buttons[i].function.toLowerCase());
-      // thisButton.setAttribute('onclick', "this.blur(); setCursorMode('" + buttons[i].function + "');");
-      svgMenu.appendChild(thisButton);
-      let thisMode = buttons[i].function;
-      thisButton.addEventListener('click', (event) => {
-        setCursorMode(thisMode)
-      })
-    }
-    SVGDraw.prototype.buildSVGmenu();       // populate the button-ology from the data element description (mostly)
+    SVGDraw.prototype.buildSVGmenu(containerID);       // populate the button-ology from the data element description (mostly)
 
     document.onkeydown = self.keyHandler();   /////////////// This is probably tooo broad   /////////////////
     document.onkeyup = self.keyUpHandler();
@@ -285,7 +267,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         let newGroupID = 'g' + (document.getElementById("xlt").childElementCount).toString();
         group.setAttributeNS(null, 'id', newGroupID);
-        group.setAttributeNS(null, 'type', cursorMode);
+        group.setAttributeNS(null, 'class', cursorMode);
         thisGroup = group;
         document.getElementById("xlt").appendChild(group);
         let element = createElement('polyline');        //YES, I KNOW... polyline behavior mimics google maps better
@@ -313,7 +295,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         thisGroup = group;
         let newGroupID = 'g' + (document.getElementById("xlt").childElementCount).toString();
         group.setAttributeNS(null, 'id', newGroupID);
-        group.setAttributeNS(null, 'type', cursorMode);
+        group.setAttributeNS(null, 'class', cursorMode);
         document.getElementById("xlt").appendChild(group);
         let element = createElement('polyline');
 
@@ -340,7 +322,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         let newGroupID = 'g' + (document.getElementById("xlt").childElementCount).toString();
         group.setAttributeNS(null, 'id', newGroupID);
-        group.setAttributeNS(null, 'type', cursorMode);
+        group.setAttributeNS(null, 'class', cursorMode);
         document.getElementById("xlt").appendChild(group);
         let element = createElement('rect');
 
@@ -363,7 +345,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         thisGroup = group;
         let newGroupID = 'g' + (document.getElementById("xlt").childElementCount).toString();
         group.setAttributeNS(null, 'id', newGroupID);
-        group.setAttributeNS(null, 'type', cursorMode);
+        group.setAttributeNS(null, 'class', cursorMode);
         document.getElementById("xlt").appendChild(group);
         let element = createElement('line');
 
@@ -388,7 +370,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         thisGroup = group;
         let newGroupID = 'g' + (document.getElementById("xlt").childElementCount).toString();
         group.setAttributeNS(null, 'id', newGroupID);
-        group.setAttributeNS(null, 'type', cursorMode);
+        group.setAttributeNS(null, 'class', cursorMode);
         document.getElementById("xlt").appendChild(group);
         let element = createElement('line');
 
@@ -415,7 +397,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         let newGroupID = 'g' + (document.getElementById("xlt").childElementCount).toString();
         group.setAttributeNS(null, 'id', newGroupID);
-        group.setAttributeNS(null, 'type', cursorMode);
+        group.setAttributeNS(null, 'class', cursorMode);
         document.getElementById("xlt").appendChild(group);
         let element = createElement(cursorMode);      // new generalized method
 
@@ -437,7 +419,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         thisGroup = group;
         let newGroupID = 'g' + (document.getElementById("xlt").childElementCount).toString();
         group.setAttributeNS(null, 'id', newGroupID);
-        group.setAttributeNS(null, 'type', cursorMode);
+        group.setAttributeNS(null, 'class', cursorMode);
         document.getElementById("xlt").appendChild(group);
         let element = createElement('ellipse');
 
@@ -462,7 +444,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         thisGroup = group;
         let newGroupID = 'g' + (document.getElementById("xlt").childElementCount).toString();
         group.setAttributeNS(null, 'id', newGroupID);
-        group.setAttributeNS(null, 'type', cursorMode);
+        group.setAttributeNS(null, 'class', cursorMode);
         document.getElementById("xlt").appendChild(group);
         //for (j = 0; j < thisSVGpoints.length; j++) {              // for text mode there is only one
         let element = createElement('polyline');
@@ -492,7 +474,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         thisGroup = group;
         let newGroupID = 'g' + (document.getElementById("xlt").childElementCount).toString();
         group.setAttributeNS(null, 'id', newGroupID);
-        group.setAttributeNS(null, 'type', cursorMode);
+        group.setAttributeNS(null, 'class', cursorMode);
         document.getElementById("xlt").appendChild(group);
         let element = createElement('path');
 
@@ -520,7 +502,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         thisGroup = group;
         let newGroupID = 'g' + (document.getElementById("xlt").childElementCount).toString();
         group.setAttributeNS(null, 'id', newGroupID);
-        group.setAttributeNS(null, 'type', cursorMode);
+        group.setAttributeNS(null, 'class', cursorMode);
         document.getElementById("xlt").appendChild(group);
         //for (j = 0; j < thisSVGpoints.length; j++) {              // for text mode there is only one
         let element;
@@ -582,8 +564,8 @@ function getCurvePoints(coords) {   // special bounding poly for curve element
     + curvePoint(coords[4], coords[5]) + ' ' + curvePoint(coords[6], coords[7]);
 }
 
-function createElement(type) {
-  let element = document.createElementNS('http://www.w3.org/2000/svg', type);
+function createElement(klass) {
+  let element = document.createElementNS('http://www.w3.org/2000/svg', klass);
   element.setAttributeNS(null, 'stroke', cursorColor);
   element.setAttributeNS(null, 'stroke-width', strokeWidth);
   element.setAttributeNS(null, 'stroke-opacity', '0.9');
@@ -631,7 +613,7 @@ function setElementMouseEnterLeave(group) {     // this actually sets the parent
 
 function setEditElement(group) {    // add bubble elements to the group containing this element
   if (checkElementConflict(group)) {    // returns true if conflict
-    console.log('Element conflict: ' + group.attributes['type'].value);
+    console.log('Element conflict: ' + group.attributes.class.value);
     return;
   }
   console.log('setEditElement no conflict')
@@ -641,19 +623,19 @@ function setEditElement(group) {    // add bubble elements to the group containi
       msg += ', thisElement = ' + thisElement.toString()
     }
     ;
-    console.log(group.attributes['type'].value + ' ' + msg);
+    console.log(group.attributes.class.value + ' ' + msg);
     thisGroup = group;        // there is probably no creation activity
   }
   //if (group.firstChild.tagName != cursorMode) {    // start editing an element not in the current mode
   savedCursorMode = cursorMode;   // don't wait for actual action on bubble
   if (group.firstChild) {
     if (group.firstChild.tagName != 'path') {
-      if (group.attributes.type) {                   // type atribute existence
-        cursorMode = group.attributes.type.value;
+      if (group.attributes.class) {                   // class atribute existence
+        cursorMode = group.attributes.class.value;
       } else {
         cursorMode = group.firstChild.tagName;
       }
-    } else {                  // now that there are both cubic and quadratic curves, we must detect this one's type
+    } else {                  // now that there are both cubic and quadratic curves, we must detect this one's class
       cursorMode = 'cubic';   // ///////// finesse path
       if (group.firstChild.attributes.d.value.indexOf('C ') == -1) {   // is the path quadratic because it's not cubic?
         cursorMode = 'quadratic';
@@ -671,7 +653,7 @@ function setEditElement(group) {    // add bubble elements to the group containi
   }
   let bubbleGroup = createBubbleGroup(group);      // since bubble groups are heterogeneous in structure
   group.appendChild(bubbleGroup);             // make the new bubble group in a no-id <g>
-  console.log('setEditElement ' + group.id + ' ' + group.attributes['type'].value)
+  console.log('setEditElement ' + group.id + ' ' + group.attributes.class.value)
   // group.removeEventListener('mouseleave', mouseLeaveFunction)
 }
 
@@ -764,7 +746,7 @@ function exitEditPoint(group) {    // services mouseUp from SIZE/point bubble
   }
   svgInProgress = false;  ///////////////
   thisBubble = null;
-  //cursorMode = "MOVE";  //was savedCursorMode; ////////////// actually editing element unchains creation of this type
+  //cursorMode = "MOVE";  //was savedCursorMode; ////////////// actually editing element unchains creation of this class
   setCursorMode("MOVE");
   setElementMouseEnterLeave(group);
 }
@@ -778,8 +760,8 @@ function setShiftElement(bubble) {    // end of SHIFT leaves single bubble; shou
   // thisBubble = group.lastChild.firstChild;      // this is the center/first bubble
   thisBubble = thisGroup.children[1].children['shift'];      // this is the center/first bubble
   cursorMode = thisElement.tagName;
-  if (thisGroup.attributes.type) {
-    cursorMode = thisGroup.attributes.type.value
+  if (thisGroup.attributes.class) {
+    cursorMode = thisGroup.attributes.class.value
   }
   //// presumption of ordering of shift bubble vs other bubbles: FIRST bubble is shift -- modified other code so TRUE
   let endK = thisGroup.lastChild.childElementCount;        // total bubbles, leave the first one
@@ -826,8 +808,8 @@ function setPointElement(bubble) {    // this performs the inline substitution o
   if (bubble.parentNode.lastChild.tagName == 'g') {
     bubble.parentNode.lastChild.remove(); // /////////// this is the right place: remove insert point bubbles
   }
-  if (thisGroup.attributes.type) {
-    cursorMode = thisGroup.attributes.type.value;
+  if (thisGroup.attributes.class) {
+    cursorMode = thisGroup.attributes.class.value;
   } else {
     cursorMode = thisElement.tagName;
   }
@@ -1193,18 +1175,6 @@ function isNumeric(n) {
   return !isNaN(parseFloat(n)) && isFinite(n);
 }
 
-
-// function unbindMouseHandlers(self) {    //   /////////////  this routine and its usages should be excised
-//   if (event.type != 'mouseup') {
-//     return false;                 // ////// this is always happening
-//   }
-//   //$(document).unbind(self.mouseMoveEvent, self.mouseMoveHandler);   // unbinding on mouse UP
-//   //$(document).unbind(self.mouseUpEvent, self.mouseUpHandler);
-// // kill the linkage to the handler
-// //  self.mouseMoveHandler = null;
-// //  self.mouseUpHandler = null;
-// }
-
 SVGDraw.prototype.onSvgMouseMove = function () {
   let self = this;
   return function (event) {
@@ -1493,7 +1463,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       if ((event.type == 'mousedown') || (svgInProgress == false)) {    // extra condition for line
         return;
       }
-      let mainLine = thisGroup.children[0]
+      let mainLine = thisGroup.children[0];
       this.updateMousePosition(event);
       if (svgInProgress == 'SHIFT') {
         let x1 = parseFloat(mainLine.attributes['x1'].value)
@@ -1508,7 +1478,6 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         let cy2 = (lastMouseY - yC) / zoom
         let dx = (cx - cx2)
         let dy = (cy2 - cy)
-
         thisBubble.attributes['cx'].value = cx2;      // translate the bubble
         thisBubble.attributes['cy'].value = cy2;
         mainLine.attributes['x1'].value = x1 - dx;    // correspondingly
@@ -1548,7 +1517,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       if (document.getElementById('arrowHeadPixels').checked) {
         barbLength = document.getElementById('arrowHeadLength').value;
       } else {
-        barbLength = lineLength * arrowSize / 100;
+        barbLength = lineLength * arrowPercent / 100;
       }
       let pctX = parseFloat(thisX2) - (dx * barbLength);   //  baseline for barb trailing end
       let pctY = parseFloat(thisY2) - (dy * barbLength);
@@ -2234,15 +2203,26 @@ function setCursorMode(mode) {      // detect current mode not completed prior t
       cursorMode = 'rect';          // also cubic and quadratic, whose tagName is path and draw which is polyline
       console.log('@setCursorMode2 cursorMode = ' + cursorMode)
     }
+    if(mode == 'clear') {
+      clearLastGroup();
+      cursorMode = 'MOVE';
+    }
+    if(mode == 'reset') {
+      zoom_trans(0, 0, baseZoom);
+      cursorMode = 'MOVE';
+    }
   }
+  // cursorMode WILL BE set at this point
   savedCursorMode = 'MOVE';      ////////////// eliminated but reinstated
-  if (mode.toUpperCase() != 'MOVE') {
+  if (cursorMode.toUpperCase() != 'MOVE') {
     waitElement = true;
     console.log('@setCursorMode3 waitElement = ' + cursorMode)
   }
-  indicateMode(mode);
+  indicateMode(cursorMode);
   svgInProgress = false;
-
+}
+SVGDraw.prototype.setMode = function(mode) {
+  setCursorMode(mode)
 }
 
 function checkLeftoverElement() {       // this function is only called when svgInProgress is false (?)
@@ -2523,7 +2503,7 @@ function collectSVG(verbatim) {   // verbatim true includes all markup, false me
     // thisG.removeAttribute('onmouseleave');
     j++;                                        // index the next <g> in case we are verbatim-ish
     if (!verbatim) {    // new wrinkle for arrow and similar groups
-      if (thisG.attributes.type) {
+      if (thisG.attributes.class) {
         thisG.removeAttribute('id');
       } else {
         j--;                                              // not verbatim, so back up to index the same <g>
@@ -2546,10 +2526,6 @@ SVGDraw.prototype.showSVG = function(verbatim) {
 };
 
 SVGDraw.prototype.jsonSVG = function (verbatim) {      // package SVG into JSON object
-// specification is to return elements within a single group as text
-// { "data": {
-//      "type":  "svg",
-//      "attributes": "<svg . . . the svg text . . . </svg>"
   let clonedSVG = collectSVG(false).firstChild;     // strip off <svg...> </svg>
   clonedSVG.removeAttribute('id');
   clonedSVG.removeAttribute('transform');
@@ -2564,268 +2540,300 @@ SVGDraw.prototype.jsonSVG = function (verbatim) {      // package SVG into JSON 
   return JSONsvg;
 };
 
- SVGDraw.prototype.buildSVGmenu = function() {
-  let thisButton;
-  thisButton = document.createElement('input');     // default MOVE button
-  //thisButton.setAttribute('id', 'btn_' + buttons[i].function);
-  thisButton.setAttribute('type', 'button');
-  thisButton.setAttribute('value', 'MOVE');
-  thisButton.setAttribute('id', 'b_move');
-  // thisButton.setAttribute('onclick', "setCursorMode('MOVE');");
-  svgMenu.appendChild(thisButton);
-  thisButton.addEventListener('click', (event) => {
-    setCursorMode('MOVE')
-  })
+// buildSVGmenu refactored into standalone integrated function
+ SVGDraw.prototype.buildSVGmenu = function(containerID) {
+   if(containerID.attributes['data-buttons']) {
+     let buttons = JSON.parse(containerID.attributes['data-buttons'].value).buttons;
+     svgMenu = document.createElement('div');        // this lengthy, tedious section generates the controls needed
+     svgMenu.setAttribute('id', 'svgMenu');
+     containerID.parentElement.appendChild(svgMenu);
+     let thisButton, thisSpan, i;
+     for (i = 0; i < buttons.length; i++) {                // these buttons explicitly enumerated in data-buttons
+       let thisFunction = buttons[i].function;
+       let thisValue = buttons[i].value;
+       switch (thisFunction) {
+         case 'clear':
+         case 'polygon':
+         case 'polyline':
+         case 'line':
+         case 'arrow':
+         case 'rectangle':
+         case 'circle':
+         case 'ellipse':
+         case 'quadratic':
+         case 'cubic':
+         case 'draw':
+         case 'text':
+         case 'MOVE':
+         case 'reset':
+           thisButton = document.createElement('input');
+           thisButton.setAttribute('type', 'button');
+           if(thisValue) {
+             thisButton.setAttribute('value', thisValue);
+           } else {
+           thisButton.setAttribute('value', buttons[i].function.charAt(0).toUpperCase() + buttons[i].function.slice(1));
+           }
+           thisButton.setAttribute('id', 'b_' + buttons[i].function.toLowerCase());
+           svgMenu.appendChild(thisButton);
+           let thisMode = buttons[i].function;
+           thisButton.addEventListener('click', (event) => {
+             setCursorMode(thisMode)
+           });
+           break;
+         case 'mode':
+           thisSpan = document.createElement('span');      // mode/status display area
+           thisSpan.setAttribute('id', 'mode');
+           svgMenu.appendChild(thisSpan);
+           break;
+         case 'zoomin':
+           thisButton = document.createElement('input');     // default ZOOM OUT button
+           thisButton.setAttribute('type', 'button');
+           thisButton.setAttribute('value', 'Zoom IN');
+           thisButton.setAttribute('id', 'b_zoomin');
+           svgMenu.appendChild(thisButton);
+           thisButton.addEventListener('click', (event) => {
+             thisButton.blur();
+             zoomIn();
+           });
+           break;
+         case 'zoom':
+           thisButton = document.createElement('span');      // ZOOM display area
+           thisButton.setAttribute('id', 'zoom');
+           thisButton.setAttribute('innerHTML', ' Zoom:  ----');
+           svgMenu.appendChild(thisButton);
+           break;
+         case 'zoomout':
+           thisButton = document.createElement('input');     // default ZOOM OUT button
+           thisButton.setAttribute('type', 'button');
+           thisButton.setAttribute('value', 'Zoom OUT');
+           thisButton.setAttribute('id', 'b_zoomout');
+           svgMenu.appendChild(thisButton);
+           thisButton.addEventListener('click', (event) => {
+             thisButton.blur();
+             zoomOut();
+           });
+           break;
+         case 'textheight':
+           thisSpan = document.createElement('span');      // TEXT display area
+           thisSpan.setAttribute('id', 'textBlock');
+           //thisSpan.textContent = 'Text Size: ';
+           svgMenu.appendChild(thisSpan);
+           let thistextHeightTitle = document.createElement('span');
+           thistextHeightTitle.innerHTML = ' Text Size: ';
+           thisSpan.appendChild(thistextHeightTitle);
+           thisButton = document.createElement('input');     // default TEXT SIZE input
+           thisButton.setAttribute('id', 'textHeight');
+           thisButton.setAttribute('type', 'number');
+           thisButton.setAttribute('min', '5');
+           thisButton.setAttribute('step', '5');
+           thisButton.setAttribute('max', '300');
+           thisButton.setAttribute('style', 'width: 4em');
+           thisButton.setAttribute('value', '75');
+           // thisButton.setAttribute('onchange', 'textHeight=this.value; this.blur();');
+           thisSpan.appendChild(thisButton);
+           // thisButton.addEventListener('change', (event) => { textHeight = thisButton.value; thisButton.blur(); })
+           thisButton.addEventListener('change', (event) => {
+             setTextHeight()
+           });
+           break;
+         case 'newline':
+           svgMenu.appendChild(document.createElement('br'));
+           thisSpan = document.createElement('span');
+           thisSpan.innerHTML = 'Select color: ';
+           svgMenu.appendChild(thisSpan);
+           break;
+         case 'colorselect':
+           let colorSelect = {
+             "buttons": [     // select this color buttons: Red/Green/Blue/Black/UserDefined/Selected
+               {"color": "#FF0000"},
+               {"color": "#00FF00"},
+               {"color": "#0000FF"},
+               {"color": "#000000"},
+               {"color": "#666666"},
+               {"color": "#FF0000"}
+             ]
+           };
+           let j;
+           for (j = 0; j < colorSelect.buttons.length; j++) {                // buttons explicitly enumerated in data-buttons
+             if (j == 4) {                                  // insert the text area input after the first 4 color select buttons
+               thisButton = document.createElement('input');
+               thisButton.setAttribute('id', 'userColor');
+               thisButton.setAttribute('type', 'text');
+               thisButton.setAttribute('value', colorSelect.buttons[j].color);
+               thisButton.setAttribute('style', 'width: 5em');
+               // thisButton.setAttribute('onchange', "setUserColor(this.value); this.blur();");
+               svgMenu.appendChild(thisButton);
+               thisButton.addEventListener('change', (event) => {
+                 setUserColor(getUserColor());
+                 thisButton.blur();
+               });
 
-  let thisSpan;
-  thisSpan = document.createElement('span');      // mode/status display area
-  thisSpan.setAttribute('id', 'mode');
-  svgMenu.appendChild(thisSpan);
+               thisButton = document.createElement('input');   // add the user-defined color select button
+               thisButton.setAttribute('id', 'selectUserColor');
+               thisButton.setAttribute('type', 'button');
+               thisButton.setAttribute('style', 'background-color: ' + colorSelect.buttons[j].color);
+               // thisButton.setAttribute('onclick', "setCursorColor(getUserColor()); this.blur();");
+               svgMenu.appendChild(thisButton);
+               thisButton.addEventListener('click', (event) => {
+                 setCursorColor(getUserColor());
+                 thisButton.blur();
+               })
+             }
+             if (j < colorSelect.buttons.length - 2) {       // for the first four (0:3) color select buttons, just set table color
+               thisButton = document.createElement('input');
+               thisButton.setAttribute('type', 'button');
+               thisButton.setAttribute('style', 'background-color: ' + colorSelect.buttons[j].color);
+               // thisButton.setAttribute('onclick', "setCursorColor('" + colorSelect.buttons[j].color + "'); this.blur();");
+               svgMenu.appendChild(thisButton);
+               let thisColor = colorSelect.buttons[j].color;
+               thisButton.addEventListener('click', (event) => {
+                 setCursorColor(thisColor);
+                 thisButton.blur();
+               })
+             }
+             if (j > colorSelect.buttons.length - 2) {   // insert the selected color block (5) (indicator only) as last
+               let thisColorTitle = document.createElement('span');
+               thisColorTitle.innerHTML = ' Selected Color >';
+               svgMenu.appendChild(thisColorTitle);
+               thisButton = document.createElement('input');
+               thisButton.setAttribute('id', 'cursorColor');
+               thisButton.setAttribute('type', 'button');
+               // thisButton.setAttribute('style', 'this.blur(); background-color: ' + colorSelect.buttons[j].color);
+               thisButton.setAttribute('style', 'background-color: ' + colorSelect.buttons[j].color);
+               svgMenu.appendChild(thisButton);
+               // let thisColor = colorSelect.buttons[j].color;
+               // thisButton.addEventListener('click', (event) => { setUserColor(thisColor); this.blur(); });
+               cursorColor = colorSelect.buttons[j].color;   // set the cursorColor from the nominal button arrangement
+             }
+           }
+           break;
+         case 'arrowspecs':
+           thisSpan = document.createElement('span');      // arrow display area
+           thisSpan.setAttribute('id', 'arrowBlock');
 
-  thisButton = document.createElement('input');     // default ZOOM IN button
-  thisButton.setAttribute('type', 'button');
-  thisButton.setAttribute('value', 'Zoom IN');
-  thisButton.setAttribute('id', 'b_zoomin');
-  // thisButton.setAttribute('onclick', "this.blur(); zoomIn();");
-  svgMenu.appendChild(thisButton);
-  thisButton.addEventListener('click', (event) => {
-    thisButton.blur();
-    zoomIn();
-  })
+           thisSpan.innerHTML += ' &nbsp;Arrowhead: Closed:';
+           thisButton = document.createElement('input');
+           thisButton.setAttribute('id', 'arrowHeadClosed');
+           thisButton.setAttribute('type', 'checkbox');
+           // thisButton.setAttribute('onclick', "this.blur();");
+           thisSpan.appendChild(thisButton);
+           thisButton.addEventListener('click', (event) => {
+             // thisButton.blur();
+             arrowClosed = document.getElementById('arrowHeadClosed').checked
+           });
 
-  thisButton = document.createElement('span');      // ZOOM display area
-  thisButton.setAttribute('id', 'zoom');
-  thisButton.setAttribute('innerHTML', ' Zoom:  ----');
-  svgMenu.appendChild(thisButton);
+           thisSpan.innerHTML += ' &nbsp; Fixed:';
+           thisButton = document.createElement('input');
+           thisButton.setAttribute('id', 'arrowHeadPixels');
+           thisButton.setAttribute('type', 'checkbox');
+           // thisButton.setAttribute('onclick', "this.blur();");
+           thisSpan.appendChild(thisButton);
+           thisButton.addEventListener('click', (event) => {
+             // thisButton.blur();
+             arrowFixed = document.getElementById('arrowHeadPixels').checked
+           });
 
-  thisButton = document.createElement('input');     // default ZOOM OUT button
-  thisButton.setAttribute('type', 'button');
-  thisButton.setAttribute('value', 'Zoom OUT');
-  thisButton.setAttribute('id', 'b_zoomout');
-  // thisButton.setAttribute('onclick', "this.blur(); zoomOut();");
-  svgMenu.appendChild(thisButton);
-  thisButton.addEventListener('click', (event) => {
-    thisButton.blur();
-    zoomOut();
-  })
+           thisSpan.innerHTML += ' &nbsp; Length:';
+           thisButton = document.createElement('input');
+           thisButton.setAttribute('id', 'arrowHeadLength');
+           thisButton.setAttribute('type', 'number');
+           thisButton.setAttribute('value', '50');
+           // thisButton.setAttribute('min', '5');
+           // thisButton.setAttribute('step', '10');
+           // thisButton.setAttribute('max', '150');
+           thisButton.setAttribute('style', 'width: 4em');
+           // thisButton.setAttribute('onchange', 'this.blur();');
+           thisSpan.appendChild(thisButton);
+           thisButton.addEventListener('change', (event) => {
+             // thisButton.blur();
+             // arrowheadLength = parseFloat(document.getElementById('arrowHeadLength').value)
+             SVGDraw.prototype.apiArrowLength()
+           })
 
-  thisButton = document.createElement('input');     // default ZOOM OUT button
-  thisButton.setAttribute('type', 'button');
-  thisButton.setAttribute('value', 'Reset');
-  thisButton.setAttribute('id', 'b_reset');
-  // thisButton.setAttribute('onclick', "this.blur(); zoom_trans(0, 0, baseZoom);");
-  svgMenu.appendChild(thisButton);
-  thisButton.addEventListener('click', (event) => {
-    thisButton.blur();
-    zoom_trans(0, 0, baseZoom);
-  })
+           thisSpan.innerHTML += ' &nbsp; Percent:';
+           thisButton = document.createElement('input');     // default TEXT SIZE input
+           thisButton.setAttribute('id', 'arrowHeadPercent');
+           thisButton.setAttribute('type', 'number');
+           thisButton.setAttribute('min', '5');
+           thisButton.setAttribute('step', '1');
+           thisButton.setAttribute('max', '30');
+           thisButton.setAttribute('style', 'width: 4em');
+           thisButton.setAttribute('value', '10');
+           thisSpan.appendChild(thisButton);
+           thisSpan.addEventListener('change', (event) => {
+             thisButton.blur();
+             arrowPercent = parseFloat(document.getElementById('arrowHeadPercent').value);
+           });
+           svgMenu.appendChild(thisSpan);
+           break;
+         case 'json':
+           thisButton = document.createElement('input');
+           thisButton.setAttribute('id', 'saveSVG');
+           thisButton.setAttribute('type', 'button');
+           thisButton.setAttribute('value', 'Extract SVG');
+           // thisButton.setAttribute('onclick', 'this.blur(); showSVG(true);');
+           svgMenu.appendChild(thisButton);
+           thisButton.addEventListener('click', (event) => {
+             thisButton.blur();
+             SVGDraw.prototype.showSVG(true);
+           });
 
-  thisSpan = document.createElement('span');      // TEXT display area
-  thisSpan.setAttribute('id', 'textBlock');
-  //thisSpan.textContent = 'Text Size: ';
-  svgMenu.appendChild(thisSpan);
-  let thisTextsizeTitle = document.createElement('span');
-  thisTextsizeTitle.innerHTML = 'Text Size: ';
-  thisSpan.appendChild(thisTextsizeTitle);
-  thisButton = document.createElement('input');     // default TEXT SIZE input
-  thisButton.setAttribute('id', 'textSize');
-  thisButton.setAttribute('type', 'number');
-  thisButton.setAttribute('min', '5');
-  thisButton.setAttribute('step', '5');
-  thisButton.setAttribute('max', '300');
-  thisButton.setAttribute('style', 'width: 4em');
-  thisButton.setAttribute('value', '75');
-  // thisButton.setAttribute('onchange', 'textHeight=this.value; this.blur();');
-  thisSpan.appendChild(thisButton);
-  // thisButton.addEventListener('change', (event) => { textHeight = thisButton.value; thisButton.blur(); })
-  thisButton.addEventListener('change', (event) => {
-    setTextHeight()
-  })
+           thisButton = document.createElement('input');
+           thisButton.setAttribute('id', 'plainSVG');
+           thisButton.setAttribute('type', 'button');
+           thisButton.setAttribute('value', 'Plain SVG');
+           // thisButton.setAttribute('onclick', 'this.blur(); showSVG(false);');
+           // thisButton.setAttribute('onclick', 'showSVG(false);');
+           svgMenu.appendChild(thisButton);
+           thisButton.addEventListener('click', (event) => {
+             thisButton.blur();
+             SVGDraw.prototype.showSVG(false);
+           });
 
-  //thisButton = document.createElement('input');     // default TEXT input
-  //thisButton.setAttribute('id', 'text4svg');        // this control eliminated
-  //thisButton.setAttribute('type', 'text');
-  //thisButton.setAttribute('disabled', 'true');
-  //thisSpan.appendChild(thisButton);
-  // thisSpan.innerHTML += '<br>Select color: ';
-  svgMenu.appendChild(document.createElement('br'));
-  thisSpan = document.createElement('span');
-  thisSpan.innerHTML = 'Select color: ';
-  svgMenu.appendChild(thisSpan);
-  let colorSelect = {
-    "buttons": [     // select this color buttons: Red/Green/Blue/Black/UserDefined/Selected
-      {"color": "#FF0000"},
-      {"color": "#00FF00"},
-      {"color": "#0000FF"},
-      {"color": "#000000"},
-      {"color": "#666666"},
-      {"color": "#FF0000"}
-    ]
-  };
-  let i;
-  for (i = 0; i < colorSelect.buttons.length; i++) {                // buttons explicitly enumerated in data-buttons
-    if (i == 4) {                                  // insert the text area input after the first 4 color select buttons
-      thisButton = document.createElement('input');
-      thisButton.setAttribute('id', 'userColor');
-      thisButton.setAttribute('type', 'text');
-      thisButton.setAttribute('value', colorSelect.buttons[i].color);
-      thisButton.setAttribute('style', 'width: 5em');
-      // thisButton.setAttribute('onchange', "setUserColor(this.value); this.blur();");
-      svgMenu.appendChild(thisButton);
-      thisButton.addEventListener('change', (event) => {
-        setUserColor(getUserColor());
-        thisButton.blur();
-      });
+           thisButton = document.createElement('input');
+           thisButton.setAttribute('id', 'svgJSON');
+           thisButton.setAttribute('type', 'button');
+           thisButton.setAttribute('value', 'JSON SVG');
+           svgMenu.appendChild(thisButton);
+           thisButton.addEventListener('click', (event) => {
+             SVGDraw.prototype.jsonSVG(false);
+           });
 
-      thisButton = document.createElement('input');   // add the user-defined color select button
-      thisButton.setAttribute('id', 'selectUserColor');
-      thisButton.setAttribute('type', 'button');
-      thisButton.setAttribute('style', 'background-color: ' + colorSelect.buttons[i].color);
-      // thisButton.setAttribute('onclick', "setCursorColor(getUserColor()); this.blur();");
-      svgMenu.appendChild(thisButton);
-      thisButton.addEventListener('click', (event) => {
-        setCursorColor(getUserColor());
-        thisButton.blur();
-      })
-    }
-    if (i < colorSelect.buttons.length - 2) {       // for the first four (0:3) color select buttons, just set table color
-      thisButton = document.createElement('input');
-      thisButton.setAttribute('type', 'button');
-      thisButton.setAttribute('style', 'background-color: ' + colorSelect.buttons[i].color);
-      // thisButton.setAttribute('onclick', "setCursorColor('" + colorSelect.buttons[i].color + "'); this.blur();");
-      svgMenu.appendChild(thisButton);
-      let thisColor = colorSelect.buttons[i].color;
-      thisButton.addEventListener('click', (event) => {
-        setCursorColor(thisColor);
-        thisButton.blur();
-      })
-    }
-    if (i > colorSelect.buttons.length - 2) {   // insert the selected color block (5) (indicator only) as last
-      let thisColorTitle = document.createElement('span');
-      thisColorTitle.innerHTML = ' Selected Color >';
-      svgMenu.appendChild(thisColorTitle);
-      thisButton = document.createElement('input');
-      thisButton.setAttribute('id', 'cursorColor');
-      thisButton.setAttribute('type', 'button');
-      // thisButton.setAttribute('style', 'this.blur(); background-color: ' + colorSelect.buttons[i].color);
-      thisButton.setAttribute('style', 'background-color: ' + colorSelect.buttons[i].color);
-      svgMenu.appendChild(thisButton);
-      // let thisColor = colorSelect.buttons[i].color;
-      // thisButton.addEventListener('click', (event) => { setUserColor(thisColor); this.blur(); });
-      cursorColor = colorSelect.buttons[i].color;   // set the cursorColor from the nominal button arrangement
+           svgMenu.appendChild(document.createElement('br'))
+
+           let thisTextArea = document.createElement('textarea');
+           thisTextArea.setAttribute('id', 'textSVGorJSON');
+           svgMenu.appendChild(thisTextArea);
+           break;
+       }
+     }
+  }
+
+ };
+function setTextHeight() {
+  textHeight = document.getElementById('textHeight').value
+}
+SVGDraw.prototype.apiTextHeight = function(height) {
+  if(isNumeric(height)) textHeight = height
+};
+SVGDraw.prototype.apiArrowClosed = function(checked) {
+  arrowClosed = checked
+};
+SVGDraw.prototype.apiArrowFixed = function(checked) {
+  arrowFixed = checked
+};
+SVGDraw.prototype.apiArrowLength = function(length) {
+  if(length) {
+    if(isNumeric(length)) {
+    arrowheadLength = length
     }
   }
-  //thisSpan = document.createElement('span');    // removed control for cursor position indication
-  //thisSpan.setAttribute('id', 'coords');
-  //svgMenu.appendChild(thisSpan);
-
-  thisButton = document.createElement('input');
-  thisButton.setAttribute('id', 'svgArrow');
-  thisButton.setAttribute('type', 'button');
-  thisButton.setAttribute('value', 'Arrow line');
-  // thisButton.setAttribute('onclick', "setCursorMode('arrow'); this.blur();");
-  svgMenu.appendChild(thisButton);
-  thisButton.addEventListener('click', (event) => {
-    setCursorMode('arrow');
-    thisButton.blur();
-  })
-
-  thisSpan = document.createElement('span');      // arrow display area
-  thisSpan.setAttribute('id', 'arrowBlock');
-
-  thisSpan.innerHTML += ' &nbsp; Fixed:';
-  thisButton = document.createElement('input');
-  thisButton.setAttribute('id', 'arrowHeadPixels');
-  thisButton.setAttribute('type', 'checkbox');
-  // thisButton.setAttribute('onclick', "this.blur();");
-  thisSpan.appendChild(thisButton);
-  thisButton.addEventListener('click', (event) => {
-    thisButton.blur();
-  })
-
-  thisSpan.innerHTML += ' &nbsp; Closed:';
-  thisButton = document.createElement('input');
-  thisButton.setAttribute('id', 'arrowHeadClosed');
-  thisButton.setAttribute('type', 'checkbox');
-  // thisButton.setAttribute('onclick', "this.blur();");
-  thisSpan.appendChild(thisButton);
-  thisButton.addEventListener('click', (event) => {
-    thisButton.blur();
-  })
-
-  thisSpan.innerHTML += ' &nbsp; Length:';
-  thisButton = document.createElement('input');
-  thisButton.setAttribute('id', 'arrowHeadLength');
-  thisButton.setAttribute('type', 'number');
-  thisButton.setAttribute('value', '50');
-  // thisButton.setAttribute('min', '5');
-  // thisButton.setAttribute('step', '10');
-  // thisButton.setAttribute('max', '150');
-  thisButton.setAttribute('style', 'width: 4em');
-  // thisButton.setAttribute('onchange', 'this.blur();');
-  thisSpan.appendChild(thisButton);
-  thisButton.addEventListener('change', (event) => {
-    thisButton.blur();
-  })
-
-  thisSpan.innerHTML += ' &nbsp; Percent:';
-  thisButton = document.createElement('input');     // default TEXT SIZE input
-  thisButton.setAttribute('id', 'arrowHeadPercent');
-  thisButton.setAttribute('type', 'number');
-  thisButton.setAttribute('min', '5');
-  thisButton.setAttribute('step', '1');
-  thisButton.setAttribute('max', '30');
-  thisButton.setAttribute('style', 'width: 4em');
-  thisButton.setAttribute('value', '10');
-  // thisButton.setAttribute('onchange', 'this.blur(); arrowSize=this.value;');
-  thisSpan.appendChild(thisButton);
-  thisSpan.addEventListener('change', (event) => {
-    thisButton.blur();
-    arrowSize = parseFloat(document.getElementById('arrowHeadPercent').value);
-  });
-  svgMenu.appendChild(thisSpan);
-
-  thisButton = document.createElement('input');
-  thisButton.setAttribute('id', 'saveSVG');
-  thisButton.setAttribute('type', 'button');
-  thisButton.setAttribute('value', 'Extract SVG');
-  // thisButton.setAttribute('onclick', 'this.blur(); showSVG(true);');
-  svgMenu.appendChild(thisButton);
-  thisButton.addEventListener('click', (event) => {
-    thisButton.blur();
-    SVGDraw.prototype.showSVG(true);
-  });
-
-  thisButton = document.createElement('input');
-  thisButton.setAttribute('id', 'plainSVG');
-  thisButton.setAttribute('type', 'button');
-  thisButton.setAttribute('value', 'Plain SVG');
-  // thisButton.setAttribute('onclick', 'this.blur(); showSVG(false);');
-  // thisButton.setAttribute('onclick', 'showSVG(false);');
-  svgMenu.appendChild(thisButton);
-  thisButton.addEventListener('click', (event) => {
-    thisButton.blur();
-    SVGDraw.prototype.showSVG(false);
-  });
-
-  thisButton = document.createElement('input');
-  thisButton.setAttribute('id', 'svgJSON');
-  thisButton.setAttribute('type', 'button');
-  thisButton.setAttribute('value', 'JSON SVG');
-  svgMenu.appendChild(thisButton);
-  thisButton.addEventListener('click', (event) => {
-    SVGDraw.prototype.jsonSVG(false);
-  });
-
-  svgMenu.appendChild(document.createElement('br'))
-
-  let thisTextArea = document.createElement('textarea');
-  thisTextArea.setAttribute('id', 'textSVGorJSON');
-  svgMenu.appendChild(thisTextArea);
-}
-
-function setTextHeight() {
-  textHeight = document.getElementById('textSize').value
-}
+  else {
+    arrowheadLength = parseFloat(document.getElementById('arrowHeadLemgth').value);
+  }
+};
+SVGDraw.prototype.apiArrowPercent = function(percent) {
+  if(isNumeric(percent)) arrowPercent = percent
+};
 
 export default SVGDraw

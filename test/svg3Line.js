@@ -24,10 +24,10 @@ describe('Line creation', () => {
   const driver = new Builder().forBrowser('firefox').build();
   driver.manage().setTimeouts({implicit: 40000});
   const actions = driver.actions();
-  it('Should create an svg element with id "g1" and type "line"', async () => {
+  it('Should create an svg element with id "g1" and class "line"', async () => {
     await driver.get('http://localhost:8080/');
     await driver.findElement(By.id('image_file')).sendKeys(testPath + '/images/testImage.jpg');
-    let element, type, id, zoom, transform, xoff, yoff, x1, x2, y1, y2;
+    let element, _class, id, zoom, transform, xoff, yoff, x1, x2, y1, y2;
     x1 = 300;
     y1 = 300;   // failsafe to
     x2 = 400;   // non-offset values
@@ -61,8 +61,8 @@ describe('Line creation', () => {
     try {
       element = await driver.findElement(By.id('g1'));
       id = await element.getAttribute('id').then(function (x) {return x});
-      type = await element.getAttribute('type').then(function (x) {return x});
-      console_log('id: ' + id + ' | type: ' + type);
+      _class = await element.getAttribute('class').then(function (x) {return x});
+      console_log('id: ' + id + ' | class: ' + _class);
     }
     catch (event) {
       console.log(event);
@@ -79,7 +79,7 @@ describe('Line creation', () => {
       console.log(event);
     }
     finally {
-      expect(type).to.equal('line', 'type:line');
+      expect(_class).to.equal('line', 'class:line');
       expect(id).to.equal('g1', 'id: g1');
       expect(x1).to.equal(((300)/zoom).toString(), 'x1');
       expect(y1).to.equal(((300)/zoom).toString(), 'y1');

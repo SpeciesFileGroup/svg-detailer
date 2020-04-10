@@ -9,10 +9,10 @@ describe('Circle creation', () => {
   driver.manage().setTimeouts({implicit: 40000});
   const actions = driver.actions();
 
-  it('Should create an element with id g1 and type circle', async () => {
+  it('Should create an element with id g1 and class circle', async () => {
     await driver.get('http://localhost:8080/svg-detailer/');
     await driver.findElement(By.id('image_file')).sendKeys(testPath + '/images/testImage.jpg');
-    let element, type, id, xoff, yoff, zoom, transform, cx, cy, r;
+    let element, _class, id, xoff, yoff, zoom, transform, cx, cy, r;
     try {
       element = await driver.findElement(By.id('container'));
       xoff = parseInt(await element.getAttribute('offsetLeft').then(function (x) {return x}));
@@ -40,8 +40,8 @@ describe('Circle creation', () => {
       await actions.release().perform();
       element = await driver.findElement(By.id('g1'));
       id = await element.getAttribute('id').then(function (x) {return x});
-      type = await element.getAttribute('type').then(function (x) {return x});
-      // console_log('id: ' + id + ' | type: ' + type);
+      _class = await element.getAttribute('class').then(function (x) {return x});
+      // console_log('id: ' + id + ' | class: ' + _class);
       element = await driver.findElement(By.css('circle'));
       cx = await element.getAttribute('cx').then(function (x) {return x});
       cy = await element.getAttribute('cy').then(function (x) {return x});
@@ -52,7 +52,7 @@ describe('Circle creation', () => {
       console.log(event);
     }
     finally {
-      expect(type).to.equal('circle', 'type');
+      expect(_class).to.equal('circle', 'class');
       expect(id).to.equal('g1', 'id');
       expect(cx).to.equal((300/zoom).toString(), 'cx');
       expect(cy).to.equal((300/zoom).toString(), 'cy');

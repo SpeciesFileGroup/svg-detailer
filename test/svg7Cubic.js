@@ -26,10 +26,10 @@ describe('Cubic creation', () => {
   driver.manage().setTimeouts({implicit: 40000});
   const actions = driver.actions();
 
-  it('Should create an svg element with id "g1" and type "cubic"', async () => {
+  it('Should create an svg element with id "g1" and class "cubic"', async () => {
     await driver.get('http://localhost:8080/');
     await driver.findElement(By.id('image_file')).sendKeys(testPath + '/images/testImage1.png');
-    let container, element, type, id, zoom, transform, xoff, yoff, mode, p1x, p2x, p1y, p2y, d, points, c1x, c1y, c2x, c2y;
+    let container, element, _class, id, zoom, transform, xoff, yoff, mode, p1x, p2x, p1y, p2y, d, points, c1x, c1y, c2x, c2y;
     p1x = 300;
     p1y = 300;   // failsafe to
     p2x = 400;   // non-offset values
@@ -93,14 +93,14 @@ describe('Cubic creation', () => {
     try {
       element = await driver.findElement(By.id('g1'));
       id = await element.getAttribute('id').then(function (x) {return x});
-      type = await element.getAttribute('type').then(function (x) {return x});
-      console_log('id: ' + id + ' | type: ' + type);
+      _class = await element.getAttribute('class').then(function (x) {return x});
+      console_log('id: ' + id + ' | class: ' + _class);
     }
     catch (event) {
       console.log(event);
     }
     finally {
-      expect(type).to.equal('cubic', 'type:cubic');
+      expect(_class).to.equal('cubic', 'class:cubic');
       expect(id).to.equal('g1', 'id: g1');
       let dx = (p1x - p2x)/zoom;
       let dy = (p1y - p2y)/zoom;
