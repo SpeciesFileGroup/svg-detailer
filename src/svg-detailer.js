@@ -1475,7 +1475,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       if ((event.type == 'mousedown') || (svgInProgress == false)) {    // extra condition for line
         return;
       }
-      let mainLine = thisGroup.children[0]
+      let mainLine = thisGroup.children[0];
       this.updateMousePosition(event);
       if (svgInProgress == 'SHIFT') {
         let x1 = parseFloat(mainLine.attributes['x1'].value)
