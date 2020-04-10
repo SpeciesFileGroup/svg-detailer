@@ -564,8 +564,8 @@ function getCurvePoints(coords) {   // special bounding poly for curve element
     + curvePoint(coords[4], coords[5]) + ' ' + curvePoint(coords[6], coords[7]);
 }
 
-function createElement(type) {
-  let element = document.createElementNS('http://www.w3.org/2000/svg', type);
+function createElement(klass) {
+  let element = document.createElementNS('http://www.w3.org/2000/svg', klass);
   element.setAttributeNS(null, 'stroke', cursorColor);
   element.setAttributeNS(null, 'stroke-width', strokeWidth);
   element.setAttributeNS(null, 'stroke-opacity', '0.9');
@@ -613,7 +613,7 @@ function setElementMouseEnterLeave(group) {     // this actually sets the parent
 
 function setEditElement(group) {    // add bubble elements to the group containing this element
   if (checkElementConflict(group)) {    // returns true if conflict
-    console.log('Element conflict: ' + group.attributes['class'].value);
+    console.log('Element conflict: ' + group.attributes.class.value);
     return;
   }
   console.log('setEditElement no conflict')
@@ -623,19 +623,19 @@ function setEditElement(group) {    // add bubble elements to the group containi
       msg += ', thisElement = ' + thisElement.toString()
     }
     ;
-    console.log(group.attributes['class'].value + ' ' + msg);
+    console.log(group.attributes.class.value + ' ' + msg);
     thisGroup = group;        // there is probably no creation activity
   }
   //if (group.firstChild.tagName != cursorMode) {    // start editing an element not in the current mode
   savedCursorMode = cursorMode;   // don't wait for actual action on bubble
   if (group.firstChild) {
     if (group.firstChild.tagName != 'path') {
-      if (group.attributes.type) {                   // type atribute existence
-        cursorMode = group.attributes.type.value;
+      if (group.attributes.class) {                   // class atribute existence
+        cursorMode = group.attributes.class.value;
       } else {
         cursorMode = group.firstChild.tagName;
       }
-    } else {                  // now that there are both cubic and quadratic curves, we must detect this one's type
+    } else {                  // now that there are both cubic and quadratic curves, we must detect this one's class
       cursorMode = 'cubic';   // ///////// finesse path
       if (group.firstChild.attributes.d.value.indexOf('C ') == -1) {   // is the path quadratic because it's not cubic?
         cursorMode = 'quadratic';
@@ -653,7 +653,7 @@ function setEditElement(group) {    // add bubble elements to the group containi
   }
   let bubbleGroup = createBubbleGroup(group);      // since bubble groups are heterogeneous in structure
   group.appendChild(bubbleGroup);             // make the new bubble group in a no-id <g>
-  console.log('setEditElement ' + group.id + ' ' + group.attributes['class'].value)
+  console.log('setEditElement ' + group.id + ' ' + group.attributes.class.value)
   // group.removeEventListener('mouseleave', mouseLeaveFunction)
 }
 
@@ -746,7 +746,7 @@ function exitEditPoint(group) {    // services mouseUp from SIZE/point bubble
   }
   svgInProgress = false;  ///////////////
   thisBubble = null;
-  //cursorMode = "MOVE";  //was savedCursorMode; ////////////// actually editing element unchains creation of this type
+  //cursorMode = "MOVE";  //was savedCursorMode; ////////////// actually editing element unchains creation of this class
   setCursorMode("MOVE");
   setElementMouseEnterLeave(group);
 }
@@ -760,8 +760,8 @@ function setShiftElement(bubble) {    // end of SHIFT leaves single bubble; shou
   // thisBubble = group.lastChild.firstChild;      // this is the center/first bubble
   thisBubble = thisGroup.children[1].children['shift'];      // this is the center/first bubble
   cursorMode = thisElement.tagName;
-  if (thisGroup.attributes.type) {
-    cursorMode = thisGroup.attributes.type.value
+  if (thisGroup.attributes.class) {
+    cursorMode = thisGroup.attributes.class.value
   }
   //// presumption of ordering of shift bubble vs other bubbles: FIRST bubble is shift -- modified other code so TRUE
   let endK = thisGroup.lastChild.childElementCount;        // total bubbles, leave the first one
@@ -808,8 +808,8 @@ function setPointElement(bubble) {    // this performs the inline substitution o
   if (bubble.parentNode.lastChild.tagName == 'g') {
     bubble.parentNode.lastChild.remove(); // /////////// this is the right place: remove insert point bubbles
   }
-  if (thisGroup.attributes.type) {
-    cursorMode = thisGroup.attributes.type.value;
+  if (thisGroup.attributes.class) {
+    cursorMode = thisGroup.attributes.class.value;
   } else {
     cursorMode = thisElement.tagName;
   }
@@ -1175,18 +1175,6 @@ function isNumeric(n) {
   return !isNaN(parseFloat(n)) && isFinite(n);
 }
 
-
-// function unbindMouseHandlers(self) {    //   /////////////  this routine and its usages should be excised
-//   if (event.type != 'mouseup') {
-//     return false;                 // ////// this is always happening
-//   }
-//   //$(document).unbind(self.mouseMoveEvent, self.mouseMoveHandler);   // unbinding on mouse UP
-//   //$(document).unbind(self.mouseUpEvent, self.mouseUpHandler);
-// // kill the linkage to the handler
-// //  self.mouseMoveHandler = null;
-// //  self.mouseUpHandler = null;
-// }
-
 SVGDraw.prototype.onSvgMouseMove = function () {
   let self = this;
   return function (event) {
@@ -1490,7 +1478,6 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         let cy2 = (lastMouseY - yC) / zoom
         let dx = (cx - cx2)
         let dy = (cy2 - cy)
-
         thisBubble.attributes['cx'].value = cx2;      // translate the bubble
         thisBubble.attributes['cy'].value = cy2;
         mainLine.attributes['x1'].value = x1 - dx;    // correspondingly
@@ -2516,7 +2503,7 @@ function collectSVG(verbatim) {   // verbatim true includes all markup, false me
     // thisG.removeAttribute('onmouseleave');
     j++;                                        // index the next <g> in case we are verbatim-ish
     if (!verbatim) {    // new wrinkle for arrow and similar groups
-      if (thisG.attributes.type) {
+      if (thisG.attributes.class) {
         thisG.removeAttribute('id');
       } else {
         j--;                                              // not verbatim, so back up to index the same <g>
@@ -2540,10 +2527,6 @@ SVGDraw.prototype.showSVG = function(verbatim) {
 
 // function jsonSVG(verbatim) {      // package SVG into JSON object
 SVGDraw.prototype.jsonSVG = function (verbatim) {      // package SVG into JSON object
-// specification is to return elements within a single group as text
-// { "data": {
-//      "type":  "svg",
-//      "attributes": "<svg . . . the svg text . . . </svg>"
   let clonedSVG = collectSVG(false).firstChild;     // strip off <svg...> </svg>
   clonedSVG.removeAttribute('id');
   clonedSVG.removeAttribute('transform');
