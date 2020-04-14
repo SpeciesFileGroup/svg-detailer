@@ -1772,15 +1772,20 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
     else if (cursorMode == "text") {    // translate
       if (svgInProgress == 'SHIFT') {
         this.updateMousePosition(event);
-        thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom;     // translate the bubble
-        thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
+        if(!thisBubble) {
+          thisBubble = event.target;
+        }
+        let dx = (lastMouseX - xC) / zoom;
+        let dy = (lastMouseY - yC) / zoom;
+        thisBubble.attributes['cx'].value = dx;     // translate the bubble
+        thisBubble.attributes['cy'].value = dy;
         for (let i = 0; i < thisGroup.children.length; i++) {      // for any text lines in this group (skip bubble)
           if (thisGroup.children[i].tagName == 'text') {          // only shift text elements, not bubbles
-            thisGroup.children[i].attributes['x'].value = (lastMouseX - xC) / zoom;    // translate each <text> element
-            thisGroup.children[i].attributes['y'].value = ((lastMouseY - yC) / zoom) + (i * textHeight);
+            thisGroup.children[i].attributes['x'].value = dx;    // translate each <text> element
+            thisGroup.children[i].attributes['y'].value = dy + (i * textHeight);
           } else {      // translate the bubble
-            thisGroup.children[i].children[0].attributes['cx'].value = (lastMouseX - xC) / zoom;    // translate each <text> element
-            thisGroup.children[i].children[0].attributes['cy'].value = ((lastMouseY - yC) / zoom)/* + (i * textHeight)*/;
+            thisGroup.children[i].children[0].attributes['cx'].value = dx;    // translate each <text> element
+            thisGroup.children[i].children[0].attributes['cy'].value = (dy)/* + (i * textHeight)*/;
           }
         }
       }
