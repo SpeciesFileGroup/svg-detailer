@@ -63,7 +63,31 @@ entire element can be backtracked to nothing. The intention is to extend this to
 [Here.](https://speciesfilegroup.org/svg-detailer)  With the implementation of the npm package version of svg-detailer, 
                                                   use of the program without using npm (and having no dependencies) only requires removing the final statement in the file 
                                                   svg-detailer.js.  That is "export default SVGDraw".
+## Tests
+The test environment uses several npm modules.  To set up the configuration the following commands are used:
+  * npm install
+  * npm install -g selenium-webdriver
+  * npm install -g geckodriver
+  * npm install -g mocha
+  * npm install -g chai
+  * npm run serve
+  
+To execute the tests, there are batch/suite and individual mode commands:
 
+&nbsp; &nbsp; To run all tests, from the svg-detailer directory execute:
+
+&nbsp; &nbsp; &nbsp; &nbsp;  mocha --no-timeouts
+
+&nbsp; &nbsp; To run individual tests, from the svg-detailer directory execute:
+
+&nbsp; &nbsp; &nbsp; &nbsp;  mocha --no-timeouts ./test/&lt;testname&gt;
+
+&nbsp; &nbsp; OR,  from the svg-detailer/test directory execute:
+
+&nbsp; &nbsp; &nbsp; &nbsp;  mocha --no-timeouts &lt;testname&gt;
+
+  
+  
 ## Funding 
 
 This project was funded in part by NSF-ABI-1356381.  Any opinions, findings and conclusions or recommendations expressed 

@@ -128,7 +128,6 @@ var _drawModes = [
   'rectangle', 'circle', 'ellipse', 'cubic', 'quadratic',
   'draw', 'text', 'MOVE'
 ];
-// TODO: Fix shift text GROUP <tspan>?
 
 function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
 

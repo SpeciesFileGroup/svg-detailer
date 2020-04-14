@@ -1584,7 +1584,7 @@ var _SHIFTMAP = {
   '/': '?',
   '\\': '|'
 };
-var _drawModes = ['clear', 'polygon', 'polyline', 'line', 'arrow', 'rectangle', 'circle', 'ellipse', 'cubic', 'quadratic', 'draw', 'text', 'MOVE']; // TODO: Fix shift text GROUP <tspan>?; Entry points for Arrow attributes, color setting
+var _drawModes = ['clear', 'polygon', 'polyline', 'line', 'arrow', 'rectangle', 'circle', 'ellipse', 'cubic', 'quadratic', 'draw', 'text', 'MOVE']; // TODO: Fix shift text GROUP <tspan>?
 
 function SVGDraw(containerID) {
   // container:<svgLayer>:<xlt>:<svgImage>
@@ -3777,22 +3777,31 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       // translate
       if (svgInProgress == 'SHIFT') {
         this.updateMousePosition(event);
-        thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom; // translate the bubble
 
-        thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
+        if (!thisBubble) {
+          thisBubble = event.target;
+        }
+
+        var _dx7 = (lastMouseX - xC) / zoom;
+
+        var _dy7 = (lastMouseY - yC) / zoom;
+
+        thisBubble.attributes['cx'].value = _dx7; // translate the bubble
+
+        thisBubble.attributes['cy'].value = _dy7;
 
         for (var i = 0; i < thisGroup.children.length; i++) {
           // for any text lines in this group (skip bubble)
           if (thisGroup.children[i].tagName == 'text') {
             // only shift text elements, not bubbles
-            thisGroup.children[i].attributes['x'].value = (lastMouseX - xC) / zoom; // translate each <text> element
+            thisGroup.children[i].attributes['x'].value = _dx7; // translate each <text> element
 
-            thisGroup.children[i].attributes['y'].value = (lastMouseY - yC) / zoom + i * textHeight;
+            thisGroup.children[i].attributes['y'].value = _dy7 + i * textHeight;
           } else {
             // translate the bubble
-            thisGroup.children[i].children[0].attributes['cx'].value = (lastMouseX - xC) / zoom; // translate each <text> element
+            thisGroup.children[i].children[0].attributes['cx'].value = _dx7; // translate each <text> element
 
-            thisGroup.children[i].children[0].attributes['cy'].value = (lastMouseY - yC) / zoom
+            thisGroup.children[i].children[0].attributes['cy'].value = _dy7
             /* + (i * textHeight)*/
             ;
           }
