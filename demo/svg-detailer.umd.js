@@ -1584,7 +1584,7 @@ var _SHIFTMAP = {
   '/': '?',
   '\\': '|'
 };
-var _drawModes = ['clear', 'polygon', 'polyline', 'line', 'arrow', 'rectangle', 'circle', 'ellipse', 'cubic', 'quadratic', 'draw', 'text', 'MOVE']; // TODO: Fix shift text GROUP <tspan>?
+var _drawModes = ['clear', 'polygon', 'polyline', 'line', 'arrow', 'rectangle', 'circle', 'ellipse', 'cubic', 'quadratic', 'draw', 'text', 'MOVE'];
 
 function SVGDraw(containerID) {
   // container:<svgLayer>:<xlt>:<svgImage>
