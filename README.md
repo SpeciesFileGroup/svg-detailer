@@ -72,6 +72,9 @@ The test environment uses several npm modules.  To set up the configuration the 
   * npm install -g chai
   * npm run serve
   
+To run the demo application, use //localhost:8080 as the URL.  In some cases, port 8080 might have been preempted by 
+some other process, so the server will report a different (nearby) port after "npm run serve".
+  
 To execute the tests, there are batch/suite and individual mode commands:
 
 &nbsp; &nbsp; To run all tests, from the svg-detailer directory execute:
