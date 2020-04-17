@@ -1509,7 +1509,9 @@ var thisBubble; // the bubble mousedown-ed in the currently edited element
 
 var svgInProgress = false;
 var lastMouseX;
-var lastMouseY; // var logMouse = false;       // debug
+var lastMouseY;
+var enable_log = false; // default to NOT log debug output
+// var logMouse = false;       // debug
 // var logStatus = false;      // flags
 // var logIndex = 0;           // limit counter for above
 
@@ -2231,7 +2233,7 @@ function mouseEnterFunction(event) {
   var thisGroupID = thisGroup ? thisGroup.id : 'null';
   var thisElementTagName = thisElement ? thisElement.tagName : 'null';
   var thisElementParent = thisElement ? thisElement.parentElement.id : 'null';
-  console.log("mouseenter" + ' eventTarget=' + event.target.id + ' thisGroup=' + thisGroupID + ' thisElement=' + thisElementTagName + ' parent=' + thisElementParent + ' ' + cursorMode + ' ');
+  console_log(enable_log, "mouseenter" + ' eventTarget=' + event.target.id + ' thisGroup=' + thisGroupID + ' thisElement=' + thisElementTagName + ' parent=' + thisElementParent + ' ' + cursorMode + ' ');
   setEditElement(event.target);
 }
 
@@ -2239,7 +2241,7 @@ function mouseLeaveFunction(event) {
   var thisGroupID = thisGroup ? thisGroup.id : 'null';
   var thisElementTagName = thisElement ? thisElement.tagName : 'null';
   var thisElementParent = thisElement ? thisElement.parentElement.id : 'null';
-  console.log("mouseleave" + ' eventTarget=' + event.target.id + ' thisGroup=' + thisGroupID + ' thisElement=' + thisElementTagName + ' parent=' + thisElementParent + ' ' + cursorMode + ' ');
+  console_log(enable_log, "mouseleave" + ' eventTarget=' + event.target.id + ' thisGroup=' + thisGroupID + ' thisElement=' + thisElementTagName + ' parent=' + thisElementParent + ' ' + cursorMode + ' ');
   clearEditElement(event.target);
 }
 
@@ -2260,11 +2262,11 @@ function setEditElement(group) {
   // add bubble elements to the group containing this element
   if (checkElementConflict(group)) {
     // returns true if conflict
-    console.log('Element conflict: ' + group.attributes.class.value);
+    console_log(enable_log, 'Element conflict: ' + group.attributes.class.value);
     return;
   }
 
-  console.log('setEditElement no conflict');
+  console_log(enable_log, 'setEditElement no conflict');
 
   if (thisGroup == null) {
     // no conflicts detected, so if thisGroup is null,
@@ -2275,7 +2277,7 @@ function setEditElement(group) {
     }
 
     ;
-    console.log(group.attributes.class.value + ' ' + msg);
+    console_log(enable_log, group.attributes.class.value + ' ' + msg);
     thisGroup = group; // there is probably no creation activity
   } //if (group.firstChild.tagName != cursorMode) {    // start editing an element not in the current mode
 
@@ -2317,13 +2319,13 @@ function setEditElement(group) {
 
   group.appendChild(bubbleGroup); // make the new bubble group in a no-id <g>
 
-  console.log('setEditElement ' + group.id + ' ' + group.attributes.class.value); // group.removeEventListener('mouseleave', mouseLeaveFunction)
+  console_log(enable_log, 'setEditElement ' + group.id + ' ' + group.attributes.class.value); // group.removeEventListener('mouseleave', mouseLeaveFunction)
 }
 
 function clearEditElement(group) {
   // given containing group; invoked by mouseleave, so order of statements reordered
   var thisGroupID = thisGroup ? thisGroup.id : 'null';
-  console.log('clearEditElement: svgInProgress=' + svgInProgress + ', group=' + group.id + ', thisGroup=' + thisGroupID);
+  console_log(enable_log, 'clearEditElement: svgInProgress=' + svgInProgress + ', group=' + group.id + ', thisGroup=' + thisGroupID);
 
   if (svgInProgress == 'SHIFT') {
     // if we are shifting an element, do nothing
@@ -2332,18 +2334,18 @@ function clearEditElement(group) {
 
   if (!group) {
     // if we are misassociated just back away . . .
-    console.log('clearEditElement: group argument null');
+    console_log(enable_log, 'clearEditElement: group argument null');
     return;
   }
 
   if (waitElement) {
-    console.log('clearEditElement: waitElement');
+    console_log(enable_log, 'clearEditElement: waitElement');
     return;
   }
 
   if (thisGroup && thisGroupID != group.id) {
     // collision
-    console.log('clearEditElement: group conflict');
+    console_log(enable_log, 'clearEditElement: group conflict');
     return;
   }
 
@@ -2389,17 +2391,17 @@ function checkElementConflict(group) {
    thisGroup, nominally the group of the active element
    */
   if (waitElement) {
-    console.log('checkElementConflict1: waitElement = ' + waitElement);
+    console_log(enable_log, 'checkElementConflict1: waitElement = ' + waitElement);
     return true;
   }
 
   if (!svgInProgress) {
-    console.log('checkElementConflict2: svgInProgress=' + svgInProgress + 'thisGroup=' + group.id);
+    console_log(enable_log, 'checkElementConflict2: svgInProgress=' + svgInProgress + 'thisGroup=' + group.id);
     return false; // if no active element
   }
 
   if (svgInProgress == 'SHIFT') {
-    console.log('checkElementConflict3: svgInProgress=' + svgInProgress + 'thisGroup=' + group.id);
+    console_log(enable_log, 'checkElementConflict3: svgInProgress=' + svgInProgress + 'thisGroup=' + group.id);
 
     if (thisGroup.id != group.id) {
       return true;
@@ -2409,12 +2411,12 @@ function checkElementConflict(group) {
   }
 
   if (svgInProgress != group.firstChild.tagName) {
-    console.log('checkElementConflict4: svgInProgress=' + svgInProgress + ', thisElement=' + thisElement + ', group element=' + group.firstChild.tagName);
+    console_log(enable_log, 'checkElementConflict4: svgInProgress=' + svgInProgress + ', thisElement=' + thisElement + ', group element=' + group.firstChild.tagName);
     return true; //  if we crossed another element
   }
 
   if (thisGroup != group) {
-    console.log('checkElementConflict5: svgInProgress=' + svgInProgress + ', thisGroup=' + thisGroup.id + ', group=' + group.id + ', group element=' + group.firstChild.tagName);
+    console_log(enable_log, 'checkElementConflict5: svgInProgress=' + svgInProgress + ', thisGroup=' + thisGroup.id + ', group=' + group.id + ', group element=' + group.firstChild.tagName);
     return true;
   }
 }
@@ -2423,7 +2425,7 @@ function exitEditPoint(group) {
   // services mouseUp from SIZE/point bubble
   // reset all bubbles for this element
   if (group == null) {
-    console.log('fault');
+    console_log(enable_log, 'fault');
   }
 
   while (group.childElementCount > 1 && group.lastChild.tagName == 'g') {
@@ -2466,7 +2468,7 @@ function setShiftElement(bubble) {
   thisGroup.removeEventListener('mouseenter', mouseEnterFunction);
   thisGroup.removeEventListener('mouseleave', mouseLeaveFunction);
   svgInProgress = 'SHIFT';
-  console.log('svgInProgress = SHIFT, cursorMode = ' + cursorMode);
+  console_log(enable_log, 'svgInProgress = SHIFT, cursorMode = ' + cursorMode);
 }
 
 function setSizeElement(bubble) {
@@ -2490,7 +2492,7 @@ function setSizeElement(bubble) {
   }
 
   svgInProgress = 'SIZE';
-  console.log('svgInProgress = SIZE, cursorMode = ' + cursorMode + ' ' + thisElement.tagName);
+  console_log(enable_log, 'svgInProgress = SIZE, cursorMode = ' + cursorMode + ' ' + thisElement.tagName);
   group.removeEventListener('mouseenter', mouseEnterFunction);
   group.removeEventListener('mouseleave', mouseLeaveFunction);
 }
@@ -2589,7 +2591,7 @@ function createBubbleGroup(group) {
   var nextY;
 
   if (!group) {
-    console.log('group arg null, thisGroup=' + thisGroup);
+    console_log(enable_log, 'group arg null, thisGroup=' + thisGroup);
   }
 
   var element = group.firstChild;
@@ -3308,7 +3310,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
 
       if (event.type == 'mousedown' || svgInProgress == false) {
         // extra condition for line
-        console.log('cursorMode=line abort event:' + event.type + ' svgInProgress= ' + svgInProgress);
+        console_log(enable_log, 'cursorMode=line abort event:' + event.type + ' svgInProgress= ' + svgInProgress);
         return;
       }
 
@@ -3365,7 +3367,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
 
         thisElement.attributes[linePoints[0]].value = (lastMouseX - xC) / zoom;
         thisElement.attributes[linePoints[1]].value = (lastMouseY - yC) / zoom;
-        console.log('x: ' + ((lastMouseX - xC) / zoom).toString() + ' / y: ' + ((lastMouseY - yC) / zoom).toString());
+        console_log(enable_log, 'x: ' + ((lastMouseX - xC) / zoom).toString() + ' / y: ' + ((lastMouseY - yC) / zoom).toString());
       } //thisElement.attributes['stroke'] = cursorColor;   ///// disabled due to unwanted side effects
 
     } else if (cursorMode == 'arrow') {
@@ -3638,7 +3640,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
 
         var _thisY = parseFloat(thisBubble.attributes['cy'].value);
 
-        console.log('endpoints: [' + thisX + ', ' + thisY + '], [' + _thisX + ', ' + _thisY + ']');
+        console_log(enable_log, 'endpoints: [' + thisX + ', ' + thisY + '], [' + _thisX + ', ' + _thisY + ']');
 
         var _dx5 = thisX - _thisX;
 
@@ -3650,8 +3652,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         var theseCoords = getCurveCoords(thisDvalue); //#TODO: fix incremental mistracking of shift point, bubble no longer present
 
         if (thisBubble.id == 'shift') {
-          console.log(thisDvalue);
-          console.log('dx: ' + _dx5 + ', dy: ' + _dy5); // tranlate each coordinate (array contains x, y, x, y, ... x, y
+          console_log(enable_log, thisDvalue);
+          console_log(enable_log, 'dx: ' + _dx5 + ', dy: ' + _dy5); // tranlate each coordinate (array contains x, y, x, y, ... x, y
 
           for (var _k7 = 0; _k7 < theseCoords.length; _k7++) {
             theseCoords[_k7] = (_dx5 + parseFloat(theseCoords[_k7])).toFixed(3);
@@ -3668,7 +3670,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
 
           thisElement.attributes['d'].value = getCurvePath(theseCoords[0], theseCoords[1], theseCoords[2], theseCoords[3], theseCoords[4], theseCoords[5], theseCoords[6], theseCoords[7]); // responds to both C and Q curves
 
-          console.log(thisElement.attributes['d'].value);
+          console_log(enable_log, thisElement.attributes['d'].value);
         } //
         // worksheet data for quadratic and cubic curves is conformed to the same model
         // p1: [0,1], c1: [2,3], c2: [3,4], p2: [6,7]. Only one control point is used
@@ -3765,9 +3767,9 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           thisD = theseCurvePoints[0] + thisPathType + curvePoint(theseControlPoints[0], theseControlPoints[1]);
           thisD += curvePoint(theseControlPoints[2], theseControlPoints[3]);
           thisD += curvePoint(_thisX2, _thisY2);
-          console.log('p1: ' + thisP1[0] + ', ' + thisP1[1]);
-          console.log('control points: ' + theseControlPoints[0] + ', ' + theseControlPoints[1] + ' ... ' + theseControlPoints[2] + ', ' + theseControlPoints[3]);
-          console.log('p2: ' + _thisX2 + ', ' + _thisY2);
+          console_log(enable_log, 'p1: ' + thisP1[0] + ', ' + thisP1[1]);
+          console_log(enable_log, 'control points: ' + theseControlPoints[0] + ', ' + theseControlPoints[1] + ' ... ' + theseControlPoints[2] + ', ' + theseControlPoints[3]);
+          console_log(enable_log, 'p2: ' + _thisX2 + ', ' + _thisY2);
         }
 
         thisD += pathPoint(_thisX2, _thisY2);
@@ -4289,7 +4291,7 @@ function setCursorMode(mode) {
 
   if (mode.toUpperCase() == 'MOVE') {
     cursorMode = mode;
-    console.log('@setCursorMode1 cursorMode = ' + cursorMode);
+    console_log(enable_log, '@setCursorMode1 cursorMode = ' + cursorMode);
   } else {
     cursorMode = mode.toLowerCase();
 
@@ -4301,7 +4303,7 @@ function setCursorMode(mode) {
       // there are  few cases where the tagName of the element != cursorMode
       cursorMode = 'rect'; // also cubic and quadratic, whose tagName is path and draw which is polyline
 
-      console.log('@setCursorMode2 cursorMode = ' + cursorMode);
+      console_log(enable_log, '@setCursorMode2 cursorMode = ' + cursorMode);
     }
 
     if (mode == 'clear') {
@@ -4320,7 +4322,7 @@ function setCursorMode(mode) {
 
   if (cursorMode.toUpperCase() != 'MOVE') {
     waitElement = true;
-    console.log('@setCursorMode3 waitElement = ' + cursorMode);
+    console_log(enable_log, '@setCursorMode3 waitElement = ' + cursorMode);
   }
 
   indicateMode(cursorMode);
@@ -5036,6 +5038,15 @@ SVGDraw.prototype.buildSVGmenu = function (containerID) {
     })();
   }
 };
+
+function console_log(logFlag, message) {
+  if (logFlag) {
+    console.log(message);
+    return true;
+  }
+
+  return false;
+}
 
 function setTextHeight() {
   textHeight = document.getElementById('textHeight').value;
