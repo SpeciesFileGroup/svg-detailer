@@ -7,10 +7,9 @@ var yC = 0;
 var cursorMode = "MOVE";
 var cursorColor;
 var zoom;                 // set on initialization from baseZoom @ full image
-var baseStrokeWidth = 1;
 var baseBubbleRadius = 6;
 // transform below to functions?
-var strokeWidth;   //= (baseStrokeWidth / zoom).toString();    // dynamically recomputed with zoom (not this one)
+var strokeWidth = 1;   //= (baseStrokeWidth / zoom).toString();    // NOT dynamically recomputed with zoom (not this one)
 var bubbleRadius;  //= (baseBubbleRadius / zoom).toString(); // and transcoded from/to string (may not be required)
 var baseZoom;           // calculated from svg and image attributes
 var maxZoom = 4;        // this is 4 pixels per source image pixel
@@ -180,7 +179,7 @@ function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
     }
     zoom = baseZoom;      // at initialization
 
-    strokeWidth = (baseStrokeWidth / zoom).toString();    // dynamically recomputed with zoom (not this one)
+    // strokeWidth = baseStrokeWidth.toString();    // NOT dynamically recomputed with zoom (not this one)
     bubbleRadius = (baseBubbleRadius / zoom).toString(); // and transcoded from/to string (may not be required)
 
     lastMouseX = baseZoom * svgImage.width / 2;         // center of image
@@ -880,6 +879,7 @@ function createBubbleGroup(group) {
 
   switch (element.tagName) {
     case 'circle':    // 1 relocation bubble, 4 compass-point resize bubbles (flagged SHIFT and SIZE respecively)
+      bubbleGroup.setAttributeNS(null, 'class', 'bubbles');
       let cx = svgAttrs['cx'];
       let cy = svgAttrs['cy'];
       let cr = svgAttrs['r'];
