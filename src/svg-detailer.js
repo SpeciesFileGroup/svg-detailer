@@ -1638,11 +1638,66 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         return;
       }
       this.updateMousePosition(event);
-      let thesePoints = thisElement.attributes['points'].value;
-      let thisPoint = ((lastMouseX - xC) / zoom).toFixed(3).toString()
-        + ',' + ((lastMouseY - yC) / zoom).toFixed(3).toString() + ' ';
-      thisElement.attributes['points'].value = thesePoints.concat(thisPoint);
-    }
+      if(svgInProgress == 'SHIFT') {
+        let shiftPoint = ((lastMouseX - xC) / zoom).toFixed(3).toString()
+          + ',' + ((lastMouseY - yC) / zoom).toFixed(3).toString();
+        let shiftingPoints = thisElement.attributes['points'].value.trim();
+        let splitShiftPoints = shiftingPoints.split(' ');
+        if (thisBubble != null) {       // thisBubble set on mousedown
+          let cx = parseFloat(thisBubble.attributes['cx'].value);   // old
+          let cy = parseFloat(thisBubble.attributes['cy'].value);   // x, y
+          let cx2 = (lastMouseX - xC) / zoom;                       // new x
+          let cy2 = (lastMouseY - yC) / zoom;                       // , y
+          let dx = (cx2 - cx)
+          let dy = (cy2 - cy)
+          thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom;     // translate the bubble
+          thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
+
+          // splitShiftPoints all need to be shifted by the deltas
+          // so iterate over all points, in initially a very pedantic way
+          let shiftedPoints = '';
+          let j;      //iterator for decomposing x, y point lists
+          let xPoints = [];
+          let yPoints = [];
+          for (j=0; j < splitShiftPoints.length; j++) {
+            let thisXY = splitShiftPoints[j].split(',');
+            xPoints[j] = (parseFloat(thisXY[0]) + dx).toFixed(3);
+            yPoints[j] = (parseFloat(thisXY[1]) + dy).toFixed(3);
+            shiftedPoints += xPoints[j] + ',' + yPoints[j] + ' '
+          }
+          for (let k = 0; k < splitShiftPoints.length; k++) {
+            shiftingPoints += splitShiftPoints[k] + ' ';
+          }
+          thisElement.attributes['points'].value = shiftedPoints
+        }
+      }   // end of SHIFT draw case
+      else {    // edit point by bubble
+        let thisPoint = ((lastMouseX - xC) / zoom).toFixed(3).toString()
+          + ',' + ((lastMouseY - yC) / zoom).toFixed(3).toString();
+        let thesePoints = thisElement.attributes['points'].value.trim();
+        let splitPoints = thesePoints.split(' ');
+        if (thisBubble != null) {       // look for bubble to denote just move THIS point only
+          // currently, no distinction is made between existing vertex and new point
+          // however, this may change in the future JRF 23NOV15
+          thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom;     // translate the bubble
+          thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
+          if (isNumeric(thisBubble.id)) {       // presume integer for now
+            splitPoints[parseInt(thisBubble.id)] = thisPoint;   // replace this point
+            thesePoints = '';
+            for (let k = 0; k < splitPoints.length; k++) {
+              thesePoints += splitPoints[k] + ' ';
+            }
+            thisElement.attributes['points'].value = thesePoints
+          }
+        }   // end of edit point case
+        else {    // add new point at end during creation case
+        let thesePoints = thisElement.attributes['points'].value;
+        let thisPoint = ((lastMouseX - xC) / zoom).toFixed(3).toString()
+          + ',' + ((lastMouseY - yC) / zoom).toFixed(3).toString() + ' ';
+        thisElement.attributes['points'].value = thesePoints.concat(thisPoint);
+        }   // end of new point at end case
+      }
+    }     // end of Draw case
 
     else if ((cursorMode == 'cubic') || (cursorMode == 'quadratic')) {
       lastMouseX = this.lastMousePoint.x;
