@@ -1283,7 +1283,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           }
           thisElement.attributes['points'].value = shiftedPoints
         }
-      } else {
+      }
+      else {
         let thisPoint = ((lastMouseX - xC) / zoom).toFixed(3).toString()
           + ',' + ((lastMouseY - yC) / zoom).toFixed(3).toString();
         let thesePoints = thisElement.attributes['points'].value.trim();
@@ -1299,7 +1300,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
             }
             thisElement.attributes['points'].value = thesePoints
           }
-        } else {        // svgInProgress = 'polygon', so normal creation of element adding new point to end
+        } else {        // svgInProgress = 'poly--', so normal creation of element adding new point to end
           thesePoints = '';                               // clear thecollector
           for (let k = 0; k < splitPoints.length - 1; k++) {  // reconstruct except for the last point
             thesePoints += splitPoints[k] + ' ';          // space delimiter at the end of each coordinate
@@ -1354,8 +1355,6 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         let thesePoints = thisElement.attributes['points'].value.trim();
         let splitPoints = thesePoints.split(' ');
         if (thisBubble != null) {       // look for bubble to denote just move THIS point only
-                                        // currently, no distinction is made between existing vertex and new point
-                                        // however, this may change in the future JRF 23NOV15
           thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom;     // translate the bubble
           thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
           if (isNumeric(thisBubble.id)) {       // presume integer for now
@@ -1366,7 +1365,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
             }
             thisElement.attributes['points'].value = thesePoints
           }
-        } else {
+        } else {        // svgInProgress = 'poly--', so normal creation of element adding new point to end
+
           thesePoints = '';                               // clear the collector
           for (let k = 0; k < splitPoints.length - 1; k++) {  // reconstruct except for the last point
             thesePoints += splitPoints[k] + ' ';          // space delimiter at the end of each coordinate
@@ -1377,10 +1377,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       }
     }
 
-    else if ((cursorMode == "rect") /*|| (cursorMode == 'bubble')*/) {
-      //lastMouseX = this.lastMousePoint.x;
-      //lastMouseY = this.lastMousePoint.y;
-      if (/*(event.type == 'mousedown') || */(svgInProgress == false)) {
+    else if (cursorMode == "rect") {
+      if (svgInProgress == false) {
         return;
       }
       if (svgInProgress == 'SHIFT') {
@@ -1392,8 +1390,6 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       } else {
         let thisRectX = thisElement.attributes['x'].value;
         let thisRectY = thisElement.attributes['y'].value;
-        // var thisRectW = thisElement.attributes['width'].value;
-        // var thisRectH = thisElement.attributes['height'].value;
 
         this.updateMousePosition(event);
         thisElement.attributes['width'].value = (lastMouseX - xC) / zoom - thisRectX;
@@ -1403,7 +1399,6 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom;     // translate the bubble
           thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
         }
-        //thisElement.attributes['stroke'] = cursorColor;   ///// disabled due to unwanted side effects
       }
     }
 
@@ -2902,6 +2897,9 @@ SVGDraw.prototype.apiArrowLength = function(length) {
 };
 SVGDraw.prototype.apiArrowPercent = function(percent) {
   if(isNumeric(percent)) arrowPercent = percent
+};
+SVGDraw.prototype.apiStrokeWidth = function(pixels) {
+  if(isNumeric(pixels)) strokeWidth = pixels
 };
 
 export default SVGDraw
