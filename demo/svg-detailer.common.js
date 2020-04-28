@@ -1450,10 +1450,9 @@ var cursorMode = "MOVE";
 var cursorColor;
 var zoom; // set on initialization from baseZoom @ full image
 
-var baseStrokeWidth = 1;
 var baseBubbleRadius = 6; // transform below to functions?
 
-var strokeWidth; //= (baseStrokeWidth / zoom).toString();    // dynamically recomputed with zoom (not this one)
+var strokeWidth = 1; //= (baseStrokeWidth / zoom).toString();    // NOT dynamically recomputed with zoom (not this one)
 
 var bubbleRadius; //= (baseBubbleRadius / zoom).toString(); // and transcoded from/to string (may not be required)
 
@@ -1624,8 +1623,7 @@ function SVGDraw(containerID) {
     }
 
     zoom = baseZoom; // at initialization
-
-    strokeWidth = (baseStrokeWidth / zoom).toString(); // dynamically recomputed with zoom (not this one)
+    // strokeWidth = baseStrokeWidth.toString();    // NOT dynamically recomputed with zoom (not this one)
 
     bubbleRadius = (baseBubbleRadius / zoom).toString(); // and transcoded from/to string (may not be required)
 
@@ -2601,6 +2599,7 @@ function createBubbleGroup(group) {
   switch (element.tagName) {
     case 'circle':
       // 1 relocation bubble, 4 compass-point resize bubbles (flagged SHIFT and SIZE respecively)
+      bubbleGroup.setAttributeNS(null, 'class', 'bubbles');
       var cx = svgAttrs['cx'];
       var cy = svgAttrs['cy'];
       var cr = svgAttrs['r'];
@@ -3148,7 +3147,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
             thisElement.attributes['points'].value = thesePoints;
           }
         } else {
-          // svgInProgress = 'polygon', so normal creation of element adding new point to end
+          // svgInProgress = 'poly--', so normal creation of element adding new point to end
           thesePoints = ''; // clear thecollector
 
           for (var _k3 = 0; _k3 < splitPoints.length - 1; _k3++) {
@@ -3228,8 +3227,6 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
 
         if (thisBubble != null) {
           // look for bubble to denote just move THIS point only
-          // currently, no distinction is made between existing vertex and new point
-          // however, this may change in the future JRF 23NOV15
           thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom; // translate the bubble
 
           thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
@@ -3247,6 +3244,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
             thisElement.attributes['points'].value = _thesePoints2;
           }
         } else {
+          // svgInProgress = 'poly--', so normal creation of element adding new point to end
           _thesePoints2 = ''; // clear the collector
 
           for (var _k6 = 0; _k6 < _splitPoints.length - 1; _k6++) {
@@ -3258,43 +3256,34 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           thisElement.attributes['points'].value = _thesePoints2.concat(_thisPoint2);
         }
       }
-    } else if (cursorMode == "rect")
-      /*|| (cursorMode == 'bubble')*/
-      {
-        //lastMouseX = this.lastMousePoint.x;
-        //lastMouseY = this.lastMousePoint.y;
-        if (
-        /*(event.type == 'mousedown') || */
-        svgInProgress == false) {
-          return;
-        }
+    } else if (cursorMode == "rect") {
+      if (svgInProgress == false) {
+        return;
+      }
 
-        if (svgInProgress == 'SHIFT') {
-          this.updateMousePosition(event);
+      if (svgInProgress == 'SHIFT') {
+        this.updateMousePosition(event);
+        thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom; // translate the bubble
+
+        thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
+        thisElement.attributes['x'].value = (lastMouseX - xC) / zoom; // correspondingly translate thisElement
+
+        thisElement.attributes['y'].value = (lastMouseY - yC) / zoom;
+      } else {
+        var thisRectX = thisElement.attributes['x'].value;
+        var thisRectY = thisElement.attributes['y'].value;
+        this.updateMousePosition(event);
+        thisElement.attributes['width'].value = (lastMouseX - xC) / zoom - thisRectX;
+        thisElement.attributes['height'].value = (lastMouseY - yC) / zoom - thisRectY;
+
+        if (thisBubble) {
+          thisBubble = event.target;
           thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom; // translate the bubble
 
           thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
-          thisElement.attributes['x'].value = (lastMouseX - xC) / zoom; // correspondingly translate thisElement
-
-          thisElement.attributes['y'].value = (lastMouseY - yC) / zoom;
-        } else {
-          var thisRectX = thisElement.attributes['x'].value;
-          var thisRectY = thisElement.attributes['y'].value; // var thisRectW = thisElement.attributes['width'].value;
-          // var thisRectH = thisElement.attributes['height'].value;
-
-          this.updateMousePosition(event);
-          thisElement.attributes['width'].value = (lastMouseX - xC) / zoom - thisRectX;
-          thisElement.attributes['height'].value = (lastMouseY - yC) / zoom - thisRectY;
-
-          if (thisBubble) {
-            thisBubble = event.target;
-            thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom; // translate the bubble
-
-            thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
-          } //thisElement.attributes['stroke'] = cursorColor;   ///// disabled due to unwanted side effects
-
         }
-      } else if (cursorMode == "line") {
+      }
+    } else if (cursorMode == "line") {
       lastMouseX = this.lastMousePoint.x;
       lastMouseY = this.lastMousePoint.y;
       var linePoints;
@@ -3602,72 +3591,145 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       }
 
       this.updateMousePosition(event);
-      var _thesePoints3 = thisElement.attributes['points'].value;
 
-      var _thisPoint3 = ((lastMouseX - xC) / zoom).toFixed(3).toString() + ',' + ((lastMouseY - yC) / zoom).toFixed(3).toString() + ' ';
+      if (svgInProgress == 'SHIFT') {
+        var _shiftPoint2 = ((lastMouseX - xC) / zoom).toFixed(3).toString() + ',' + ((lastMouseY - yC) / zoom).toFixed(3).toString();
 
-      thisElement.attributes['points'].value = _thesePoints3.concat(_thisPoint3);
-    } else if (cursorMode == 'cubic' || cursorMode == 'quadratic') {
-      lastMouseX = this.lastMousePoint.x;
-      lastMouseY = this.lastMousePoint.y;
+        var _shiftingPoints2 = thisElement.attributes['points'].value.trim();
 
-      if (event.type == 'mousedown' || svgInProgress == false) {
-        // extra condition for line
-        return;
-      }
+        var _splitShiftPoints2 = _shiftingPoints2.split(' ');
 
-      this.updateMousePosition(event);
-      var thisDvalue = thisElement.attributes['d'].value;
-      var thisCurveQuadratic = thisDvalue.indexOf('Q ') > 0;
+        if (thisBubble != null) {
+          // thisBubble set on mousedown
+          var _cx7 = parseFloat(thisBubble.attributes['cx'].value); // old
 
-      if (thisBubble != null) {
-        // look for bubble to denote just move THIS point only
-        // currently, no distinction is made between existing vertex and new point
-        // however, this may change in the future JRF 23NOV15
-        var thisX = (lastMouseX - xC) / zoom;
-        var thisY = (lastMouseY - yC) / zoom;
 
-        var _thisX = parseFloat(thisBubble.attributes['cx'].value);
+          var _cy7 = parseFloat(thisBubble.attributes['cy'].value); // x, y
 
-        var _thisY = parseFloat(thisBubble.attributes['cy'].value);
 
-        console_log(enable_log, 'endpoints: [' + thisX + ', ' + thisY + '], [' + _thisX + ', ' + _thisY + ']');
+          var _cx8 = (lastMouseX - xC) / zoom; // new x
 
-        var _dx5 = thisX - _thisX;
 
-        var _dy5 = thisY - _thisY;
+          var _cy8 = (lastMouseY - yC) / zoom; // , y
 
-        thisBubble.attributes['cx'].value = thisX; // translate the bubble
 
-        thisBubble.attributes['cy'].value = thisY;
-        var theseCoords = getCurveCoords(thisDvalue); //#TODO: fix incremental mistracking of shift point, bubble no longer present
+          var _dx5 = _cx8 - _cx7;
 
-        if (thisBubble.id == 'shift') {
-          console_log(enable_log, thisDvalue);
-          console_log(enable_log, 'dx: ' + _dx5 + ', dy: ' + _dy5); // tranlate each coordinate (array contains x, y, x, y, ... x, y
+          var _dy5 = _cy8 - _cy7;
 
-          for (var _k7 = 0; _k7 < theseCoords.length; _k7++) {
-            theseCoords[_k7] = (_dx5 + parseFloat(theseCoords[_k7])).toFixed(3);
-            theseCoords[_k7 + 1] = (_dy5 + parseFloat(theseCoords[_k7 + 1])).toFixed(3);
-            _k7++;
+          thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom; // translate the bubble
+
+          thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom; // splitShiftPoints all need to be shifted by the deltas
+          // so iterate over all points, in initially a very pedantic way
+
+          var _shiftedPoints2 = '';
+
+          var _j2; //iterator for decomposing x, y point lists
+
+
+          var _xPoints2 = [];
+          var _yPoints2 = [];
+
+          for (_j2 = 0; _j2 < _splitShiftPoints2.length; _j2++) {
+            var _thisXY2 = _splitShiftPoints2[_j2].split(',');
+
+            _xPoints2[_j2] = (parseFloat(_thisXY2[0]) + _dx5).toFixed(3);
+            _yPoints2[_j2] = (parseFloat(_thisXY2[1]) + _dy5).toFixed(3);
+            _shiftedPoints2 += _xPoints2[_j2] + ',' + _yPoints2[_j2] + ' ';
           }
 
-          if (thisCurveQuadratic) {
-            //////// this is a kludge to make user the param names line up in getCurveCoords
-            theseCoords[6] = theseCoords[4]; // populate template curve p2
-
-            theseCoords[7] = theseCoords[5]; // coordinates from quadratic p2 values
+          for (var _k7 = 0; _k7 < _splitShiftPoints2.length; _k7++) {
+            _shiftingPoints2 += _splitShiftPoints2[_k7] + ' ';
           }
 
-          thisElement.attributes['d'].value = getCurvePath(theseCoords[0], theseCoords[1], theseCoords[2], theseCoords[3], theseCoords[4], theseCoords[5], theseCoords[6], theseCoords[7]); // responds to both C and Q curves
+          thisElement.attributes['points'].value = _shiftedPoints2;
+        }
+      } // end of SHIFT draw case
+      else {
+          // edit point by bubble
+          var _thisPoint3 = ((lastMouseX - xC) / zoom).toFixed(3).toString() + ',' + ((lastMouseY - yC) / zoom).toFixed(3).toString();
 
-          console_log(enable_log, thisElement.attributes['d'].value);
-        } //
-        // worksheet data for quadratic and cubic curves is conformed to the same model
-        // p1: [0,1], c1: [2,3], c2: [3,4], p2: [6,7]. Only one control point is used
-        // for quadratic when actually rendered
-        else {
-            // process non-shift bubble
+          var _thesePoints3 = thisElement.attributes['points'].value.trim();
+
+          var _splitPoints2 = _thesePoints3.split(' ');
+
+          if (thisBubble != null) {
+            // look for bubble to denote just move THIS point only
+            // currently, no distinction is made between existing vertex and new point
+            // however, this may change in the future JRF 23NOV15
+            thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom; // translate the bubble
+
+            thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
+
+            if (isNumeric(thisBubble.id)) {
+              // presume integer for now
+              _splitPoints2[parseInt(thisBubble.id)] = _thisPoint3; // replace this point
+
+              _thesePoints3 = '';
+
+              for (var _k8 = 0; _k8 < _splitPoints2.length; _k8++) {
+                _thesePoints3 += _splitPoints2[_k8] + ' ';
+              }
+
+              thisElement.attributes['points'].value = _thesePoints3;
+            }
+          } // end of edit point case
+          else {
+              // add new point at end during creation case
+              var _thesePoints4 = thisElement.attributes['points'].value;
+
+              var _thisPoint4 = ((lastMouseX - xC) / zoom).toFixed(3).toString() + ',' + ((lastMouseY - yC) / zoom).toFixed(3).toString() + ' ';
+
+              thisElement.attributes['points'].value = _thesePoints4.concat(_thisPoint4);
+            } // end of new point at end case
+
+        }
+    } // end of Draw case
+    else if (cursorMode == 'cubic' || cursorMode == 'quadratic') {
+        lastMouseX = this.lastMousePoint.x;
+        lastMouseY = this.lastMousePoint.y;
+
+        if (event.type == 'mousedown' || svgInProgress == false) {
+          // extra condition for line
+          return;
+        }
+
+        this.updateMousePosition(event);
+        var thisDvalue = thisElement.attributes['d'].value;
+        var thisCurveQuadratic = thisDvalue.indexOf('Q ') > 0;
+
+        if (thisBubble != null) {
+          // look for bubble to denote just move THIS point only
+          // currently, no distinction is made between existing vertex and new point
+          // however, this may change in the future JRF 23NOV15
+          var thisX = (lastMouseX - xC) / zoom;
+          var thisY = (lastMouseY - yC) / zoom;
+
+          var _thisX = parseFloat(thisBubble.attributes['cx'].value);
+
+          var _thisY = parseFloat(thisBubble.attributes['cy'].value);
+
+          console_log(enable_log, 'endpoints: [' + thisX + ', ' + thisY + '], [' + _thisX + ', ' + _thisY + ']');
+
+          var _dx6 = thisX - _thisX;
+
+          var _dy6 = thisY - _thisY;
+
+          thisBubble.attributes['cx'].value = thisX; // translate the bubble
+
+          thisBubble.attributes['cy'].value = thisY;
+          var theseCoords = getCurveCoords(thisDvalue); //#TODO: fix incremental mistracking of shift point, bubble no longer present
+
+          if (thisBubble.id == 'shift') {
+            console_log(enable_log, thisDvalue);
+            console_log(enable_log, 'dx: ' + _dx6 + ', dy: ' + _dy6); // tranlate each coordinate (array contains x, y, x, y, ... x, y
+
+            for (var _k9 = 0; _k9 < theseCoords.length; _k9++) {
+              theseCoords[_k9] = (_dx6 + parseFloat(theseCoords[_k9])).toFixed(3);
+              theseCoords[_k9 + 1] = (_dy6 + parseFloat(theseCoords[_k9 + 1])).toFixed(3);
+              _k9++;
+            }
+
             if (thisCurveQuadratic) {
               //////// this is a kludge to make user the param names line up in getCurveCoords
               theseCoords[6] = theseCoords[4]; // populate template curve p2
@@ -3675,132 +3737,148 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
               theseCoords[7] = theseCoords[5]; // coordinates from quadratic p2 values
             }
 
-            switch (thisBubble.id) {
-              case 'p1':
-                theseCoords[0] = thisX.toFixed(3);
-                theseCoords[1] = thisY.toFixed(3);
-                break;
-
-              case 'p2':
-                theseCoords[6] = thisX.toFixed(3);
-                theseCoords[7] = thisY.toFixed(3);
-                break;
-
-              case 'c1':
-                theseCoords[2] = thisX.toFixed(3);
-                theseCoords[3] = thisY.toFixed(3);
-                break;
-
-              case 'c2':
-                theseCoords[4] = thisX.toFixed(3);
-                theseCoords[5] = thisY.toFixed(3);
-                break;
-            }
-
-            if (thisCurveQuadratic) {
-              theseCoords[4] = theseCoords[2]; // force quadratic curve control
-
-              theseCoords[5] = theseCoords[3]; // points to be the same point
-            } // 'd' is the string containing the path parameters; set it to the updated values
-
-
             thisElement.attributes['d'].value = getCurvePath(theseCoords[0], theseCoords[1], theseCoords[2], theseCoords[3], theseCoords[4], theseCoords[5], theseCoords[6], theseCoords[7]); // responds to both C and Q curves
-            // now set the lines for the control points; two lines (l1 and l2) whether cubic or quadratic
 
-            thisElement.parentElement.lastChild.children['l1'].attributes['x1'].value = theseCoords[0];
-            thisElement.parentElement.lastChild.children['l1'].attributes['y1'].value = theseCoords[1];
-            thisElement.parentElement.lastChild.children['l1'].attributes['x2'].value = theseCoords[2];
-            thisElement.parentElement.lastChild.children['l1'].attributes['y2'].value = theseCoords[3];
-            thisElement.parentElement.lastChild.children['l2'].attributes['x1'].value = theseCoords[4];
-            thisElement.parentElement.lastChild.children['l2'].attributes['y1'].value = theseCoords[5];
-            thisElement.parentElement.lastChild.children['l2'].attributes['x2'].value = theseCoords[6];
-            thisElement.parentElement.lastChild.children['l2'].attributes['y2'].value = theseCoords[7];
-            thisElement.parentElement.lastChild.children['poly'].attributes['points'].value = getCurvePoints(theseCoords) + theseCoords[0] + ', ' + theseCoords[1]; // 'poly' is bounding polygon of endpoints and control points
-          }
-      } else {
-        // defining initial curve as straight line, i.e., rubber-banding p2 until mouseup
-        var _thisX2 = (lastMouseX - xC) / zoom;
+            console_log(enable_log, thisElement.attributes['d'].value);
+          } //
+          // worksheet data for quadratic and cubic curves is conformed to the same model
+          // p1: [0,1], c1: [2,3], c2: [3,4], p2: [6,7]. Only one control point is used
+          // for quadratic when actually rendered
+          else {
+              // process non-shift bubble
+              if (thisCurveQuadratic) {
+                //////// this is a kludge to make user the param names line up in getCurveCoords
+                theseCoords[6] = theseCoords[4]; // populate template curve p2
 
-        var _thisY2 = (lastMouseY - yC) / zoom;
+                theseCoords[7] = theseCoords[5]; // coordinates from quadratic p2 values
+              }
 
-        var thisD;
-        var thisPathType = ' C '; // set quadratic control point at midpoint, cubic's at 40% and 60% p1:p2
+              switch (thisBubble.id) {
+                case 'p1':
+                  theseCoords[0] = thisX.toFixed(3);
+                  theseCoords[1] = thisY.toFixed(3);
+                  break;
 
-        if (cursorMode == 'quadratic') thisPathType = ' Q ';
-        var theseCurvePoints = thisDvalue.split(thisPathType); // isolate control point(s) and p2
+                case 'p2':
+                  theseCoords[6] = thisX.toFixed(3);
+                  theseCoords[7] = thisY.toFixed(3);
+                  break;
 
-        var thisP1 = theseCurvePoints[0].split('M '); // isolate p1
+                case 'c1':
+                  theseCoords[2] = thisX.toFixed(3);
+                  theseCoords[3] = thisY.toFixed(3);
+                  break;
 
-        thisP1 = thisP1[1].split(', ');
+                case 'c2':
+                  theseCoords[4] = thisX.toFixed(3);
+                  theseCoords[5] = thisY.toFixed(3);
+                  break;
+              }
 
-        var _thisX3 = parseInt(thisP1[0]);
+              if (thisCurveQuadratic) {
+                theseCoords[4] = theseCoords[2]; // force quadratic curve control
 
-        var _thisY3 = parseInt(thisP1[1]);
+                theseCoords[5] = theseCoords[3]; // points to be the same point
+              } // 'd' is the string containing the path parameters; set it to the updated values
 
-        var _dx6 = _thisX3 - _thisX2;
 
-        var _dy6 = _thisY3 - _thisY2;
+              thisElement.attributes['d'].value = getCurvePath(theseCoords[0], theseCoords[1], theseCoords[2], theseCoords[3], theseCoords[4], theseCoords[5], theseCoords[6], theseCoords[7]); // responds to both C and Q curves
+              // now set the lines for the control points; two lines (l1 and l2) whether cubic or quadratic
 
-        var theseControlPoints = theseCurvePoints[1].split(', '); // get array of x,y,x,y(,x,y)
-
-        if (thisPathType == ' Q ') {
-          theseControlPoints[0] = (_thisX3 - 0.4 * _dx6).toFixed(3); // single control point
-
-          theseControlPoints[1] = (_thisY3 - 0.4 * _dy6).toFixed(3); // for quadratic
-
-          thisD = theseCurvePoints[0] + thisPathType + curvePoint(theseControlPoints[0], theseControlPoints[1]);
+              thisElement.parentElement.lastChild.children['l1'].attributes['x1'].value = theseCoords[0];
+              thisElement.parentElement.lastChild.children['l1'].attributes['y1'].value = theseCoords[1];
+              thisElement.parentElement.lastChild.children['l1'].attributes['x2'].value = theseCoords[2];
+              thisElement.parentElement.lastChild.children['l1'].attributes['y2'].value = theseCoords[3];
+              thisElement.parentElement.lastChild.children['l2'].attributes['x1'].value = theseCoords[4];
+              thisElement.parentElement.lastChild.children['l2'].attributes['y1'].value = theseCoords[5];
+              thisElement.parentElement.lastChild.children['l2'].attributes['x2'].value = theseCoords[6];
+              thisElement.parentElement.lastChild.children['l2'].attributes['y2'].value = theseCoords[7];
+              thisElement.parentElement.lastChild.children['poly'].attributes['points'].value = getCurvePoints(theseCoords) + theseCoords[0] + ', ' + theseCoords[1]; // 'poly' is bounding polygon of endpoints and control points
+            }
         } else {
-          // if (cursorMode == 'cubic')
-          theseControlPoints[0] = (_thisX3 - 0.4 * _dx6).toFixed(3);
-          theseControlPoints[1] = (_thisY3 - 0.4 * _dy6).toFixed(3);
-          theseControlPoints[2] = (_thisX3 - 0.6 * _dx6).toFixed(3);
-          theseControlPoints[3] = (_thisY3 - 0.6 * _dy6).toFixed(3);
-          thisD = theseCurvePoints[0] + thisPathType + curvePoint(theseControlPoints[0], theseControlPoints[1]);
-          thisD += curvePoint(theseControlPoints[2], theseControlPoints[3]);
-          thisD += curvePoint(_thisX2, _thisY2);
-          console_log(enable_log, 'p1: ' + thisP1[0] + ', ' + thisP1[1]);
-          console_log(enable_log, 'control points: ' + theseControlPoints[0] + ', ' + theseControlPoints[1] + ' ... ' + theseControlPoints[2] + ', ' + theseControlPoints[3]);
-          console_log(enable_log, 'p2: ' + _thisX2 + ', ' + _thisY2);
-        }
+          // defining initial curve as straight line, i.e., rubber-banding p2 until mouseup
+          var _thisX2 = (lastMouseX - xC) / zoom;
 
-        thisD += pathPoint(_thisX2, _thisY2);
-        thisElement.attributes['d'].value = thisD;
-      }
-    } else if (cursorMode == "text") {
-      // translate
-      if (svgInProgress == 'SHIFT') {
-        this.updateMousePosition(event);
+          var _thisY2 = (lastMouseY - yC) / zoom;
 
-        if (!thisBubble) {
-          thisBubble = event.target;
-        }
+          var thisD;
+          var thisPathType = ' C '; // set quadratic control point at midpoint, cubic's at 40% and 60% p1:p2
 
-        var _dx7 = (lastMouseX - xC) / zoom;
+          if (cursorMode == 'quadratic') thisPathType = ' Q ';
+          var theseCurvePoints = thisDvalue.split(thisPathType); // isolate control point(s) and p2
 
-        var _dy7 = (lastMouseY - yC) / zoom;
+          var thisP1 = theseCurvePoints[0].split('M '); // isolate p1
 
-        thisBubble.attributes['cx'].value = _dx7; // translate the bubble
+          thisP1 = thisP1[1].split(', ');
 
-        thisBubble.attributes['cy'].value = _dy7;
+          var _thisX3 = parseInt(thisP1[0]);
 
-        for (var i = 0; i < thisGroup.children.length; i++) {
-          // for any text lines in this group (skip bubble)
-          if (thisGroup.children[i].tagName == 'text') {
-            // only shift text elements, not bubbles
-            thisGroup.children[i].attributes['x'].value = _dx7; // translate each <text> element
+          var _thisY3 = parseInt(thisP1[1]);
 
-            thisGroup.children[i].attributes['y'].value = _dy7 + i * textHeight;
+          var _dx7 = _thisX3 - _thisX2;
+
+          var _dy7 = _thisY3 - _thisY2;
+
+          var theseControlPoints = theseCurvePoints[1].split(', '); // get array of x,y,x,y(,x,y)
+
+          if (thisPathType == ' Q ') {
+            theseControlPoints[0] = (_thisX3 - 0.4 * _dx7).toFixed(3); // single control point
+
+            theseControlPoints[1] = (_thisY3 - 0.4 * _dy7).toFixed(3); // for quadratic
+
+            thisD = theseCurvePoints[0] + thisPathType + curvePoint(theseControlPoints[0], theseControlPoints[1]);
           } else {
-            // translate the bubble
-            thisGroup.children[i].children[0].attributes['cx'].value = _dx7; // translate each <text> element
+            // if (cursorMode == 'cubic')
+            theseControlPoints[0] = (_thisX3 - 0.4 * _dx7).toFixed(3);
+            theseControlPoints[1] = (_thisY3 - 0.4 * _dy7).toFixed(3);
+            theseControlPoints[2] = (_thisX3 - 0.6 * _dx7).toFixed(3);
+            theseControlPoints[3] = (_thisY3 - 0.6 * _dy7).toFixed(3);
+            thisD = theseCurvePoints[0] + thisPathType + curvePoint(theseControlPoints[0], theseControlPoints[1]);
+            thisD += curvePoint(theseControlPoints[2], theseControlPoints[3]);
+            thisD += curvePoint(_thisX2, _thisY2);
+            console_log(enable_log, 'p1: ' + thisP1[0] + ', ' + thisP1[1]);
+            console_log(enable_log, 'control points: ' + theseControlPoints[0] + ', ' + theseControlPoints[1] + ' ... ' + theseControlPoints[2] + ', ' + theseControlPoints[3]);
+            console_log(enable_log, 'p2: ' + _thisX2 + ', ' + _thisY2);
+          }
 
-            thisGroup.children[i].children[0].attributes['cy'].value = _dy7
-            /* + (i * textHeight)*/
-            ;
+          thisD += pathPoint(_thisX2, _thisY2);
+          thisElement.attributes['d'].value = thisD;
+        }
+      } else if (cursorMode == "text") {
+        // translate
+        if (svgInProgress == 'SHIFT') {
+          this.updateMousePosition(event);
+
+          if (!thisBubble) {
+            thisBubble = event.target;
+          }
+
+          var _dx8 = (lastMouseX - xC) / zoom;
+
+          var _dy8 = (lastMouseY - yC) / zoom;
+
+          thisBubble.attributes['cx'].value = _dx8; // translate the bubble
+
+          thisBubble.attributes['cy'].value = _dy8;
+
+          for (var i = 0; i < thisGroup.children.length; i++) {
+            // for any text lines in this group (skip bubble)
+            if (thisGroup.children[i].tagName == 'text') {
+              // only shift text elements, not bubbles
+              thisGroup.children[i].attributes['x'].value = _dx8; // translate each <text> element
+
+              thisGroup.children[i].attributes['y'].value = _dy8 + i * textHeight;
+            } else {
+              // translate the bubble
+              thisGroup.children[i].children[0].attributes['cx'].value = _dx8; // translate each <text> element
+
+              thisGroup.children[i].children[0].attributes['cy'].value = _dy8
+              /* + (i * textHeight)*/
+              ;
+            }
           }
         }
       }
-    }
   } else if (cursorMode == 'MOVE') {
     // Revert to MOVE: this version assumes manipulating the transform <xlt> of the SVG via xC, yC
     if (svgInProgress == 'MOVE') {
@@ -5067,6 +5145,10 @@ SVGDraw.prototype.apiArrowLength = function (length) {
 
 SVGDraw.prototype.apiArrowPercent = function (percent) {
   if (isNumeric(percent)) arrowPercent = percent;
+};
+
+SVGDraw.prototype.apiStrokeWidth = function (pixels) {
+  if (isNumeric(pixels)) strokeWidth = pixels;
 };
 
 /* harmony default export */ var svg_detailer = (SVGDraw);
