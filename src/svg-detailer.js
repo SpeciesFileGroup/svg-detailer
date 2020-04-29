@@ -2534,7 +2534,6 @@ function indicateMode(mode) {
     coverRect = 'rectangle';        // replace anomalous rect with rectangle
   }
   document.getElementById("mode").textContent = coverRect.toUpperCase();
-//            $("#zoom").html("Zoom:" + zoom.toFixed(3));
   document.getElementById('zoom').innerHTML = "Zoom:" + zoom.toFixed(3);
 }
 
@@ -2547,32 +2546,16 @@ function collectSVG(verbatim) {   // verbatim true includes all markup, false me
     clonedSVG.firstChild.attributes['transform'].value = 'translate(0, 0)scale(1)';
     thisXLT.children['xltImage'].remove();
   }
-  let innerElement;
   let thisG;
-  let terminus = thisXLT.childElementCount;     // this will lety if we replace <g> elements when not "verbatim"
+  let terminus = thisXLT.childElementCount;
   let i;
-  let j = 1;                                    // this will be the indexer for <g> elements
-  let k;
-  for (i = 1; i < terminus; i++) {                // i will range over the original children count
-    thisG = thisXLT.childNodes[j];              // probably should be firstChild since iteratively
-    // thisG.removeAttribute('onmouseenter');
-    // thisG.removeAttribute('onmouseleave');
-    j++;                                        // index the next <g> in case we are verbatim-ish
+  for (i = 0; i < terminus; i++) {              // i will range over the remaining children count
+    thisG = thisXLT.childNodes[i];              // probably should be firstChild since iteratively
     if (!verbatim) {    // new wrinkle for arrow and similar groups
       if (thisG.attributes.class) {
         thisG.removeAttribute('id');
-      } else {
-        j--;                                              // not verbatim, so back up to index the same <g>
-        k = thisG.childElementCount;                     // save the number of children before it disappears
-        innerElement = thisXLT.children[j].innerHTML;   // make a copy of the primitive SVG <element>(s) inside the <g>
-        thisXLT.children[j].outerHTML = innerElement;  // replace the <g> with its content (e.g., may be multiple <text>s)
-        j += k;                                       // adjust the <g> indexer to take into account the added element(s)
       }
     }
-  }
-  if (!verbatim) {                               // disable the image if not verbatim
-    innerElement = thisXLT.firstChild.outerHTML.replace('<image', '<!--image').replace('/image>', '/image-->');
-    thisXLT.firstChild.outerHTML = innerElement;    // this is done AFTER the other depopulation so accounting is easier
   }
   return clonedSVG;        //  oops, this was too easy
 };
