@@ -62,7 +62,24 @@ entire element can be backtracked to nothing. The intention is to extend this to
 
 [Here.](https://speciesfilegroup.org/svg-detailer)  With the implementation of the npm package version of svg-detailer, 
                                                   use of the program without using npm (and having no dependencies) only requires removing the final statement in the file 
-                                                  svg-detailer.js.  That is "export default SVGDraw".
+                                                  svg-detailer.js.  That is: "export default SVGDraw".
+## Example results:
+&lt;g>
+<br>&nbsp; &lt;g id="g1" class="arrow">
+<br>&nbsp; &nbsp; &nbsp; &lt;line stroke="#FF0000" stroke-width="1" stroke-opacity="0.9" fill="" fill-opacity="0.0" stroke-linecap="round" 
+<br>&nbsp; &nbsp; &nbsp; &nbsp; x1="787.5764705882352" y1="886.1281045751634" x2="288.8546617314106" y2="822.8931396421185">
+<br>&nbsp; &nbsp; &nbsp; &lt;/line>
+<br>&nbsp; &nbsp; &nbsp; &lt;polygon stroke="#FF0000" stroke-width="1" stroke-opacity="0.9" fill="" fill-opacity="0.0" stroke-linecap="round" 
+<br>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; points="288.8546617314106,822.8931396421185 335.565,854.153 341.889,804.281">
+<br>&nbsp; &nbsp; &nbsp; &lt;/polygon>
+<br>&nbsp; &lt;/g>
+<br>&nbsp; &lt;g id="g2" class="ellipse">
+<br>&nbsp; &nbsp; &nbsp; &lt;ellipse stroke="#FF0000" stroke-width="1" stroke-opacity="0.9" fill="" fill-opacity="0.0" stroke-linecap="round" 
+<br>&nbsp; &nbsp; &nbsp; &nbsp; cx="581.9733333333334" cy="745.8133333333334" rx="180.992" ry="132.72746666666652">
+<br>&nbsp; &nbsp; &nbsp; &lt;/ellipse>
+<br>&nbsp; &lt;/g>
+<br>&lt;/g>
+<br><br> which is a  closed-head arrow and an ellipse, drawn in red.
 ## Tests
 The test environment uses several npm modules.  To set up the configuration the following commands are used:
   * npm install
