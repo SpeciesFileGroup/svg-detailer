@@ -1501,6 +1501,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       let thisX2 = thisElement.attributes['x2'].value;
       let thisY2 = thisElement.attributes['y2'].value;
       let thisColor = thisElement.attributes['stroke'].value;
+      let thisStrokeWidth = thisElement.attributes['stroke-width'].value;   // save mainLine attributes since NEW barbs
       let deltaX = thisX2 - thisX1;
       let deltaY = thisY2 - thisY1;
       let lineLength = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
@@ -1528,6 +1529,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       leftBarb.setAttributeNS(null, 'x2', x3);      // end x
       leftBarb.setAttributeNS(null, 'y2', y3);      // end y
       leftBarb.setAttributeNS(null, 'stroke', thisColor);
+      leftBarb.setAttributeNS(null, 'stroke-width', thisStrokeWidth);
       // thisGroup.appendChild(leftBarb);
       let rightBarb = createElement('line');
       rightBarb.setAttributeNS(null, 'x1', thisX2);       // start x of barbs
@@ -1535,19 +1537,15 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       rightBarb.setAttributeNS(null, 'x2', x4);      // end x
       rightBarb.setAttributeNS(null, 'y2', y4);      // end y
       rightBarb.setAttributeNS(null, 'stroke', thisColor);
+      rightBarb.setAttributeNS(null, 'stroke-width', thisStrokeWidth);
       // thisGroup.appendChild(rightBarb);
 
       if (document.getElementById('arrowHeadClosed').checked) {
-        // baseBarb = createElement('line');
-        // baseBarb.setAttributeNS(null, 'x1', x3);       // start x of barbs base
-        // baseBarb.setAttributeNS(null, 'y1', y3);      // start y of barbs base
-        // baseBarb.setAttributeNS(null, 'x2', x4);      // end x
-        // baseBarb.setAttributeNS(null, 'y2', y4);      // end y
-        // baseBarb.setAttributeNS(null, 'stroke', thisColor);
         let baseBarb = createElement('polygon');
         let barbPoints = thisX2 + ',' + thisY2 + ' ' + x3 + ',' + y3 + ' ' + x4 + ',' + y4;
         baseBarb.setAttributeNS(null, 'points', barbPoints);
         baseBarb.setAttributeNS(null, 'stroke', thisColor);
+        baseBarb.setAttributeNS(null, 'stroke-width', thisStrokeWidth);
         thisGroup.appendChild(baseBarb)
       }
       else {
