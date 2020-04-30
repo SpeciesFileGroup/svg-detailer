@@ -64,7 +64,7 @@ entire element can be backtracked to nothing. The intention is to extend this to
                                                   use of the program without using npm (and having no dependencies) only requires removing the final statement in the file 
                                                   svg-detailer.js.  That is: "export default SVGDraw".
 ## Example results:
-&lt;g>
+&lt;g id="xlt" transform="translate(0, 0) scale(1)">
 <br>&nbsp; &lt;g id="g1" class="arrow">
 <br>&nbsp; &nbsp; &nbsp; &lt;line stroke="#FF0000" stroke-width="1" stroke-opacity="0.9" fill="" fill-opacity="0.0" stroke-linecap="round" 
 <br>&nbsp; &nbsp; &nbsp; &nbsp; x1="787.57" y1="886.12" x2="288.854" y2="822.89">

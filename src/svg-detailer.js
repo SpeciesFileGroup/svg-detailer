@@ -1261,8 +1261,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           let cy = parseFloat(thisBubble.attributes['cy'].value);   // x, y
           let cx2 = (lastMouseX - xC) / zoom;                       // new x
           let cy2 = (lastMouseY - yC) / zoom;                       // , y
-          let dx = (cx2 - cx)
-          let dy = (cy2 - cy)
+          let dx = (cx2 - cx);
+          let dy = (cy2 - cy);
           thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom;     // translate the bubble
           thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
 
