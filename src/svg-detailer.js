@@ -187,7 +187,7 @@ function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
     // insert the svg base image into the transformable group <g id='xlt'>
     let xlt = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     xlt.setAttributeNS(null, 'id', 'xlt');
-    xlt.setAttributeNS(null, 'transform', 'translate(0,0)scale(' + parseFloat(zoom) + ')');
+    xlt.setAttributeNS(null, 'transform', 'translate(0,0) scale(' + parseFloat(zoom) + ')');
     svgLayer.appendChild((xlt));
     let xltImage = document.createElementNS('http://www.w3.org/2000/svg', 'image');
     xltImage.setAttributeNS(null, 'id', "xltImage");
@@ -2388,10 +2388,10 @@ function zoomOut() {
   }
 }
 
-function zoom_trans(x, y, factor) {
+function zoom_trans(x, y, scale) {
   let xlt = document.getElementById('xlt');         // DOM svg element g xlt
-  let transform = 'translate(' + ((x)).toString() + ', ' + ((y)).toString() + ')scale(' + factor.toString() + ')';
-  zoom = factor;
+  let transform = 'translate(' + ((x)).toString() + ', ' + ((y)).toString() + ') scale(' + scale.toString() + ')';
+  zoom = scale;
   xC = x;
   yC = y;
   xlt.attributes['transform'].value = transform;
@@ -2541,7 +2541,7 @@ function collectSVG(verbatim) {   // verbatim true includes all markup, false me
   if (!verbatim) {
     clonedSVG.removeAttribute('height');
     clonedSVG.removeAttribute('width');
-    clonedSVG.firstChild.attributes['transform'].value = 'translate(0, 0)scale(1)';
+    clonedSVG.firstChild.attributes['transform'].value = 'translate(0, 0) scale(1)';
     thisXLT.children['xltImage'].remove();
   }
   let thisG;
@@ -2558,8 +2558,52 @@ function collectSVG(verbatim) {   // verbatim true includes all markup, false me
   return clonedSVG;        //  oops, this was too easy
 };
 
+function getBareSVG() {   //  stripped
+  let clonedSVG = svgLayer.cloneNode(true);
+  let thisXLT = clonedSVG.firstChild;
+  // if (!verbatim) {
+    clonedSVG.removeAttribute('height');
+    clonedSVG.removeAttribute('width');
+    clonedSVG.removeAttribute('id');
+    clonedSVG.firstChild.attributes['transform'].value = 'translate(0, 0) scale(1)';
+    thisXLT.children['xltImage'].remove();
+  // }
+  let thisG;
+  let terminus = thisXLT.childElementCount;
+  let i;
+  for (i = 0; i < terminus; i++) {              // i will range over the remaining children count
+    thisG = thisXLT.childNodes[i];              // probably should be firstChild since iteratively
+    if (thisG.attributes.class) {
+      stripElement(thisG)
+    };
+  }
+  return clonedSVG;        //  oops, this was too easy
+};
+
+function stripElement(element) {
+  if(element.hasChildNodes()) {
+    let i;
+    for (i=0; i<element.childElementCount; i++) {
+      stripElement(element.childNodes[i])
+    }
+  }
+  element.removeAttribute('id');
+  element.removeAttribute('stroke');
+  element.removeAttribute('stroke-width');
+  element.removeAttribute('stroke-opacity');
+  element.removeAttribute('stroke-linecap');
+  element.removeAttribute('fill');
+  element.removeAttribute('fill-opacity');
+  element.removeAttribute('font-family');
+  return element;
+}
+
 SVGDraw.prototype.showSVG = function(verbatim) {
   svgMenu.children['textSVGorJSON'].textContent = collectSVG(verbatim).outerHTML;
+};
+
+SVGDraw.prototype.bareSVG = function() {
+  svgMenu.children['textSVGorJSON'].textContent = getBareSVG().outerHTML;
 };
 
 SVGDraw.prototype.jsonSVG = function (verbatim) {      // package SVG into JSON object
