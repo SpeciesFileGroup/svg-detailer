@@ -2607,8 +2607,8 @@ SVGDraw.prototype.apiShowSVG = function(verbatim) {
   svgMenu.children['textSVGorJSON'].textContent = collectSVG(verbatim).outerHTML;
 };
 
-SVGDraw.prototype.apiBareSVG = function() {
-  svgMenu.children['textSVGorJSON'].textContent = getBareSVG(true).outerHTML;
+SVGDraw.prototype.apiBareSVG = function(noGroups = true) {
+  svgMenu.children['textSVGorJSON'].textContent = getBareSVG(noGroups).outerHTML;
 };
 
 SVGDraw.prototype.apiJsonSVG = function (verbatim) {      // package SVG into JSON object
@@ -2885,7 +2885,7 @@ SVGDraw.prototype.apiJsonSVG = function (verbatim) {      // package SVG into JS
            svgMenu.appendChild(thisButton);
            thisButton.addEventListener('click', (event) => {
              thisButton.blur();
-             SVGDraw.prototype.apiBareSVG(false);
+             SVGDraw.prototype.apiBareSVG();
            });
 
            thisButton = document.createElement('input');
