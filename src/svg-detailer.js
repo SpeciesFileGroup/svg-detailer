@@ -2558,23 +2558,26 @@ function collectSVG(verbatim) {   // verbatim true includes all markup, false me
   return clonedSVG;        //  oops, this was too easy
 };
 
-function getBareSVG() {   //  stripped
+function getBareSVG(noGroups) {   //  stripped
   let clonedSVG = svgLayer.cloneNode(true);
+  clonedSVG.removeAttribute('height');
+  clonedSVG.removeAttribute('width');
+  clonedSVG.removeAttribute('id');
+  // clonedSVG.firstChild.attributes['transform'].value = 'translate(0, 0) scale(1)';
   let thisXLT = clonedSVG.firstChild;
-  // if (!verbatim) {
-    clonedSVG.removeAttribute('height');
-    clonedSVG.removeAttribute('width');
-    clonedSVG.removeAttribute('id');
-    clonedSVG.firstChild.attributes['transform'].value = 'translate(0, 0) scale(1)';
-    thisXLT.children['xltImage'].remove();
-  // }
-  let thisG;
+  thisXLT.removeAttribute('id');
+  thisXLT.removeAttribute('transform');
+  thisXLT.children['xltImage'].remove();
+  let thisG, i;
   let terminus = thisXLT.childElementCount;
-  let i;
+  let groups = ['arrow', 'cubic', 'quadratic', 'text'];
   for (i = 0; i < terminus; i++) {              // i will range over the remaining children count
     thisG = thisXLT.childNodes[i];              // probably should be firstChild since iteratively
     if (thisG.attributes.class) {
-      stripElement(thisG)
+      stripElement(thisG);
+      if(noGroups && !(groups.includes(thisG.attributes.class.value))) {
+        thisG.outerHTML = thisG.innerHTML;
+      }
     };
   }
   return clonedSVG;        //  oops, this was too easy
@@ -2595,18 +2598,20 @@ function stripElement(element) {
   element.removeAttribute('fill');
   element.removeAttribute('fill-opacity');
   element.removeAttribute('font-family');
+  element.removeAttribute('font-size');
+  element.removeAttribute('style');
   return element;
 }
 
-SVGDraw.prototype.showSVG = function(verbatim) {
+SVGDraw.prototype.apiShowSVG = function(verbatim) {
   svgMenu.children['textSVGorJSON'].textContent = collectSVG(verbatim).outerHTML;
 };
 
-SVGDraw.prototype.bareSVG = function() {
-  svgMenu.children['textSVGorJSON'].textContent = getBareSVG().outerHTML;
+SVGDraw.prototype.apiBareSVG = function() {
+  svgMenu.children['textSVGorJSON'].textContent = getBareSVG(true).outerHTML;
 };
 
-SVGDraw.prototype.jsonSVG = function (verbatim) {      // package SVG into JSON object
+SVGDraw.prototype.apiJsonSVG = function (verbatim) {      // package SVG into JSON object
   let clonedSVG = collectSVG(false).firstChild;     // strip off <svg...> </svg>
   clonedSVG.removeAttribute('id');
   clonedSVG.removeAttribute('transform');
@@ -2856,7 +2861,7 @@ SVGDraw.prototype.jsonSVG = function (verbatim) {      // package SVG into JSON 
            svgMenu.appendChild(thisButton);
            thisButton.addEventListener('click', (event) => {
              thisButton.blur();
-             SVGDraw.prototype.showSVG(true);
+             SVGDraw.prototype.apiShowSVG(true);
            });
 
            thisButton = document.createElement('input');
@@ -2868,7 +2873,19 @@ SVGDraw.prototype.jsonSVG = function (verbatim) {      // package SVG into JSON 
            svgMenu.appendChild(thisButton);
            thisButton.addEventListener('click', (event) => {
              thisButton.blur();
-             SVGDraw.prototype.showSVG(false);
+             SVGDraw.prototype.apiShowSVG(false);
+           });
+
+           thisButton = document.createElement('input');
+           thisButton.setAttribute('id', 'bareSVG');
+           thisButton.setAttribute('type', 'button');
+           thisButton.setAttribute('value', 'Bare SVG');
+           // thisButton.setAttribute('onclick', 'this.blur(); showSVG(false);');
+           // thisButton.setAttribute('onclick', 'showSVG(false);');
+           svgMenu.appendChild(thisButton);
+           thisButton.addEventListener('click', (event) => {
+             thisButton.blur();
+             SVGDraw.prototype.apiBareSVG(false);
            });
 
            thisButton = document.createElement('input');
@@ -2877,7 +2894,7 @@ SVGDraw.prototype.jsonSVG = function (verbatim) {      // package SVG into JSON 
            thisButton.setAttribute('value', 'JSON SVG');
            svgMenu.appendChild(thisButton);
            thisButton.addEventListener('click', (event) => {
-             SVGDraw.prototype.jsonSVG(false);
+             SVGDraw.prototype.apiJsonSVG(false);
            });
 
            svgMenu.appendChild(document.createElement('br'))
