@@ -106,7 +106,7 @@ Are minimally wrapped in an outer `<g>`, e.g. with the class of that custom elem
 ```
 
 ## Tests
-In addition do
+Install framework 
 
 ```bash
 npm install -g selenium-webdriver
@@ -117,13 +117,12 @@ npm install -g chai
 
 Run all tests: 
 
+Make sure the server is running (`npm run serve`), then:
 `mocha --no-timeouts`
 
 Run individual tests:
-
 `mocha --no-timeouts ./test/<testname>`
 
 ## Funding 
-
 This project was funded in part by NSF-ABI-1356381.Any opinions, findings and conclusions or recommendations expressed 
 in this material are those of the author(s) and do not necessarily reflect the views of the National Science Foundation. 
