@@ -2334,12 +2334,17 @@ function checkLeftoverElement() {       // this function is only called when svg
 function clearLastGroup() {
   let xlt = document.getElementById("xlt");
   if (xlt.childElementCount > 1) {              // don't remove the base image
-    xlt.lastChild.remove();
+    let group = xlt.lastChild;
+    group.removeEventListener('mouseenter', mouseEnterFunction); // disable mouseover on real element's containing group
+    group.removeEventListener('mouseleave', mouseLeaveFunction); // disable mouseleaver on real element's containing group
+    group.remove();
   }
 }
 
 function clearThisGroup(group) {
   if (group) {
+    group.removeEventListener('mouseenter', mouseEnterFunction); // disable mouseover on real element's containing group
+    group.removeEventListener('mouseleave', mouseLeaveFunction); // disable mouseleaver on real element's containing group
     group.remove();
   }
 }
