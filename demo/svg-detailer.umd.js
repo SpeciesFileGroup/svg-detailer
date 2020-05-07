@@ -822,6 +822,26 @@ module.exports = Object('z').propertyIsEnumerable(0) ? Object : function (it) {
 
 /***/ }),
 
+/***/ "6762":
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+// https://github.com/tc39/Array.prototype.includes
+var $export = __webpack_require__("5ca1");
+var $includes = __webpack_require__("c366")(true);
+
+$export($export.P, 'Array', {
+  includes: function includes(el /* , fromIndex = 0 */) {
+    return $includes(this, el, arguments.length > 1 ? arguments[1] : undefined);
+  }
+});
+
+__webpack_require__("9c6c")('includes');
+
+
+/***/ }),
+
 /***/ "6821":
 /***/ (function(module, exports, __webpack_require__) {
 
@@ -1012,6 +1032,20 @@ module.exports = function (fn, that, length) {
   return function (/* ...args */) {
     return fn.apply(that, arguments);
   };
+};
+
+
+/***/ }),
+
+/***/ "9c6c":
+/***/ (function(module, exports, __webpack_require__) {
+
+// 22.1.3.31 Array.prototype[@@unscopables]
+var UNSCOPABLES = __webpack_require__("2b4c")('unscopables');
+var ArrayProto = Array.prototype;
+if (ArrayProto[UNSCOPABLES] == undefined) __webpack_require__("32e9")(ArrayProto, UNSCOPABLES, {});
+module.exports = function (key) {
+  ArrayProto[UNSCOPABLES][key] = true;
 };
 
 
@@ -1423,6 +1457,9 @@ if (typeof window !== 'undefined') {
 // Indicate to webpack that this file can be concatenated
 /* harmony default export */ var setPublicPath = (null);
 
+// EXTERNAL MODULE: ./node_modules/core-js/modules/es7.array.includes.js
+var es7_array_includes = __webpack_require__("6762");
+
 // EXTERNAL MODULE: ./node_modules/core-js/modules/es6.string.trim.js
 var es6_string_trim = __webpack_require__("4f37");
 
@@ -1442,6 +1479,7 @@ var es6_regexp_to_string = __webpack_require__("6b54");
 var es6_date_to_string = __webpack_require__("87b3");
 
 // CONCATENATED MODULE: ./src/svg-detailer.js
+
 
 
 
@@ -1509,7 +1547,8 @@ var thisBubble; // the bubble mousedown-ed in the currently edited element
 var svgInProgress = false;
 var lastMouseX;
 var lastMouseY;
-var enable_log = false; // default to NOT log debug output
+var idCount = 0;
+var enable_log = true; // default to NOT log debug output
 // var logMouse = false;       // debug
 // var logStatus = false;      // flags
 // var logIndex = 0;           // limit counter for above
@@ -1642,7 +1681,7 @@ function SVGDraw(containerID) {
 
     var xlt = document.createElementNS('http://www.w3.org/2000/svg', 'g');
     xlt.setAttributeNS(null, 'id', 'xlt');
-    xlt.setAttributeNS(null, 'transform', 'translate(0,0)scale(' + parseFloat(zoom) + ')');
+    xlt.setAttributeNS(null, 'transform', 'translate(0,0) scale(' + parseFloat(zoom) + ')');
     svgLayer.appendChild(xlt);
     var xltImage = document.createElementNS('http://www.w3.org/2000/svg', 'image');
     xltImage.setAttributeNS(null, 'id', "xltImage");
@@ -1715,7 +1754,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
 
     if (thisGroup) {
       if (thisGroup.childElementCount > 1 && cursorMode != 'text') {
-        // this is the case where there is a click on a mouseovered
+        // this is the case where there is a click on a mousentered
         // thisGroup.lastChild.remove();
         clearEditElement(thisGroup); // setCursorMode(savedCursorMode);       // because we know specifically that we mouseentered an element
 
@@ -1733,7 +1772,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
 
         var _group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
 
-        var newGroupID = 'g' + document.getElementById("xlt").childElementCount.toString();
+        var newGroupID = 'g' + getIDcount().toString();
 
         _group.setAttributeNS(null, 'id', newGroupID);
 
@@ -1746,7 +1785,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
         _group.appendChild(element);
 
         thisElement = _group.children[0];
-        element.setAttributeNS(null, 'points', thisSVGpoints[0][0].toFixed(3).toString() + ',' + thisSVGpoints[0][1].toFixed(3).toString() + ' ' + thisSVGpoints[0][0].toFixed(3).toString() + ',' + thisSVGpoints[0][1].toFixed(3).toString() + ' '); // start x,y for both points initially
+        element.setAttributeNS(null, 'points', thisSVGpoints[0][0].toFixed(4).toString() + ',' + thisSVGpoints[0][1].toFixed(4).toString() + ' ' + thisSVGpoints[0][0].toFixed(4).toString() + ',' + thisSVGpoints[0][1].toFixed(4).toString() + ' '); // start x,y for both points initially
 
         svgInProgress = cursorMode; // mark in progress
       } else {
@@ -1754,7 +1793,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
         self.updateMousePosition(event);
         var thesePoints = thisElement.attributes['points'].value; // to trim or not to trim?  if so, multiple implications here
 
-        var thisPoint = ((lastMouseX - xC) / zoom).toFixed(3).toString() + ',' + ((lastMouseY - yC) / zoom).toFixed(3).toString() + ' ';
+        var thisPoint = ((lastMouseX - xC) / zoom).toFixed(4).toString() + ',' + ((lastMouseY - yC) / zoom).toFixed(4).toString() + ' ';
         thisElement.attributes['points'].value = thesePoints.concat(thisPoint);
       }
     }
@@ -1771,7 +1810,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
 
         thisGroup = _group2;
 
-        var _newGroupID = 'g' + document.getElementById("xlt").childElementCount.toString();
+        var _newGroupID = 'g' + getIDcount().toString();
 
         _group2.setAttributeNS(null, 'id', _newGroupID);
 
@@ -1787,7 +1826,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
 
         _element.setAttributeNS(null, 'stroke-linecap', 'round');
 
-        _element.setAttributeNS(null, 'points', thisSVGpoints[0][0].toFixed(3).toString() + ',' + thisSVGpoints[0][1].toFixed(3).toString() + ' ' + thisSVGpoints[0][0].toFixed(3).toString() + ',' + thisSVGpoints[0][1].toFixed(3).toString() + ' '); // start x,y for both points initially
+        _element.setAttributeNS(null, 'points', thisSVGpoints[0][0].toFixed(4).toString() + ',' + thisSVGpoints[0][1].toFixed(4).toString() + ' ' + thisSVGpoints[0][0].toFixed(4).toString() + ',' + thisSVGpoints[0][1].toFixed(4).toString() + ' '); // start x,y for both points initially
 
 
         svgInProgress = cursorMode; // mark in progress
@@ -1796,7 +1835,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
         self.updateMousePosition(event);
         var _thesePoints = thisElement.attributes['points'].value;
 
-        var _thisPoint = ((lastMouseX - xC) / zoom).toFixed(3).toString() + ',' + ((lastMouseY - yC) / zoom).toFixed(3).toString() + ' ';
+        var _thisPoint = ((lastMouseX - xC) / zoom).toFixed(4).toString() + ',' + ((lastMouseY - yC) / zoom).toFixed(4).toString() + ' ';
 
         thisElement.attributes['points'].value = _thesePoints.concat(_thisPoint);
       }
@@ -1812,7 +1851,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
 
         var _group3 = document.createElementNS('http://www.w3.org/2000/svg', 'g');
 
-        var _newGroupID2 = 'g' + document.getElementById("xlt").childElementCount.toString();
+        var _newGroupID2 = 'g' + getIDcount().toString();
 
         _group3.setAttributeNS(null, 'id', _newGroupID2);
 
@@ -1827,10 +1866,10 @@ SVGDraw.prototype.onSvgMouseDown = function () {
         thisGroup = _group3;
         thisElement = _group3.children[0];
 
-        _element2.setAttributeNS(null, 'x', thisSVGpoints[0][0]); // start x
+        _element2.setAttributeNS(null, 'x', thisSVGpoints[0][0].toFixed(4)); // start x
 
 
-        _element2.setAttributeNS(null, 'y', thisSVGpoints[0][1]); // start y
+        _element2.setAttributeNS(null, 'y', thisSVGpoints[0][1].toFixed(4)); // start y
 
 
         _element2.setAttributeNS(null, 'width', 1); // width x
@@ -1856,7 +1895,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
 
         thisGroup = _group4;
 
-        var _newGroupID3 = 'g' + document.getElementById("xlt").childElementCount.toString();
+        var _newGroupID3 = 'g' + getIDcount().toString();
 
         _group4.setAttributeNS(null, 'id', _newGroupID3);
 
@@ -1870,16 +1909,16 @@ SVGDraw.prototype.onSvgMouseDown = function () {
 
         thisElement = _group4.children[0];
 
-        _element3.setAttributeNS(null, 'x1', thisSVGpoints[0][0]); // start x
+        _element3.setAttributeNS(null, 'x1', thisSVGpoints[0][0].toFixed(4)); // start x
 
 
-        _element3.setAttributeNS(null, 'y1', thisSVGpoints[0][1]); // start y
+        _element3.setAttributeNS(null, 'y1', thisSVGpoints[0][1].toFixed(4)); // start y
 
 
-        _element3.setAttributeNS(null, 'x2', thisSVGpoints[0][0]); // end x
+        _element3.setAttributeNS(null, 'x2', thisSVGpoints[0][0].toFixed(4)); // end x
 
 
-        _element3.setAttributeNS(null, 'y2', thisSVGpoints[0][1]); // end y
+        _element3.setAttributeNS(null, 'y2', thisSVGpoints[0][1].toFixed(4)); // end y
 
 
         svgInProgress = cursorMode; // mark in progress
@@ -1902,7 +1941,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
 
         thisGroup = _group5;
 
-        var _newGroupID4 = 'g' + document.getElementById("xlt").childElementCount.toString();
+        var _newGroupID4 = 'g' + getIDcount().toString();
 
         _group5.setAttributeNS(null, 'id', _newGroupID4);
 
@@ -1916,16 +1955,16 @@ SVGDraw.prototype.onSvgMouseDown = function () {
 
         thisElement = _group5.children[0];
 
-        _element4.setAttributeNS(null, 'x1', thisSVGpoints[0][0]); // start x
+        _element4.setAttributeNS(null, 'x1', thisSVGpoints[0][0].toFixed(4)); // start x
 
 
-        _element4.setAttributeNS(null, 'y1', thisSVGpoints[0][1]); // start y
+        _element4.setAttributeNS(null, 'y1', thisSVGpoints[0][1].toFixed(4)); // start y
 
 
-        _element4.setAttributeNS(null, 'x2', thisSVGpoints[0][0]); // end x
+        _element4.setAttributeNS(null, 'x2', thisSVGpoints[0][0].toFixed(4)); // end x
 
 
-        _element4.setAttributeNS(null, 'y2', thisSVGpoints[0][1]); // end y
+        _element4.setAttributeNS(null, 'y2', thisSVGpoints[0][1].toFixed(4)); // end y
 
 
         svgInProgress = cursorMode; // mark in progress
@@ -1951,7 +1990,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
 
         var _group6 = document.createElementNS('http://www.w3.org/2000/svg', 'g');
 
-        var _newGroupID5 = 'g' + document.getElementById("xlt").childElementCount.toString();
+        var _newGroupID5 = 'g' + getIDcount().toString();
 
         _group6.setAttributeNS(null, 'id', _newGroupID5);
 
@@ -1967,10 +2006,10 @@ SVGDraw.prototype.onSvgMouseDown = function () {
         thisGroup = _group6;
         thisElement = _group6.children[0]; // this var is used to dynamically create the element
 
-        _element5.setAttributeNS(null, 'cx', thisSVGpoints[0][0]); // start x
+        _element5.setAttributeNS(null, 'cx', thisSVGpoints[0][0].toFixed(4)); // start x
 
 
-        _element5.setAttributeNS(null, 'cy', thisSVGpoints[0][1]); // start y
+        _element5.setAttributeNS(null, 'cy', thisSVGpoints[0][1].toFixed(4)); // start y
 
 
         _element5.setAttributeNS(null, 'r', 1); // width x
@@ -1993,7 +2032,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
 
         thisGroup = _group7;
 
-        var _newGroupID6 = 'g' + document.getElementById("xlt").childElementCount.toString();
+        var _newGroupID6 = 'g' + getIDcount().toString();
 
         _group7.setAttributeNS(null, 'id', _newGroupID6);
 
@@ -2007,10 +2046,10 @@ SVGDraw.prototype.onSvgMouseDown = function () {
 
         thisElement = _group7.children[0];
 
-        _element6.setAttributeNS(null, 'cx', thisSVGpoints[0][0]); // start x
+        _element6.setAttributeNS(null, 'cx', thisSVGpoints[0][0].toFixed(4)); // start x
 
 
-        _element6.setAttributeNS(null, 'cy', thisSVGpoints[0][1]); // start y
+        _element6.setAttributeNS(null, 'cy', thisSVGpoints[0][1].toFixed(4)); // start y
 
 
         _element6.setAttributeNS(null, 'rx', 1); // radius x
@@ -2039,7 +2078,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
 
         thisGroup = _group8;
 
-        var _newGroupID7 = 'g' + document.getElementById("xlt").childElementCount.toString();
+        var _newGroupID7 = 'g' + getIDcount().toString();
 
         _group8.setAttributeNS(null, 'id', _newGroupID7);
 
@@ -2053,7 +2092,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
 
         thisElement = _group8.children[0];
 
-        _element7.setAttributeNS(null, 'points', thisSVGpoints[0][0].toFixed(3).toString() + ',' + thisSVGpoints[0][1].toFixed(3).toString() + ' '); // start x,y
+        _element7.setAttributeNS(null, 'points', thisSVGpoints[0][0].toFixed(4).toString() + ',' + thisSVGpoints[0][1].toFixed(4).toString() + ' '); // start x,y
         //}
 
 
@@ -2082,7 +2121,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
 
         thisGroup = _group9;
 
-        var _newGroupID8 = 'g' + document.getElementById("xlt").childElementCount.toString();
+        var _newGroupID8 = 'g' + getIDcount().toString();
 
         _group9.setAttributeNS(null, 'id', _newGroupID8);
 
@@ -2123,7 +2162,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
         _group10 = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         thisGroup = _group10;
 
-        var _newGroupID9 = 'g' + document.getElementById("xlt").childElementCount.toString();
+        var _newGroupID9 = 'g' + getIDcount().toString();
 
         _group10.setAttributeNS(null, 'id', _newGroupID9);
 
@@ -2146,10 +2185,10 @@ SVGDraw.prototype.onSvgMouseDown = function () {
 
         _element9.setAttributeNS(null, 'stroke-opacity', '1.0');
 
-        _element9.setAttributeNS(null, 'x', thisSVGpoints[0][0]); // start x
+        _element9.setAttributeNS(null, 'x', thisSVGpoints[0][0].toFixed(4)); // start x
 
 
-        _element9.setAttributeNS(null, 'y', thisSVGpoints[0][1]); // start y
+        _element9.setAttributeNS(null, 'y', thisSVGpoints[0][1].toFixed(4)); // start y
 
 
         _element9.setAttributeNS(null, 'style', 'font-family: ' + textFont + '; fill: ' + cursorColor.toString() + ';');
@@ -2173,7 +2212,8 @@ SVGDraw.prototype.onSvgMouseDown = function () {
 
     return event.preventDefault() && false;
   };
-};
+}; //// end of onSvgMouseDown
+
 
 function pathPoint(x, y) {
   return parseInt(x) + ", " + parseInt(y);
@@ -2181,6 +2221,11 @@ function pathPoint(x, y) {
 
 function curvePoint(x, y) {
   return pathPoint(x, y) + ", ";
+}
+
+function getIDcount() {
+  idCount += 1;
+  return idCount;
 }
 
 function getCurvePath(x1, y1, cx1, cy1, cx2, cy2, x2, y2) {
@@ -2549,7 +2594,7 @@ function setNewPointElement(bubble) {
   }
 
   cursorMode = thisElement.tagName;
-  group.removeEventListener('mouseenter', mouseEnterFunction); // disable mouseover on real element's containing group
+  group.removeEventListener('mouseenter', mouseEnterFunction); // disable mousenter on real element's containing group
 
   group.removeEventListener('mouseleave', mouseLeaveFunction); // disable mouseleaver on real element's containing group
   // bubble.attributes['onmousedown'].value = '';  // cascade to onSvgMouseDown
@@ -2690,13 +2735,13 @@ function createBubbleGroup(group) {
       if (thisCurveTypeQuadratic) {
         xn = parseFloat(theseCoords[0]) + parseFloat(theseCoords[2]) + parseFloat(theseCoords[6]);
         yn = parseFloat(theseCoords[1]) + parseFloat(theseCoords[3]) + parseFloat(theseCoords[7]);
-        xn = (xn / 3).toFixed(3);
-        yn = (yn / 3).toFixed(3); // this calculation is less wrong for quadratic ...
+        xn = (xn / 3).toFixed(4);
+        yn = (yn / 3).toFixed(4); // this calculation is less wrong for quadratic ...
       } else {
         xn = parseFloat(theseCoords[0]) + parseFloat(theseCoords[2]) + parseFloat(theseCoords[4]) + parseFloat(theseCoords[6]);
         yn = parseFloat(theseCoords[1]) + parseFloat(theseCoords[3]) + parseFloat(theseCoords[5]) + parseFloat(theseCoords[7]);
-        xn = (xn / 4).toFixed(3);
-        yn = (yn / 4).toFixed(3);
+        xn = (xn / 4).toFixed(4);
+        yn = (yn / 4).toFixed(4);
       } // create the "bounding" polygon  'poly'
 
 
@@ -3093,7 +3138,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       this.updateMousePosition(event);
 
       if (svgInProgress == 'SHIFT') {
-        var shiftPoint = ((lastMouseX - xC) / zoom).toFixed(3).toString() + ',' + ((lastMouseY - yC) / zoom).toFixed(3).toString();
+        var shiftPoint = ((lastMouseX - xC) / zoom).toFixed(4).toString() + ',' + ((lastMouseY - yC) / zoom).toFixed(4).toString();
         var shiftingPoints = thisElement.attributes['points'].value.trim();
         var splitShiftPoints = shiftingPoints.split(' ');
 
@@ -3122,8 +3167,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
 
           for (j = 0; j < splitShiftPoints.length; j++) {
             var thisXY = splitShiftPoints[j].split(',');
-            xPoints[j] = (parseFloat(thisXY[0]) + dx).toFixed(3);
-            yPoints[j] = (parseFloat(thisXY[1]) + dy).toFixed(3);
+            xPoints[j] = (parseFloat(thisXY[0]) + dx).toFixed(4);
+            yPoints[j] = (parseFloat(thisXY[1]) + dy).toFixed(4);
             shiftedPoints += xPoints[j] + ',' + yPoints[j] + ' ';
           }
 
@@ -3134,7 +3179,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           thisElement.attributes['points'].value = shiftedPoints;
         }
       } else {
-        var thisPoint = ((lastMouseX - xC) / zoom).toFixed(3).toString() + ',' + ((lastMouseY - yC) / zoom).toFixed(3).toString();
+        var thisPoint = ((lastMouseX - xC) / zoom).toFixed(4).toString() + ',' + ((lastMouseY - yC) / zoom).toFixed(4).toString();
         var thesePoints = thisElement.attributes['points'].value.trim();
         var splitPoints = thesePoints.split(' ');
 
@@ -3176,7 +3221,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       this.updateMousePosition(event);
 
       if (svgInProgress == 'SHIFT') {
-        var _shiftPoint = ((lastMouseX - xC) / zoom).toFixed(3).toString() + ',' + ((lastMouseY - yC) / zoom).toFixed(3).toString();
+        var _shiftPoint = ((lastMouseX - xC) / zoom).toFixed(4).toString() + ',' + ((lastMouseY - yC) / zoom).toFixed(4).toString();
 
         var _shiftingPoints = thisElement.attributes['points'].value.trim();
 
@@ -3216,8 +3261,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           for (_j = 0; _j < _splitShiftPoints.length; _j++) {
             var _thisXY = _splitShiftPoints[_j].split(',');
 
-            _xPoints[_j] = (parseFloat(_thisXY[0]) + _dx).toFixed(3);
-            _yPoints[_j] = (parseFloat(_thisXY[1]) + _dy).toFixed(3);
+            _xPoints[_j] = (parseFloat(_thisXY[0]) + _dx).toFixed(4);
+            _yPoints[_j] = (parseFloat(_thisXY[1]) + _dy).toFixed(4);
             _shiftedPoints += _xPoints[_j] + ',' + _yPoints[_j] + ' ';
           }
 
@@ -3228,7 +3273,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           thisElement.attributes['points'].value = _shiftedPoints;
         }
       } else {
-        var _thisPoint2 = ((lastMouseX - xC) / zoom).toFixed(3).toString() + ',' + ((lastMouseY - yC) / zoom).toFixed(3).toString();
+        var _thisPoint2 = ((lastMouseX - xC) / zoom).toFixed(4).toString() + ',' + ((lastMouseY - yC) / zoom).toFixed(4).toString();
 
         var _thesePoints2 = thisElement.attributes['points'].value.trim();
 
@@ -3275,15 +3320,15 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom; // translate the bubble
 
         thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
-        thisElement.attributes['x'].value = (lastMouseX - xC) / zoom; // correspondingly translate thisElement
+        thisElement.attributes['x'].value = ((lastMouseX - xC) / zoom).toFixed(4); // correspondingly translate thisElement
 
-        thisElement.attributes['y'].value = (lastMouseY - yC) / zoom;
+        thisElement.attributes['y'].value = ((lastMouseY - yC) / zoom).toFixed(4);
       } else {
         var thisRectX = thisElement.attributes['x'].value;
         var thisRectY = thisElement.attributes['y'].value;
         this.updateMousePosition(event);
-        thisElement.attributes['width'].value = (lastMouseX - xC) / zoom - thisRectX;
-        thisElement.attributes['height'].value = (lastMouseY - yC) / zoom - thisRectY;
+        thisElement.attributes['width'].value = ((lastMouseX - xC) / zoom - thisRectX).toFixed(4);
+        thisElement.attributes['height'].value = ((lastMouseY - yC) / zoom - thisRectY).toFixed(4);
 
         if (thisBubble) {
           thisBubble = event.target;
@@ -3326,12 +3371,12 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           thisBubble.attributes['cx'].value = _cx4; // translate the bubble
 
           thisBubble.attributes['cy'].value = _cy4;
-          thisElement.attributes['x1'].value = x1 - _dx2; // correspondingly translate thisElement
+          thisElement.attributes['x1'].value = (x1 - _dx2).toFixed(4); // correspondingly translate thisElement
 
-          thisElement.attributes['y1'].value = _dy2 + y1;
-          thisElement.attributes['x2'].value = x2 - _dx2; // correspondingly translate thisElement
+          thisElement.attributes['y1'].value = (_dy2 + y1).toFixed(4);
+          thisElement.attributes['x2'].value = (x2 - _dx2).toFixed(4); // correspondingly translate thisElement
 
-          thisElement.attributes['y2'].value = _dy2 + y2;
+          thisElement.attributes['y2'].value = (_dy2 + y2).toFixed(4);
         }
       } else {
         // repositioning either line endpoint
@@ -3354,8 +3399,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           }
         }
 
-        thisElement.attributes[linePoints[0]].value = (lastMouseX - xC) / zoom;
-        thisElement.attributes[linePoints[1]].value = (lastMouseY - yC) / zoom;
+        thisElement.attributes[linePoints[0]].value = ((lastMouseX - xC) / zoom).toFixed(4);
+        thisElement.attributes[linePoints[1]].value = ((lastMouseY - yC) / zoom).toFixed(4);
         console_log(enable_log, 'x: ' + ((lastMouseX - xC) / zoom).toString() + ' / y: ' + ((lastMouseY - yC) / zoom).toString());
       } //thisElement.attributes['stroke'] = cursorColor;   ///// disabled due to unwanted side effects
 
@@ -3402,12 +3447,12 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         thisBubble.attributes['cx'].value = _cx6; // translate the bubble
 
         thisBubble.attributes['cy'].value = _cy6;
-        mainLine.attributes['x1'].value = _x - _dx4; // correspondingly
+        mainLine.attributes['x1'].value = (_x - _dx4).toFixed(4); // correspondingly
 
-        mainLine.attributes['y1'].value = _dy4 + _y;
-        mainLine.attributes['x2'].value = _x2 - _dx4; // translate mainLine
+        mainLine.attributes['y1'].value = (_dy4 + _y).toFixed(4);
+        mainLine.attributes['x2'].value = (_x2 - _dx4).toFixed(4); // translate mainLine
 
-        mainLine.attributes['y2'].value = _dy4 + _y2;
+        mainLine.attributes['y2'].value = (_dy4 + _y2).toFixed(4);
       } else {
         _linePoints = ['x2', 'y2']; // preset for normal post-creation mode
 
@@ -3423,8 +3468,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           }
         }
 
-        mainLine.attributes[_linePoints[0]].value = (lastMouseX - xC) / zoom;
-        mainLine.attributes[_linePoints[1]].value = (lastMouseY - yC) / zoom;
+        mainLine.attributes[_linePoints[0]].value = ((lastMouseX - xC) / zoom).toFixed(4);
+        mainLine.attributes[_linePoints[1]].value = ((lastMouseY - yC) / zoom).toFixed(4);
       }
 
       while (thisGroup.childElementCount > 1) {
@@ -3438,6 +3483,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       var thisX2 = thisElement.attributes['x2'].value;
       var thisY2 = thisElement.attributes['y2'].value;
       var thisColor = thisElement.attributes['stroke'].value;
+      var thisStrokeWidth = thisElement.attributes['stroke-width'].value; // save mainLine attributes since NEW barbs
+
       var deltaX = thisX2 - thisX1;
       var deltaY = thisY2 - thisY1;
       var lineLength = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
@@ -3464,10 +3511,10 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
 
       var pctY = parseFloat(thisY2) - _dy3 * barbLength;
 
-      var x3 = (pctX + barbLength * _dy3 / 2).toFixed(3);
-      var y3 = (pctY - barbLength * _dx3 / 2).toFixed(3);
-      var x4 = (pctX - barbLength * _dy3 / 2).toFixed(3);
-      var y4 = (pctY + barbLength * _dx3 / 2).toFixed(3);
+      var x3 = (pctX + barbLength * _dy3 / 2).toFixed(4);
+      var y3 = (pctY - barbLength * _dx3 / 2).toFixed(4);
+      var x4 = (pctX - barbLength * _dy3 / 2).toFixed(4);
+      var y4 = (pctY + barbLength * _dx3 / 2).toFixed(4);
       var leftBarb = createElement('line');
       leftBarb.setAttributeNS(null, 'x1', thisX2); // start x of barbs
 
@@ -3477,7 +3524,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
 
       leftBarb.setAttributeNS(null, 'y2', y3); // end y
 
-      leftBarb.setAttributeNS(null, 'stroke', thisColor); // thisGroup.appendChild(leftBarb);
+      leftBarb.setAttributeNS(null, 'stroke', thisColor);
+      leftBarb.setAttributeNS(null, 'stroke-width', thisStrokeWidth); // thisGroup.appendChild(leftBarb);
 
       var rightBarb = createElement('line');
       rightBarb.setAttributeNS(null, 'x1', thisX2); // start x of barbs
@@ -3488,19 +3536,15 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
 
       rightBarb.setAttributeNS(null, 'y2', y4); // end y
 
-      rightBarb.setAttributeNS(null, 'stroke', thisColor); // thisGroup.appendChild(rightBarb);
+      rightBarb.setAttributeNS(null, 'stroke', thisColor);
+      rightBarb.setAttributeNS(null, 'stroke-width', thisStrokeWidth); // thisGroup.appendChild(rightBarb);
 
       if (document.getElementById('arrowHeadClosed').checked) {
-        // baseBarb = createElement('line');
-        // baseBarb.setAttributeNS(null, 'x1', x3);       // start x of barbs base
-        // baseBarb.setAttributeNS(null, 'y1', y3);      // start y of barbs base
-        // baseBarb.setAttributeNS(null, 'x2', x4);      // end x
-        // baseBarb.setAttributeNS(null, 'y2', y4);      // end y
-        // baseBarb.setAttributeNS(null, 'stroke', thisColor);
         var baseBarb = createElement('polygon');
         var barbPoints = thisX2 + ',' + thisY2 + ' ' + x3 + ',' + y3 + ' ' + x4 + ',' + y4;
         baseBarb.setAttributeNS(null, 'points', barbPoints);
         baseBarb.setAttributeNS(null, 'stroke', thisColor);
+        baseBarb.setAttributeNS(null, 'stroke-width', thisStrokeWidth);
         thisGroup.appendChild(baseBarb);
       } else {
         thisGroup.appendChild(leftBarb);
@@ -3520,9 +3564,9 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom; // translate the bubble
 
           thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
-          thisElement.attributes['cx'].value = (lastMouseX - xC) / zoom; // correspondingly translate thisElement
+          thisElement.attributes['cx'].value = ((lastMouseX - xC) / zoom).toFixed(4); // correspondingly translate thisElement
 
-          thisElement.attributes['cy'].value = (lastMouseY - yC) / zoom;
+          thisElement.attributes['cy'].value = ((lastMouseY - yC) / zoom).toFixed(4);
         } else {
           // either resizing or originally sizing
           //this.context.moveTo(lastMouseX, lastMouseY);
@@ -3532,7 +3576,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           lastMouseX = this.lastMousePoint.x;
           lastMouseY = this.lastMousePoint.y;
           var radius = length2points(thisCircX, thisCircY, (lastMouseX - xC) / zoom, (lastMouseY - yC) / zoom);
-          thisElement.attributes['r'].value = radius;
+          thisElement.attributes['r'].value = radius.toFixed(4);
 
           if (thisBubble) {
             thisBubble = event.target;
@@ -3581,9 +3625,9 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         thisBubble.attributes['cx'].value = (lastMouseX - xC) / zoom; // translate the bubble
 
         thisBubble.attributes['cy'].value = (lastMouseY - yC) / zoom;
-        thisElement.attributes['cx'].value = (lastMouseX - xC) / zoom; // correspondingly translate thisElement
+        thisElement.attributes['cx'].value = ((lastMouseX - xC) / zoom).toFixed(4); // correspondingly translate thisElement
 
-        thisElement.attributes['cy'].value = (lastMouseY - yC) / zoom;
+        thisElement.attributes['cy'].value = ((lastMouseY - yC) / zoom).toFixed(4);
       } else {
         // resizing: cursor NOW osculates ellipse as in circle, diagonally positioned
         var thisEllipseX = thisElement.attributes['cx'].value;
@@ -3591,8 +3635,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         this.updateMousePosition(event);
         lastMouseX = this.lastMousePoint.x;
         lastMouseY = this.lastMousePoint.y;
-        thisElement.attributes['rx'].value = Math.abs(thisEllipseX - (lastMouseX - xC) / zoom) * 1.414;
-        thisElement.attributes['ry'].value = Math.abs(thisEllipseY - (lastMouseY - yC) / zoom) * 1.414;
+        thisElement.attributes['rx'].value = (Math.abs(thisEllipseX - (lastMouseX - xC) / zoom) * 1.414).toFixed(4);
+        thisElement.attributes['ry'].value = (Math.abs(thisEllipseY - (lastMouseY - yC) / zoom) * 1.414).toFixed(4);
       }
     } else if (cursorMode == "draw") {
       if (svgInProgress == false) {
@@ -3602,7 +3646,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       this.updateMousePosition(event);
 
       if (svgInProgress == 'SHIFT') {
-        var _shiftPoint2 = ((lastMouseX - xC) / zoom).toFixed(3).toString() + ',' + ((lastMouseY - yC) / zoom).toFixed(3).toString();
+        var _shiftPoint2 = ((lastMouseX - xC) / zoom).toFixed(4).toString() + ',' + ((lastMouseY - yC) / zoom).toFixed(4).toString();
 
         var _shiftingPoints2 = thisElement.attributes['points'].value.trim();
 
@@ -3642,8 +3686,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           for (_j2 = 0; _j2 < _splitShiftPoints2.length; _j2++) {
             var _thisXY2 = _splitShiftPoints2[_j2].split(',');
 
-            _xPoints2[_j2] = (parseFloat(_thisXY2[0]) + _dx5).toFixed(3);
-            _yPoints2[_j2] = (parseFloat(_thisXY2[1]) + _dy5).toFixed(3);
+            _xPoints2[_j2] = (parseFloat(_thisXY2[0]) + _dx5).toFixed(4);
+            _yPoints2[_j2] = (parseFloat(_thisXY2[1]) + _dy5).toFixed(4);
             _shiftedPoints2 += _xPoints2[_j2] + ',' + _yPoints2[_j2] + ' ';
           }
 
@@ -3656,7 +3700,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       } // end of SHIFT draw case
       else {
           // edit point by bubble
-          var _thisPoint3 = ((lastMouseX - xC) / zoom).toFixed(3).toString() + ',' + ((lastMouseY - yC) / zoom).toFixed(3).toString();
+          var _thisPoint3 = ((lastMouseX - xC) / zoom).toFixed(4).toString() + ',' + ((lastMouseY - yC) / zoom).toFixed(4).toString();
 
           var _thesePoints3 = thisElement.attributes['points'].value.trim();
 
@@ -3687,7 +3731,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
               // add new point at end during creation case
               var _thesePoints4 = thisElement.attributes['points'].value;
 
-              var _thisPoint4 = ((lastMouseX - xC) / zoom).toFixed(3).toString() + ',' + ((lastMouseY - yC) / zoom).toFixed(3).toString() + ' ';
+              var _thisPoint4 = ((lastMouseX - xC) / zoom).toFixed(4).toString() + ',' + ((lastMouseY - yC) / zoom).toFixed(4).toString() + ' ';
 
               thisElement.attributes['points'].value = _thesePoints4.concat(_thisPoint4);
             } // end of new point at end case
@@ -3734,8 +3778,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
             console_log(enable_log, 'dx: ' + _dx6 + ', dy: ' + _dy6); // tranlate each coordinate (array contains x, y, x, y, ... x, y
 
             for (var _k9 = 0; _k9 < theseCoords.length; _k9++) {
-              theseCoords[_k9] = (_dx6 + parseFloat(theseCoords[_k9])).toFixed(3);
-              theseCoords[_k9 + 1] = (_dy6 + parseFloat(theseCoords[_k9 + 1])).toFixed(3);
+              theseCoords[_k9] = (_dx6 + parseFloat(theseCoords[_k9])).toFixed(4);
+              theseCoords[_k9 + 1] = (_dy6 + parseFloat(theseCoords[_k9 + 1])).toFixed(4);
               _k9++;
             }
 
@@ -3764,23 +3808,23 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
 
               switch (thisBubble.id) {
                 case 'p1':
-                  theseCoords[0] = thisX.toFixed(3);
-                  theseCoords[1] = thisY.toFixed(3);
+                  theseCoords[0] = thisX.toFixed(4);
+                  theseCoords[1] = thisY.toFixed(4);
                   break;
 
                 case 'p2':
-                  theseCoords[6] = thisX.toFixed(3);
-                  theseCoords[7] = thisY.toFixed(3);
+                  theseCoords[6] = thisX.toFixed(4);
+                  theseCoords[7] = thisY.toFixed(4);
                   break;
 
                 case 'c1':
-                  theseCoords[2] = thisX.toFixed(3);
-                  theseCoords[3] = thisY.toFixed(3);
+                  theseCoords[2] = thisX.toFixed(4);
+                  theseCoords[3] = thisY.toFixed(4);
                   break;
 
                 case 'c2':
-                  theseCoords[4] = thisX.toFixed(3);
-                  theseCoords[5] = thisY.toFixed(3);
+                  theseCoords[4] = thisX.toFixed(4);
+                  theseCoords[5] = thisY.toFixed(4);
                   break;
               }
 
@@ -3831,17 +3875,17 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           var theseControlPoints = theseCurvePoints[1].split(', '); // get array of x,y,x,y(,x,y)
 
           if (thisPathType == ' Q ') {
-            theseControlPoints[0] = (_thisX3 - 0.4 * _dx7).toFixed(3); // single control point
+            theseControlPoints[0] = (_thisX3 - 0.4 * _dx7).toFixed(4); // single control point
 
-            theseControlPoints[1] = (_thisY3 - 0.4 * _dy7).toFixed(3); // for quadratic
+            theseControlPoints[1] = (_thisY3 - 0.4 * _dy7).toFixed(4); // for quadratic
 
             thisD = theseCurvePoints[0] + thisPathType + curvePoint(theseControlPoints[0], theseControlPoints[1]);
           } else {
             // if (cursorMode == 'cubic')
-            theseControlPoints[0] = (_thisX3 - 0.4 * _dx7).toFixed(3);
-            theseControlPoints[1] = (_thisY3 - 0.4 * _dy7).toFixed(3);
-            theseControlPoints[2] = (_thisX3 - 0.6 * _dx7).toFixed(3);
-            theseControlPoints[3] = (_thisY3 - 0.6 * _dy7).toFixed(3);
+            theseControlPoints[0] = (_thisX3 - 0.4 * _dx7).toFixed(4);
+            theseControlPoints[1] = (_thisY3 - 0.4 * _dy7).toFixed(4);
+            theseControlPoints[2] = (_thisX3 - 0.6 * _dx7).toFixed(4);
+            theseControlPoints[3] = (_thisY3 - 0.6 * _dy7).toFixed(4);
             thisD = theseCurvePoints[0] + thisPathType + curvePoint(theseControlPoints[0], theseControlPoints[1]);
             thisD += curvePoint(theseControlPoints[2], theseControlPoints[3]);
             thisD += curvePoint(_thisX2, _thisY2);
@@ -3874,9 +3918,9 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
             // for any text lines in this group (skip bubble)
             if (thisGroup.children[i].tagName == 'text') {
               // only shift text elements, not bubbles
-              thisGroup.children[i].attributes['x'].value = _dx8; // translate each <text> element
+              thisGroup.children[i].attributes['x'].value = _dx8.toFixed(4); // translate each <text> element
 
-              thisGroup.children[i].attributes['y'].value = _dy8 + i * textHeight;
+              thisGroup.children[i].attributes['y'].value = (_dy8 + i * textHeight).toFixed(4);
             } else {
               // translate the bubble
               thisGroup.children[i].children[0].attributes['cx'].value = _dx8; // translate each <text> element
@@ -4059,7 +4103,7 @@ SVGDraw.prototype.keyHandler = function () {
         }
 
       case 0x42:
-        // looking for control-B to move mouseovered group to "bottom"
+        // looking for control-B to move mousentered group to "bottom"
         if (event.ctrlKey) {
           // which is first in the SVG list
           if (thisGroup) {
@@ -4071,7 +4115,7 @@ SVGDraw.prototype.keyHandler = function () {
         }
 
       case 0x54:
-        // looking for control-T to move mouseovered group to "top"
+        // looking for control-T to move mousentered group to "top"
         if (event.ctrlKey) {
           // which is last in the SVG element list
           if (thisGroup) {
@@ -4138,9 +4182,16 @@ SVGDraw.prototype.keyHandler = function () {
     if (event.key == 'Delete' || event.key == 'Backspace' || thisKeyCode == 0x2E || thisKeyCode == 0x08) {
       if (event.shiftKey) {
         //                       Delete                  Backspage
-        clearThisGroup(thisGroup);
-        svgInProgress = false;
-        setCursorMode('MOVE');
+        // clearThisGroup(thisGroup);
+        if (thisGroup) {
+          var _cloneGroup2 = thisGroup.cloneNode(true);
+
+          thisGroup.remove();
+          clearEditElement(_cloneGroup2);
+          svgLayer.firstChild.appendChild(_cloneGroup2);
+          clearLastGroup();
+        }
+
         return;
       }
 
@@ -4481,13 +4532,28 @@ function clearLastGroup() {
 
   if (xlt.childElementCount > 1) {
     // don't remove the base image
-    xlt.lastChild.remove();
+    var _group11 = xlt.lastChild;
+
+    _group11.removeEventListener('mouseenter', mouseEnterFunction); // disable mousenter on real element's containing group
+
+
+    _group11.removeEventListener('mouseleave', mouseLeaveFunction); // disable mouseleaver on real element's containing group
+
+
+    _group11.remove();
+
+    waitElement = false;
   }
 }
 
 function clearThisGroup(group) {
   if (group) {
-    group.remove();
+    clearEditElement(group);
+    group.removeEventListener('mouseenter', mouseEnterFunction); // disable mouseenter on real element's containing group
+
+    group.removeEventListener('mouseleave', mouseLeaveFunction); // disable mouseleaver on real element's containing group
+
+    group.remove(); // waitElement = false;   ]]*****************
   }
 }
 
@@ -4525,7 +4591,7 @@ function zoomIn() {
     zoom_trans(xC, yC, newZoom);
     zoom = newZoom;
     bubbleRadius = (baseBubbleRadius / zoom).toString();
-    document.getElementById('zoom').innerHTML = "Zoom:" + zoom.toFixed(3);
+    document.getElementById('zoom').innerHTML = "Zoom:" + zoom.toFixed(4);
   }
 }
 
@@ -4538,19 +4604,19 @@ function zoomOut() {
     zoom_trans(xC, yC, newZoom);
     zoom = newZoom;
     bubbleRadius = (baseBubbleRadius / zoom).toString();
-    document.getElementById('zoom').innerHTML = "Zoom:" + zoom.toFixed(3);
+    document.getElementById('zoom').innerHTML = "Zoom:" + zoom.toFixed(4);
   }
 }
 
-function zoom_trans(x, y, factor) {
+function zoom_trans(x, y, scale) {
   var xlt = document.getElementById('xlt'); // DOM svg element g xlt
 
-  var transform = 'translate(' + x.toString() + ', ' + y.toString() + ')scale(' + factor.toString() + ')';
-  zoom = factor;
+  var transform = 'translate(' + x.toString() + ', ' + y.toString() + ') scale(' + scale.toString() + ')';
+  zoom = scale;
   xC = x;
   yC = y;
   xlt.attributes['transform'].value = transform;
-  document.getElementById('zoom').innerHTML = "Zoom:" + zoom.toFixed(3);
+  document.getElementById('zoom').innerHTML = "Zoom:" + zoom.toFixed(4);
 }
 
 function updateSvgText(event) {
@@ -4729,7 +4795,7 @@ function indicateMode(mode) {
   }
 
   document.getElementById("mode").textContent = coverRect.toUpperCase();
-  document.getElementById('zoom').innerHTML = "Zoom:" + zoom.toFixed(3);
+  document.getElementById('zoom').innerHTML = "Zoom:" + zoom.toFixed(4);
 }
 
 function collectSVG(verbatim) {
@@ -4740,7 +4806,7 @@ function collectSVG(verbatim) {
   if (!verbatim) {
     clonedSVG.removeAttribute('height');
     clonedSVG.removeAttribute('width');
-    clonedSVG.firstChild.attributes['transform'].value = 'translate(0, 0)scale(1)';
+    clonedSVG.firstChild.attributes['transform'].value = 'translate(0, 0) scale(1)';
     thisXLT.children['xltImage'].remove();
   }
 
@@ -4765,11 +4831,73 @@ function collectSVG(verbatim) {
 
 ;
 
-SVGDraw.prototype.showSVG = function (verbatim) {
+function getBareSVG(noGroups) {
+  //  stripped
+  var clonedSVG = svgLayer.cloneNode(true);
+  clonedSVG.removeAttribute('height');
+  clonedSVG.removeAttribute('width');
+  clonedSVG.removeAttribute('id'); // clonedSVG.firstChild.attributes['transform'].value = 'translate(0, 0) scale(1)';
+
+  var thisXLT = clonedSVG.firstChild;
+  thisXLT.removeAttribute('id');
+  thisXLT.removeAttribute('transform');
+  thisXLT.children['xltImage'].remove();
+  var thisG, i;
+  var terminus = thisXLT.childElementCount;
+  var groups = ['arrow', 'cubic', 'quadratic', 'text'];
+
+  for (i = 0; i < terminus; i++) {
+    // i will range over the remaining children count
+    thisG = thisXLT.childNodes[i]; // probably should be firstChild since iteratively
+
+    if (thisG.attributes.class) {
+      stripElement(thisG);
+
+      if (noGroups && !groups.includes(thisG.attributes.class.value)) {
+        thisG.outerHTML = thisG.innerHTML;
+      }
+    }
+
+    ;
+  }
+
+  return clonedSVG; //  oops, this was too easy
+}
+
+;
+
+function stripElement(element) {
+  if (element.hasChildNodes()) {
+    var i;
+
+    for (i = 0; i < element.childElementCount; i++) {
+      stripElement(element.childNodes[i]);
+    }
+  }
+
+  element.removeAttribute('id');
+  element.removeAttribute('stroke');
+  element.removeAttribute('stroke-width');
+  element.removeAttribute('stroke-opacity');
+  element.removeAttribute('stroke-linecap');
+  element.removeAttribute('fill');
+  element.removeAttribute('fill-opacity');
+  element.removeAttribute('font-family');
+  element.removeAttribute('font-size');
+  element.removeAttribute('style');
+  return element;
+}
+
+SVGDraw.prototype.apiShowSVG = function (verbatim) {
   svgMenu.children['textSVGorJSON'].textContent = collectSVG(verbatim).outerHTML;
 };
 
-SVGDraw.prototype.jsonSVG = function (verbatim) {
+SVGDraw.prototype.apiBareSVG = function () {
+  var noGroups = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : true;
+  svgMenu.children['textSVGorJSON'].textContent = getBareSVG(noGroups).outerHTML;
+};
+
+SVGDraw.prototype.apiJsonSVG = function (verbatim) {
   // package SVG into JSON object
   var clonedSVG = collectSVG(false).firstChild; // strip off <svg...> </svg>
 
@@ -5058,7 +5186,7 @@ SVGDraw.prototype.buildSVGmenu = function (containerID) {
               svgMenu.appendChild(thisButton);
               thisButton.addEventListener('click', function (event) {
                 thisButton.blur();
-                SVGDraw.prototype.showSVG(true);
+                SVGDraw.prototype.apiShowSVG(true);
               });
               thisButton = document.createElement('input');
               thisButton.setAttribute('id', 'plainSVG');
@@ -5069,7 +5197,18 @@ SVGDraw.prototype.buildSVGmenu = function (containerID) {
               svgMenu.appendChild(thisButton);
               thisButton.addEventListener('click', function (event) {
                 thisButton.blur();
-                SVGDraw.prototype.showSVG(false);
+                SVGDraw.prototype.apiShowSVG(false);
+              });
+              thisButton = document.createElement('input');
+              thisButton.setAttribute('id', 'bareSVG');
+              thisButton.setAttribute('type', 'button');
+              thisButton.setAttribute('value', 'Bare SVG'); // thisButton.setAttribute('onclick', 'this.blur(); showSVG(false);');
+              // thisButton.setAttribute('onclick', 'showSVG(false);');
+
+              svgMenu.appendChild(thisButton);
+              thisButton.addEventListener('click', function (event) {
+                thisButton.blur();
+                SVGDraw.prototype.apiBareSVG();
               });
               thisButton = document.createElement('input');
               thisButton.setAttribute('id', 'svgJSON');
@@ -5077,7 +5216,7 @@ SVGDraw.prototype.buildSVGmenu = function (containerID) {
               thisButton.setAttribute('value', 'JSON SVG');
               svgMenu.appendChild(thisButton);
               thisButton.addEventListener('click', function (event) {
-                SVGDraw.prototype.jsonSVG(false);
+                SVGDraw.prototype.apiJsonSVG(false);
               });
               svgMenu.appendChild(document.createElement('br'));
               var thisTextArea = document.createElement('textarea');
