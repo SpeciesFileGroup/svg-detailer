@@ -52,8 +52,8 @@ describe('Ellipse creation', () => {
     finally {
       expect(_class).to.equal('ellipse', 'class');
       expect(id).to.equal('g1', 'id');
-      expect(cx).to.equal((300/zoom).toString(), 'cx');
-      expect(cy).to.equal((300/zoom).toString(), 'cy');
+      expect(cx).to.equal((300/zoom).toFixed(4).toString(), 'cx');
+      expect(cy).to.equal((300/zoom).toFixed(4).toString(), 'cy');
     }
     let mode = await driver.findElement(By.id('b_move')).click();
     await driver.quit();

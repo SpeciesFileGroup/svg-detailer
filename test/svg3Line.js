@@ -81,10 +81,10 @@ describe('Line creation', () => {
     finally {
       expect(_class).to.equal('line', 'class:line');
       expect(id).to.equal('g1', 'id: g1');
-      expect(x1).to.equal(((300)/zoom).toString(), 'x1');
-      expect(y1).to.equal(((300)/zoom).toString(), 'y1');
-      expect(x2).to.equal(((400)/zoom).toString(), 'x2');
-      expect(y2).to.equal(((400)/zoom).toString(), 'y2');
+      expect(x1).to.equal(((300)/zoom).toFixed(4).toString(), 'x1');
+      expect(y1).to.equal(((300)/zoom).toFixed(4).toString(), 'y1');
+      expect(x2).to.equal(((400)/zoom).toFixed(4).toString(), 'x2');
+      expect(y2).to.equal(((400)/zoom).toFixed(4).toString(), 'y2');
       }
     let mode = await driver.findElement(By.id('b_move')).click();
     await driver.quit();

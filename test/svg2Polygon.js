@@ -68,8 +68,8 @@ describe('Polygon creation', () => {
       console_log(coords);    // points created through move/click
       console_log(points);    // non-offset rendered screen pixel points
       for(i=0; i<points.length; i++) {    // mutate original points to zoom-scaled and then to strings
-        points[i][0] = ((points[i][0])/zoom).toFixed(3);
-        points[i][1] = ((points[i][1])/zoom).toFixed(3);
+        points[i][0] = ((points[i][0])/zoom).toFixed(4);
+        points[i][1] = ((points[i][1])/zoom).toFixed(4);
         // console_log('coords[' + i + ']: ' + coords[i] + ' | x: ' + px + ', y: ' + py);
         idealPoints[i] = points[i][0].toString() + ',' + points[i][1].toString();
         console_log(idealPoints);

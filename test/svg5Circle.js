@@ -54,9 +54,9 @@ describe('Circle creation', () => {
     finally {
       expect(_class).to.equal('circle', 'class');
       expect(id).to.equal('g1', 'id');
-      expect(cx).to.equal((300/zoom).toString(), 'cx');
-      expect(cy).to.equal((300/zoom).toString(), 'cy');
-      expect(r).to.equal((200/zoom).toString(), 'r')
+      expect(cx).to.equal((300/zoom).toFixed(4).toString(), 'cx');
+      expect(cy).to.equal((300/zoom).toFixed(4).toString(), 'cy');
+      expect(r).to.equal((200/zoom).toFixed(4).toString(), 'r')
     }
     let mode = await driver.findElement(By.id('b_move')).click();
     await driver.quit();
