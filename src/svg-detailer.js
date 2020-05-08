@@ -50,7 +50,7 @@ var lastMouseX;
 var lastMouseY;
 var idCount = 0;
 
-var enable_log  = true;    // default to NOT log debug output
+var enable_log  = false;    // default to NOT log debug output
 
 // var logMouse = false;       // debug
 // var logStatus = false;      // flags
@@ -271,7 +271,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         group.setAttributeNS(null, 'class', cursorMode);
         thisGroup = group;
         document.getElementById("xlt").appendChild(group);
-        let element = createElement('polyline');        //YES, I KNOW... polyline behavior mimics google maps better
+        let element = newElement('polyline');        //YES, I KNOW... polyline behavior mimics google maps better
 
         group.appendChild(element);
         thisElement = group.children[0];
@@ -298,7 +298,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         group.setAttributeNS(null, 'id', newGroupID);
         group.setAttributeNS(null, 'class', cursorMode);
         document.getElementById("xlt").appendChild(group);
-        let element = createElement('polyline');
+        let element = newElement('polyline');
 
         group.appendChild(element);
         thisElement = group.children[0];
@@ -325,7 +325,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         group.setAttributeNS(null, 'id', newGroupID);
         group.setAttributeNS(null, 'class', cursorMode);
         document.getElementById("xlt").appendChild(group);
-        let element = createElement('rect');
+        let element = newElement('rect');
 
         group.appendChild(element);
         thisGroup = group;
@@ -348,7 +348,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         group.setAttributeNS(null, 'id', newGroupID);
         group.setAttributeNS(null, 'class', cursorMode);
         document.getElementById("xlt").appendChild(group);
-        let element = createElement('line');
+        let element = newElement('line');
 
         group.appendChild(element);
         thisElement = group.children[0];
@@ -373,7 +373,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         group.setAttributeNS(null, 'id', newGroupID);
         group.setAttributeNS(null, 'class', cursorMode);
         document.getElementById("xlt").appendChild(group);
-        let element = createElement('line');
+        let element = newElement('line');
 
         group.appendChild(element);
         thisElement = group.children[0];
@@ -400,7 +400,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         group.setAttributeNS(null, 'id', newGroupID);
         group.setAttributeNS(null, 'class', cursorMode);
         document.getElementById("xlt").appendChild(group);
-        let element = createElement(cursorMode);      // new generalized method
+        let element = newElement(cursorMode);      // new generalized method
 
         group.appendChild(element);
         thisGroup = group;
@@ -422,7 +422,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         group.setAttributeNS(null, 'id', newGroupID);
         group.setAttributeNS(null, 'class', cursorMode);
         document.getElementById("xlt").appendChild(group);
-        let element = createElement('ellipse');
+        let element = newElement('ellipse');
 
         group.appendChild(element);
         thisElement = group.children[0];
@@ -448,7 +448,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         group.setAttributeNS(null, 'class', cursorMode);
         document.getElementById("xlt").appendChild(group);
         //for (j = 0; j < thisSVGpoints.length; j++) {              // for text mode there is only one
-        let element = createElement('polyline');
+        let element = newElement('polyline');
 
         group.appendChild(element);
         thisElement = group.children[0];
@@ -477,7 +477,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         group.setAttributeNS(null, 'id', newGroupID);
         group.setAttributeNS(null, 'class', cursorMode);
         document.getElementById("xlt").appendChild(group);
-        let element = createElement('path');
+        let element = newElement('path');
 
         group.appendChild(element);
         thisElement = group.children[0];
@@ -508,9 +508,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         //for (j = 0; j < thisSVGpoints.length; j++) {              // for text mode there is only one
         let element;
         element = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        //document.getElementById(group.id).appendChild(element);
         group.appendChild(element);
-        // thisSVGpointsText = group.children[0];
         thisElement = group.children[0];
         element.setAttributeNS(null, 'stroke', cursorColor);
         element.setAttributeNS(null, 'stroke-width', '1');
@@ -570,7 +568,7 @@ function getCurvePoints(coords) {   // special bounding poly for curve element
     + curvePoint(coords[4], coords[5]) + ' ' + curvePoint(coords[6], coords[7]);
 }
 
-function createElement(klass) {
+function newElement(klass) {
   let element = document.createElementNS('http://www.w3.org/2000/svg', klass);
   element.setAttributeNS(null, 'stroke', cursorColor);
   element.setAttributeNS(null, 'stroke-width', strokeWidth);
@@ -1098,7 +1096,7 @@ function createCurveBubble(cx, cy, id) {    // used for <path...> inter-vertex c
 }
 
 function createControlLine(x1, y1, x2, y2, id) {
-  let line = createElement('line');
+  let line = newElement('line');
   line.setAttributeNS(null, 'x1', x1);
   line.setAttributeNS(null, 'y1', y1);
   line.setAttributeNS(null, 'x2', x2);
@@ -1109,7 +1107,7 @@ function createControlLine(x1, y1, x2, y2, id) {
 }
 
 function createBoundsPoly(coords) {        // used by createBubbleGroup.path
-  let poly = createElement('polyline');
+  let poly = newElement('polyline');
   poly.setAttributeNS(null, 'id', 'poly');
   poly.setAttributeNS(null, 'points', getCurvePoints(coords));
   poly.setAttributeNS(null, 'stroke-opacity', '0.0');
@@ -1117,7 +1115,7 @@ function createBoundsPoly(coords) {        // used by createBubbleGroup.path
 }
 
 function createBubbleStub(offsetX, offsetY) {   // create same-size bubble
-  let bubble = createElement('circle');      // this is constant, since it is a bubble
+  let bubble = newElement('circle');      // this is constant, since it is a bubble
   if (isNaN(offsetX)) {
     alert('offsetX: ' + offsetX.toString());
   }
@@ -1529,7 +1527,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       let x4 = (pctX - barbLength * dy / 2).toFixed(4);
       let y4 = (pctY + barbLength * dx / 2).toFixed(4);
 
-      let leftBarb = createElement('line');
+      let leftBarb = newElement('line');
       leftBarb.setAttributeNS(null, 'x1', thisX2);       // start x of barbs
       leftBarb.setAttributeNS(null, 'y1', thisY2);      // start y of barbs
       leftBarb.setAttributeNS(null, 'x2', x3);      // end x
@@ -1537,7 +1535,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       leftBarb.setAttributeNS(null, 'stroke', thisColor);
       leftBarb.setAttributeNS(null, 'stroke-width', thisStrokeWidth);
       // thisGroup.appendChild(leftBarb);
-      let rightBarb = createElement('line');
+      let rightBarb = newElement('line');
       rightBarb.setAttributeNS(null, 'x1', thisX2);       // start x of barbs
       rightBarb.setAttributeNS(null, 'y1', thisY2);      // start y of barbs
       rightBarb.setAttributeNS(null, 'x2', x4);      // end x
@@ -1547,7 +1545,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       // thisGroup.appendChild(rightBarb);
 
       if (document.getElementById('arrowHeadClosed').checked) {
-        let baseBarb = createElement('polygon');
+        let baseBarb = newElement('polygon');
         let barbPoints = thisX2 + ',' + thisY2 + ' ' + x3 + ',' + y3 + ' ' + x4 + ',' + y4;
         baseBarb.setAttributeNS(null, 'points', barbPoints);
         baseBarb.setAttributeNS(null, 'stroke', thisColor);
@@ -2286,7 +2284,7 @@ function setCursorMode(mode) {      // detect current mode not completed prior t
   indicateMode(cursorMode);
   svgInProgress = false;
 }
-SVGDraw.prototype.setMode = function(mode) {
+SVGDraw.prototype.apiSetMode = function(mode) {
   setCursorMode(mode)
 }
 
