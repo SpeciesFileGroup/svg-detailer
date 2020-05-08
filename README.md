@@ -100,17 +100,32 @@ It is assumed that the user will render these back, or provide a stylesheet as n
 Variants of these methods are controlled by API arguments, e.g., noGroups = false, verbatim = true, etc.
 
 #### Standard SVG elements
-Are simply the element themselve, with no other attributees, e.g.
+Are simply the element themselves, with no other attributees if "bare", e.g.:
 ```
- TODO - example for rectangle
+<rect x="186.0000" y="940.0000" width="266.0000" height="168.0000"></rect>
 ```
 
 #### Custom elements
-Are minimally wrapped in an outer `<g>`, e.g. with the class of that custom element
+Are minimally wrapped in an outer `<g>` , e.g., (if "bare") with the class of that custom element:
 
 ```
- TODO - example arrow
+<g class="arrow">
+ <line x1="787.57" y1="886.12" x2="288.854" y2="822.89"></line>
+ <polygon points="288.85,822.89 335.56,854.15 341.89,804.28"></polygon>
+</g>
 ```
+## API
+Control functions for external creation and editing are prefixed with "SVGDraw.prototype.  ".  Current methods:
+* apiSetMode(drawing element mode)
+* apiShowSVG(verbatim)
+* apiBareSVG(noGroups)
+* apiJsonSVG(verbatim)
+* apiStrokeWidth(pixels)
+* apiTextHeight()
+* apiArrowClosed(checked)
+* apiArrowFixed(checked)
+* apiArrowPercent(percent)
+* apiArrowLength(length)
 
 ## Tests
 Install framework 
