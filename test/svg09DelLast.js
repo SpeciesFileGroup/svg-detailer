@@ -64,29 +64,23 @@ describe('Delete last element', () => {
         expect(cy).to.equal((300/zoom).toFixed(4).toString(), 'cy');
       }
       try {
-        let before, bcount, after, acount;
+        let bcount, acount;
         bcount = await driver.findElement(By.id('xlt')).getAttribute('childElementCount');
         console_log(bcount);
         let mode = await driver.findElement(By.id('b_clear')).click();
-        // after = await driver.findElement(By.id('xlt')).childElementCount;
         acount = await driver.findElement(By.id('xlt')).getAttribute('childElementCount');
         console_log(acount);
-        expect(bcount - acount).to.equal('1')
+        expect(bcount - acount).to.equal(1)
       }
       catch (event) {
         console.log(event);
       }
-      // let mode = await driver.findElement(By.id('b_clear')).click();
-      // await driver.quit();
-
     }
     catch(event) {
-      console.log(event)
+      console_log(event)
     }
-
   });
   function console_log(object) {
     if(enable_log) console.log(object)
   }
 });     // end of describe
-
