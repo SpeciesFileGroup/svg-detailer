@@ -1838,7 +1838,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
             thisGroup.children[i].attributes['y'].value = (dy + (i * textHeight)).toFixed(4);
           } else {      // translate the bubble
             thisGroup.children[i].children[0].attributes['cx'].value = dx;    // translate each <text> element
-            thisGroup.children[i].children[0].attributes['cy'].value = (dy)/* + (i * textHeight)*/;
+            thisGroup.children[i].children[0].attributes['cy'].value = dy;
           }
         }
       }

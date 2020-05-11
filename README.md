@@ -121,7 +121,7 @@ Control functions for external creation and editing are prefixed with "SVGDraw.p
 * apiBareSVG(noGroups)
 * apiJsonSVG(verbatim)
 * apiStrokeWidth(pixels)
-* apiTextHeight()
+* apiTextHeight(pixels)
 * apiArrowClosed(checked)
 * apiArrowFixed(checked)
 * apiArrowPercent(percent)
