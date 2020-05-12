@@ -7,10 +7,10 @@
 var path = require('path');
 
 const testPath = path.dirname(__filename);
-const enable_log = true;
+const enable_log = false;
 const { Builder, By, Key, until} = require('selenium-webdriver');
 const {expect} = require('chai');
-describe('Delete last element', () => {
+describe('Delete hovered element', () => {
   const driver = new Builder().forBrowser('firefox').build();
   // let mode = driver.findElement(By.id, 'mode');
   driver.manage().setTimeouts({implicit: 40000});
@@ -67,25 +67,20 @@ describe('Delete last element', () => {
         let before, bcount, after, acount;
         bcount = await driver.findElement(By.id('xlt')).getAttribute('childElementCount');
         console_log(bcount);
-        // let mode = await driver.findElement(By.id('b_clear')).click();
-        await driver.findElement(By.id('container')).sendKeys('+del');
+        let mode = await driver.findElement(By.id('delHover')).click();
+        // await driver.findElement(By.id('container')).sendKeys('+del');
         acount = await driver.findElement(By.id('xlt')).getAttribute('childElementCount');
         console_log(acount);
+        expect(bcount - acount).to.equal(1)
       }
       catch (event) {
         console.log(event);
       }
-      finally {
-        expect(bcount - acount).to.equal(1)
-      }
-      // let mode = await driver.findElement(By.id('b_clear')).click();
-      // await driver.quit();
-
-    }
+     }
     catch(event) {
       console.log(event)
     }
-
+    await driver.quit();
   });
   function console_log(object) {
     if(enable_log) console.log(object)

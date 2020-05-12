@@ -2914,6 +2914,15 @@ SVGDraw.prototype.apiJsonSVG = function (verbatim) {      // package SVG into JS
              SVGDraw.prototype.apiJsonSVG(false);
            });
 
+           thisButton = document.createElement('input');        // special function for tests
+           thisButton.setAttribute('id', 'delHover');
+           thisButton.setAttribute('type', 'button');
+           thisButton.setAttribute('value', '?');
+           svgMenu.appendChild(thisButton);
+           thisButton.addEventListener('click', (event) => {
+             SVGDraw.prototype.apiDeleteHover(thisGroup);
+           });
+
            svgMenu.appendChild(document.createElement('br'))
 
            let thisTextArea = document.createElement('textarea');
@@ -2960,5 +2969,8 @@ SVGDraw.prototype.apiArrowPercent = function(percent) {
 SVGDraw.prototype.apiStrokeWidth = function(pixels) {
   if(isNumeric(pixels)) strokeWidth = pixels
 };
+SVGDraw.prototype.apiDeleteHover = function(group) {
+  clearThisGroup(group)
+}
 
 export default SVGDraw

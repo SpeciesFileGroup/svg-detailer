@@ -7,7 +7,7 @@
 var path = require('path');
 
 const testPath = path.dirname(__filename);
-const enable_log = true;
+const enable_log = false;
 const { Builder, By, Key, until} = require('selenium-webdriver');
 const {expect} = require('chai');
 describe('Delete last element', () => {
@@ -79,6 +79,7 @@ describe('Delete last element', () => {
     catch(event) {
       console_log(event)
     }
+    await driver.quit();
   });
   function console_log(object) {
     if(enable_log) console.log(object)
