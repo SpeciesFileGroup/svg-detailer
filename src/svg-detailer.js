@@ -5,7 +5,7 @@ Revised version of svg-detailer/svgDraw 06MAR2020
 var xC = 0;
 var yC = 0;
 var cursorMode = "MOVE";
-var cursorColor;
+var stroke;
 var zoom;                 // set on initialization from baseZoom @ full image
 var baseBubbleRadius = 6;
 // transform below to functions?
@@ -514,12 +514,12 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         element = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         group.appendChild(element);
         thisElement = group.children[0];
-        element.setAttributeNS(null, 'stroke', cursorColor);
+        element.setAttributeNS(null, 'stroke', stroke);
         element.setAttributeNS(null, 'stroke-width', '1');
         element.setAttributeNS(null, 'stroke-opacity', '1.0');
         element.setAttributeNS(null, 'x', thisSVGpoints[0][0].toFixed(4));      // start x
         element.setAttributeNS(null, 'y', thisSVGpoints[0][1].toFixed(4));      // start y
-        element.setAttributeNS(null, 'style', 'font-family: ' + fontFamily + '; fill: ' + cursorColor.toString() + ';');
+        element.setAttributeNS(null, 'style', 'font-family: ' + fontFamily + '; fill: ' + stroke.toString() + ';');
         element.setAttributeNS(null, 'font-size', fontSize);
         element.innerHTML = '_';    // plant the text cursor   /////////////////
         svgInProgress = 'text';     // mark in progress
@@ -574,7 +574,7 @@ function getCurvePoints(coords) {   // special bounding poly for curve element
 
 function newElement(klass) {
   let element = document.createElementNS('http://www.w3.org/2000/svg', klass);
-  element.setAttributeNS(null, 'stroke', cursorColor);
+  element.setAttributeNS(null, 'stroke', stroke);
   element.setAttributeNS(null, 'stroke-width', strokeWidth);
   element.setAttributeNS(null, 'stroke-opacity', strokeOpacity.toString());
   element.setAttributeNS(null, 'fill', fill);
@@ -1457,7 +1457,6 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         thisElement.attributes[linePoints[1]].value = ((lastMouseY - yC) / zoom).toFixed(4);
         console_log(enable_log, 'x: ' + ((lastMouseX - xC) / zoom).toString() + ' / y: ' + ((lastMouseY - yC) / zoom).toString())
       }
-      //thisElement.attributes['stroke'] = cursorColor;   ///// disabled due to unwanted side effects
     }
 
     else if (cursorMode == 'arrow') {
@@ -1606,7 +1605,6 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           bubbles['W'].attributes['cx'].value = parseFloat(thisCircX) - radius
           bubbles['N'].attributes['cy'].value = parseFloat(thisCircY) - radius
         }
-        //thisElement.attributes['stroke'].value = cursorColor;   ///// disabled due to unwanted side effects
       }
     }
 
@@ -2460,16 +2458,14 @@ function updateSvgText(event) {                       // modified to eliminate m
     return;
   }   // only pass printing keys, Delete, and Return/Enter
   thisElement.innerHTML = parseHTML(text4svg);           // this needs to be pair-parsed into ' '&nbsp;
-  thisElement.attributes['stroke'].value = cursorColor;       // allow in-line whole line color/font/size over-ride
-  thisElement.attributes['style'].value = 'font-family: ' + fontFamily + '; fill: ' + cursorColor + ';';    //  including fill
+  thisElement.attributes['stroke'].value = stroke;       // allow in-line whole line color/font/size over-ride
+  thisElement.attributes['style'].value = 'font-family: ' + fontFamily + '; fill: ' + stroke + ';';    //  including fill
   thisElement.attributes['font-size'].value = fontSize;
   let nextX = thisElement.attributes['x'].value;
   let nextY = parseInt(thisElement.attributes['y'].value) + parseInt(fontSize);
   let nextLine = thisElement.cloneNode();
   if (event.keyCode == 13) {      // line feed on ENTER/CR -- termination on shift-Enter/Return already picked off
     thisElement.innerHTML = parseHTML(text4svgValue.slice(0, text4svgValue.length));   // remove cursor at end of line
-    //    var thisInverse = inverseColor(cursorColor);        // no longer used -- relocation bubble used now
-    //    thisElement.attributes['onmouseover'] = 'this.attributes["stroke"].value = ' + thisInverse + ';';
     nextLine.attributes['x'].value = nextX;
     nextLine.attributes['y'].value = nextY;
     thisElement.parentElement.appendChild(nextLine);
@@ -2539,11 +2535,11 @@ function closeSvgText() {
   svgInProgress = false;
 }
 
-function setCursorColor(color) {
-  cursorColor = color;
-  let  colorButton = document.getElementById('cursorColor');
+function setStroke(color) {
+  stroke = color;
+  let  colorButton = document.getElementById('stroke');
   if (colorButton) {
-    colorButton.attributes['style'].value = 'background-color: ' + cursorColor;
+    colorButton.attributes['style'].value = 'background-color: ' + stroke;
   }
 }
 
@@ -2788,7 +2784,7 @@ SVGDraw.prototype.apiJsonSVG = function (verbatim) {      // package SVG into JS
                thisButton.setAttribute('style', 'background-color: ' + colorSelect.buttons[j].color);
                svgMenu.appendChild(thisButton);
                thisButton.addEventListener('click', (event) => {
-                 setCursorColor(getUserColor());
+                 setStroke(getUserColor());
                  thisButton.blur();
                })
              }
@@ -2799,7 +2795,7 @@ SVGDraw.prototype.apiJsonSVG = function (verbatim) {      // package SVG into JS
                svgMenu.appendChild(thisButton);
                let thisColor = colorSelect.buttons[j].color;
                thisButton.addEventListener('click', (event) => {
-                 setCursorColor(thisColor);
+                 setStroke(thisColor);
                  thisButton.blur();
                })
              }
@@ -2808,11 +2804,11 @@ SVGDraw.prototype.apiJsonSVG = function (verbatim) {      // package SVG into JS
                thisColorTitle.innerHTML = ' Selected Color >';
                svgMenu.appendChild(thisColorTitle);
                thisButton = document.createElement('input');
-               thisButton.setAttribute('id', 'cursorColor');
+               thisButton.setAttribute('id', 'stroke');
                thisButton.setAttribute('type', 'button');
                thisButton.setAttribute('style', 'background-color: ' + colorSelect.buttons[j].color);
                svgMenu.appendChild(thisButton);
-               cursorColor = colorSelect.buttons[j].color;   // set the cursorColor from the nominal button arrangement
+               stroke = colorSelect.buttons[j].color;   // set the stroke from the nominal button arrangement
              }
            }
            break;
@@ -2976,7 +2972,7 @@ SVGDraw.prototype.apiArrowPercent = function(percent) {
   if(isNumeric(percent)) arrowPercent = percent
 };
 SVGDraw.prototype.apiStroke = function(color) {
-  setCursorColor(color);      // not completely safe, but there are many color variants
+  setStroke(color);      // not completely safe, but there are many color variants
 };
 SVGDraw.prototype.apiStrokeWidth = function(pixels) {
   if(isNumeric(pixels)) strokeWidth = pixels
