@@ -120,7 +120,11 @@ Control functions for external creation and editing are prefixed with "SVGDraw.p
 * apiShowSVG(verbatim)
 * apiBareSVG(noGroups)
 * apiJsonSVG(verbatim)
+* apiStroke(color)
 * apiStrokeWidth(pixels)
+* apiStrokeOpacity(decimal)
+* apiFill(color)
+* apiFillOpacity(decimal)
 * apiTextHeight(pixels)
 * apiArrowClosed(checked)
 * apiArrowFixed(checked)
@@ -146,5 +150,4 @@ Run individual tests:
 `mocha --no-timeouts ./test/<testname>`
 
 ## Funding 
-This project was funded in part by NSF-ABI-1356381.Any opinions, findings and conclusions or recommendations expressed 
-in this material are those of the author(s) and do not necessarily reflect the views of the National Science Foundation. 
+This project was funded in part by NSF-ABI-1356381.Any opinions, findings and conclusions or recommendations expressed in this material are those of the author(s) and do not necessarily reflect the views of the National Science Foundation. 

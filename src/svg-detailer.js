@@ -10,6 +10,9 @@ var zoom;                 // set on initialization from baseZoom @ full image
 var baseBubbleRadius = 6;
 // transform below to functions?
 var strokeWidth = 1;   //= (baseStrokeWidth / zoom).toString();    // NOT dynamically recomputed with zoom (not this one)
+var strokeOpacity = 0.9;
+var fill = '';
+var fillOpacity = 0.0;
 var bubbleRadius;  //= (baseBubbleRadius / zoom).toString(); // and transcoded from/to string (may not be required)
 var baseZoom;           // calculated from svg and image attributes
 var maxZoom = 4;        // this is 4 pixels per source image pixel
@@ -28,7 +31,7 @@ var firstKey;
 var secondKey;
 // converted to thisElement: var thisSvgText;            // pointer to svg text element currently being populated
 var text4svg = '_';         // buffer replacing HTML input control previously used for text, prime with underscore cursor
-var textHeight = 75;
+var fontSize = 50;
 var textFont = 'Verdana';
 var arrowPercent = 10;        // defalt arrow head size 10$
 var arrowheadLength = 50;     // or 50 pixels
@@ -136,7 +139,7 @@ function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
   svgImage = new Image();
   thisSVGpoints = [];            // collect points as [x,y]
 
-  textHeight = 75;
+  fontSize = 50;
   textFont = 'Verdana';
 
 
@@ -516,7 +519,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         element.setAttributeNS(null, 'x', thisSVGpoints[0][0].toFixed(4));      // start x
         element.setAttributeNS(null, 'y', thisSVGpoints[0][1].toFixed(4));      // start y
         element.setAttributeNS(null, 'style', 'font-family: ' + textFont + '; fill: ' + cursorColor.toString() + ';');
-        element.setAttributeNS(null, 'font-size', textHeight);
+        element.setAttributeNS(null, 'font-size', fontSize);
         element.innerHTML = '_';    // plant the text cursor   /////////////////
         svgInProgress = 'text';     // mark in progress
       }
@@ -572,9 +575,9 @@ function newElement(klass) {
   let element = document.createElementNS('http://www.w3.org/2000/svg', klass);
   element.setAttributeNS(null, 'stroke', cursorColor);
   element.setAttributeNS(null, 'stroke-width', strokeWidth);
-  element.setAttributeNS(null, 'stroke-opacity', '0.9');
-  element.setAttributeNS(null, 'fill', '');
-  element.setAttributeNS(null, 'fill-opacity', '0.0');
+  element.setAttributeNS(null, 'stroke-opacity', strokeOpacity.toString());
+  element.setAttributeNS(null, 'fill', fill);
+  element.setAttributeNS(null, 'fill-opacity', fillOpacity.toString());
   element.setAttributeNS(null, 'stroke-linecap', 'round');
   return element;
 }
@@ -1835,7 +1838,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         for (let i = 0; i < thisGroup.children.length; i++) {      // for any text lines in this group (skip bubble)
           if (thisGroup.children[i].tagName == 'text') {          // only shift text elements, not bubbles
             thisGroup.children[i].attributes['x'].value = dx.toFixed(4);    // translate each <text> element
-            thisGroup.children[i].attributes['y'].value = (dy + (i * textHeight)).toFixed(4);
+            thisGroup.children[i].attributes['y'].value = (dy + (i * fontSize)).toFixed(4);
           } else {      // translate the bubble
             thisGroup.children[i].children[0].attributes['cx'].value = dx;    // translate each <text> element
             thisGroup.children[i].children[0].attributes['cy'].value = dy;
@@ -2450,9 +2453,9 @@ function updateSvgText(event) {                       // modified to eliminate m
   thisElement.innerHTML = parseHTML(text4svg);           // this needs to be pair-parsed into ' '&nbsp;
   thisElement.attributes['stroke'].value = cursorColor;       // allow in-line whole line color/font/size over-ride
   thisElement.attributes['style'].value = 'font-family: ' + textFont + '; fill: ' + cursorColor + ';';    //  including fill
-  thisElement.attributes['font-size'].value = textHeight;
+  thisElement.attributes['font-size'].value = fontSize;
   let nextX = thisElement.attributes['x'].value;
-  let nextY = parseInt(thisElement.attributes['y'].value) + parseInt(textHeight);
+  let nextY = parseInt(thisElement.attributes['y'].value) + parseInt(fontSize);
   let nextLine = thisElement.cloneNode();
   if (event.keyCode == 13) {      // line feed on ENTER/CR -- termination on shift-Enter/Return already picked off
     thisElement.innerHTML = parseHTML(text4svgValue.slice(0, text4svgValue.length));   // remove cursor at end of line
@@ -2529,7 +2532,10 @@ function closeSvgText() {
 
 function setCursorColor(color) {
   cursorColor = color;
-  document.getElementById('cursorColor').attributes['style'].value = 'background-color: ' + cursorColor;
+  let  colorButton = document.getElementById('cursorColor');
+  if (colorButton) {
+    colorButton.attributes['style'].value = 'background-color: ' + cursorColor;
+  }
 }
 
 function setUserColor(color) {          // only sets up the color for later selection
@@ -2716,27 +2722,24 @@ SVGDraw.prototype.apiJsonSVG = function (verbatim) {      // package SVG into JS
              zoomOut();
            });
            break;
-         case 'textheight':
+         case 'fontsize':
            thisSpan = document.createElement('span');      // TEXT display area
            thisSpan.setAttribute('id', 'textBlock');
-           //thisSpan.textContent = 'Text Size: ';
            svgMenu.appendChild(thisSpan);
-           let thistextHeightTitle = document.createElement('span');
-           thistextHeightTitle.innerHTML = ' Text Size: ';
-           thisSpan.appendChild(thistextHeightTitle);
+           let thisFontSizeTitle = document.createElement('span');
+           thisFontSizeTitle.innerHTML = ' Font Size: ';
+           thisSpan.appendChild(thisFontSizeTitle);
            thisButton = document.createElement('input');     // default TEXT SIZE input
-           thisButton.setAttribute('id', 'textHeight');
+           thisButton.setAttribute('id', 'fontSize');
            thisButton.setAttribute('type', 'number');
            thisButton.setAttribute('min', '5');
            thisButton.setAttribute('step', '5');
            thisButton.setAttribute('max', '300');
            thisButton.setAttribute('style', 'width: 4em');
-           thisButton.setAttribute('value', '75');
-           // thisButton.setAttribute('onchange', 'textHeight=this.value; this.blur();');
+           thisButton.setAttribute('value', fontSize.toString());
            thisSpan.appendChild(thisButton);
-           // thisButton.addEventListener('change', (event) => { textHeight = thisButton.value; thisButton.blur(); })
            thisButton.addEventListener('change', (event) => {
-             setTextHeight()
+             setfontSize()
            });
            break;
          case 'newline':
@@ -2764,7 +2767,6 @@ SVGDraw.prototype.apiJsonSVG = function (verbatim) {      // package SVG into JS
                thisButton.setAttribute('type', 'text');
                thisButton.setAttribute('value', colorSelect.buttons[j].color);
                thisButton.setAttribute('style', 'width: 5em');
-               // thisButton.setAttribute('onchange', "setUserColor(this.value); this.blur();");
                svgMenu.appendChild(thisButton);
                thisButton.addEventListener('change', (event) => {
                  setUserColor(getUserColor());
@@ -2775,7 +2777,6 @@ SVGDraw.prototype.apiJsonSVG = function (verbatim) {      // package SVG into JS
                thisButton.setAttribute('id', 'selectUserColor');
                thisButton.setAttribute('type', 'button');
                thisButton.setAttribute('style', 'background-color: ' + colorSelect.buttons[j].color);
-               // thisButton.setAttribute('onclick', "setCursorColor(getUserColor()); this.blur();");
                svgMenu.appendChild(thisButton);
                thisButton.addEventListener('click', (event) => {
                  setCursorColor(getUserColor());
@@ -2786,7 +2787,6 @@ SVGDraw.prototype.apiJsonSVG = function (verbatim) {      // package SVG into JS
                thisButton = document.createElement('input');
                thisButton.setAttribute('type', 'button');
                thisButton.setAttribute('style', 'background-color: ' + colorSelect.buttons[j].color);
-               // thisButton.setAttribute('onclick', "setCursorColor('" + colorSelect.buttons[j].color + "'); this.blur();");
                svgMenu.appendChild(thisButton);
                let thisColor = colorSelect.buttons[j].color;
                thisButton.addEventListener('click', (event) => {
@@ -2801,11 +2801,8 @@ SVGDraw.prototype.apiJsonSVG = function (verbatim) {      // package SVG into JS
                thisButton = document.createElement('input');
                thisButton.setAttribute('id', 'cursorColor');
                thisButton.setAttribute('type', 'button');
-               // thisButton.setAttribute('style', 'this.blur(); background-color: ' + colorSelect.buttons[j].color);
                thisButton.setAttribute('style', 'background-color: ' + colorSelect.buttons[j].color);
                svgMenu.appendChild(thisButton);
-               // let thisColor = colorSelect.buttons[j].color;
-               // thisButton.addEventListener('click', (event) => { setUserColor(thisColor); this.blur(); });
                cursorColor = colorSelect.buttons[j].color;   // set the cursorColor from the nominal button arrangement
              }
            }
@@ -2941,11 +2938,11 @@ function console_log(logFlag, message) {
   }
   return false
 }
-function setTextHeight() {
-  textHeight = document.getElementById('textHeight').value
+function setfontSize() {
+  fontSize = document.getElementById('fontSize').value
 }
-SVGDraw.prototype.apiTextHeight = function(height) {
-  if(isNumeric(height)) textHeight = height
+SVGDraw.prototype.apifontSize = function(fontsize) {
+  if(isNumeric(fontsize)) fontSize = fontsize
 };
 SVGDraw.prototype.apiArrowClosed = function(checked) {
   arrowClosed = checked
@@ -2960,17 +2957,36 @@ SVGDraw.prototype.apiArrowLength = function(length) {
     }
   }
   else {
-    arrowheadLength = parseFloat(document.getElementById('arrowHeadLemgth').value);
+    arrowheadLength = parseFloat(document.getElementById('arrowHeadLength').value);
   }
 };
 SVGDraw.prototype.apiArrowPercent = function(percent) {
   if(isNumeric(percent)) arrowPercent = percent
 };
+SVGDraw.prototype.apiStroke = function(color) {
+  setCursorColor(color);      // not completely safe, but there are many color variants
+};
 SVGDraw.prototype.apiStrokeWidth = function(pixels) {
   if(isNumeric(pixels)) strokeWidth = pixels
 };
+SVGDraw.prototype.apiStrokeOpacity = function(opacity) {
+  if(opacity >= 0 && opacity <= 1) {
+    strokeOpacity = opacity;
+  }
+};
+SVGDraw.prototype.apiFill = function(color) {
+  fill = color;
+};
+SVGDraw.prototype.apiFillOpacity = function(opacity) {
+  if(opacity >= 0 && opacity <= 1) {
+    fillOpacity = opacity.toString();
+  }
+};
+SVGDraw.prototype.apiDeleteLast = function() {
+  clearLastGroup();
+};
 SVGDraw.prototype.apiDeleteHover = function(group) {
-  clearThisGroup(group)
-}
+  if(group) clearThisGroup(group)
+};
 
 export default SVGDraw
