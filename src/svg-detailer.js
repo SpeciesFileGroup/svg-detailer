@@ -13,6 +13,7 @@ var strokeWidth = 1;   //= (baseStrokeWidth / zoom).toString();    // NOT dynami
 var strokeOpacity = 0.9;
 var fill = '';
 var fillOpacity = 0.0;
+var strokeLinecap = 'round';
 var bubbleRadius;  //= (baseBubbleRadius / zoom).toString(); // and transcoded from/to string (may not be required)
 var baseZoom;           // calculated from svg and image attributes
 var maxZoom = 4;        // this is 4 pixels per source image pixel
@@ -32,7 +33,7 @@ var secondKey;
 // converted to thisElement: var thisSvgText;            // pointer to svg text element currently being populated
 var text4svg = '_';         // buffer replacing HTML input control previously used for text, prime with underscore cursor
 var fontSize = 50;
-var textFont = 'Verdana';
+var fontFamily = 'Verdana';
 var arrowPercent = 10;        // defalt arrow head size 10$
 var arrowheadLength = 50;     // or 50 pixels
 var arrowFixed = false;       // paired with above
@@ -140,7 +141,7 @@ function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
   thisSVGpoints = [];            // collect points as [x,y]
 
   fontSize = 50;
-  textFont = 'Verdana';
+  fontFamily = 'Verdana';
 
 
   savedCursorMode = cursorMode;
@@ -518,7 +519,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         element.setAttributeNS(null, 'stroke-opacity', '1.0');
         element.setAttributeNS(null, 'x', thisSVGpoints[0][0].toFixed(4));      // start x
         element.setAttributeNS(null, 'y', thisSVGpoints[0][1].toFixed(4));      // start y
-        element.setAttributeNS(null, 'style', 'font-family: ' + textFont + '; fill: ' + cursorColor.toString() + ';');
+        element.setAttributeNS(null, 'style', 'font-family: ' + fontFamily + '; fill: ' + cursorColor.toString() + ';');
         element.setAttributeNS(null, 'font-size', fontSize);
         element.innerHTML = '_';    // plant the text cursor   /////////////////
         svgInProgress = 'text';     // mark in progress
@@ -578,7 +579,7 @@ function newElement(klass) {
   element.setAttributeNS(null, 'stroke-opacity', strokeOpacity.toString());
   element.setAttributeNS(null, 'fill', fill);
   element.setAttributeNS(null, 'fill-opacity', fillOpacity.toString());
-  element.setAttributeNS(null, 'stroke-linecap', 'round');
+  element.setAttributeNS(null, 'stroke-linecap', strokeLinecap);
   return element;
 }
 
@@ -2408,6 +2409,13 @@ function zoomOut() {
   }
 }
 
+function setZoom(scale) {
+  xC = lastMouseX - (lastMouseX - xC) * scale / zoom;
+  yC = lastMouseY - (lastMouseY - yC) * scale / zoom;
+  zoom_trans(xC, yC, scale);
+  zoom = scale;
+}
+
 function zoom_trans(x, y, scale) {
   let xlt = document.getElementById('xlt');         // DOM svg element g xlt
   let transform = 'translate(' + ((x)).toString() + ', ' + ((y)).toString() + ') scale(' + scale.toString() + ')';
@@ -2415,7 +2423,8 @@ function zoom_trans(x, y, scale) {
   xC = x;
   yC = y;
   xlt.attributes['transform'].value = transform;
-  document.getElementById('zoom').innerHTML = "Zoom:" + zoom.toFixed(4);
+  let zoomElement = document.getElementById('zoom');
+  if(zoomElement) zoomElement.innerHTML = "Zoom:" + scale.toFixed(4);
 }
 
 function updateSvgText(event) {                       // modified to eliminate mousetrap
@@ -2452,7 +2461,7 @@ function updateSvgText(event) {                       // modified to eliminate m
   }   // only pass printing keys, Delete, and Return/Enter
   thisElement.innerHTML = parseHTML(text4svg);           // this needs to be pair-parsed into ' '&nbsp;
   thisElement.attributes['stroke'].value = cursorColor;       // allow in-line whole line color/font/size over-ride
-  thisElement.attributes['style'].value = 'font-family: ' + textFont + '; fill: ' + cursorColor + ';';    //  including fill
+  thisElement.attributes['style'].value = 'font-family: ' + fontFamily + '; fill: ' + cursorColor + ';';    //  including fill
   thisElement.attributes['font-size'].value = fontSize;
   let nextX = thisElement.attributes['x'].value;
   let nextY = parseInt(thisElement.attributes['y'].value) + parseInt(fontSize);
@@ -2944,6 +2953,9 @@ function setfontSize() {
 SVGDraw.prototype.apifontSize = function(fontsize) {
   if(isNumeric(fontsize)) fontSize = fontsize
 };
+SVGDraw.prototype.apifontFamily = function(font) {
+  fontFamily = font
+};
 SVGDraw.prototype.apiArrowClosed = function(checked) {
   arrowClosed = checked
 };
@@ -2974,6 +2986,9 @@ SVGDraw.prototype.apiStrokeOpacity = function(opacity) {
     strokeOpacity = opacity;
   }
 };
+SVGDraw.prototype.apiStrokeLinecap = function(style) {
+  strokeLinecap = style
+};
 SVGDraw.prototype.apiFill = function(color) {
   fill = color;
 };
@@ -2981,6 +2996,15 @@ SVGDraw.prototype.apiFillOpacity = function(opacity) {
   if(opacity >= 0 && opacity <= 1) {
     fillOpacity = opacity.toString();
   }
+};
+SVGDraw.prototype.apiZoomIn = function(){
+  zoomIn()
+};
+SVGDraw.prototype.apiZoomOut = function(){
+  zoomOut()
+};
+SVGDraw.prototype.apiSetZoom = function(scale){
+  setZoom(scale)
 };
 SVGDraw.prototype.apiDeleteLast = function() {
   clearLastGroup();
