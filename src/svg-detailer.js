@@ -34,7 +34,7 @@ var secondKey;
 var text4svg = '_';         // buffer replacing HTML input control previously used for text, prime with underscore cursor
 var fontSize = 50;
 var fontFamily = 'Verdana';
-var arrowPercent = 10;        // defalt arrow head size 10$
+var arrowPercent = 10;        // default arrow head size 10 percent of arrow length in pixels
 var arrowheadLength = 50;     // or 50 pixels
 var arrowFixed = false;       // paired with above
 var arrowClosed = false;
@@ -2746,7 +2746,7 @@ SVGDraw.prototype.apiJsonSVG = function (verbatim) {      // package SVG into JS
            thisButton.setAttribute('value', fontSize.toString());
            thisSpan.appendChild(thisButton);
            thisButton.addEventListener('change', (event) => {
-             setfontSize()
+             fontSize = parseInt(document.getElementById('fontSize').value)
            });
            break;
          case 'newline':
@@ -2817,41 +2817,47 @@ SVGDraw.prototype.apiJsonSVG = function (verbatim) {      // package SVG into JS
          case 'arrowspecs':
            thisSpan = document.createElement('span');      // arrow display area
            thisSpan.setAttribute('id', 'arrowBlock');
-
            thisSpan.innerHTML += ' &nbsp;Arrowhead: Closed:';
+           svgMenu.appendChild(thisSpan);
+
            thisButton = document.createElement('input');
            thisButton.setAttribute('id', 'arrowHeadClosed');
            thisButton.setAttribute('type', 'checkbox');
-           // thisButton.setAttribute('onclick', "this.blur();");
-           thisSpan.appendChild(thisButton);
            thisButton.addEventListener('click', (event) => {
              arrowClosed = document.getElementById('arrowHeadClosed').checked
            });
+           svgMenu.appendChild(thisButton);
 
+           thisSpan = document.createElement('span');      // arrow display area
            thisSpan.innerHTML += ' &nbsp; Fixed:';
+           svgMenu.appendChild(thisSpan);
+
            thisButton = document.createElement('input');
            thisButton.setAttribute('id', 'arrowHeadPixels');
            thisButton.setAttribute('type', 'checkbox');
-           thisSpan.appendChild(thisButton);
            thisButton.addEventListener('click', (event) => {
              arrowFixed = document.getElementById('arrowHeadPixels').checked
            });
+           svgMenu.appendChild(thisButton);
 
+           thisSpan = document.createElement('span');      // arrow display area
            thisSpan.innerHTML += ' &nbsp; Length:';
+           svgMenu.appendChild(thisSpan);
+
            thisButton = document.createElement('input');
            thisButton.setAttribute('id', 'arrowHeadLength');
            thisButton.setAttribute('type', 'number');
            thisButton.setAttribute('value', '50');
-           // thisButton.setAttribute('min', '5');
-           // thisButton.setAttribute('step', '10');
-           // thisButton.setAttribute('max', '150');
            thisButton.setAttribute('style', 'width: 4em');
-           thisSpan.appendChild(thisButton);
            thisButton.addEventListener('change', (event) => {
-             SVGDraw.prototype.apiArrowLength()
-           })
+             arrowheadLength = parseInt(document.getElementById('arrowHeadLength').value);
+           });
+           svgMenu.appendChild(thisButton);
 
+           thisSpan = document.createElement('span');      // arrow display area
            thisSpan.innerHTML += ' &nbsp; Percent:';
+           svgMenu.appendChild(thisSpan);
+
            thisButton = document.createElement('input');     // default TEXT SIZE input
            thisButton.setAttribute('id', 'arrowHeadPercent');
            thisButton.setAttribute('type', 'number');
@@ -2860,12 +2866,13 @@ SVGDraw.prototype.apiJsonSVG = function (verbatim) {      // package SVG into JS
            thisButton.setAttribute('max', '30');
            thisButton.setAttribute('style', 'width: 4em');
            thisButton.setAttribute('value', '10');
-           thisSpan.appendChild(thisButton);
-           thisSpan.addEventListener('change', (event) => {
-             arrowPercent = parseFloat(document.getElementById('arrowHeadPercent').value);
+           thisButton.addEventListener('change', (event) => {
+             arrowPercent = parseInt(document.getElementById('arrowHeadPercent').value)
            });
-           svgMenu.appendChild(thisSpan);
+           svgMenu.appendChild(thisButton);
+
            break;
+
          case 'json':
            thisButton = document.createElement('input');
            thisButton.setAttribute('id', 'saveSVG');
@@ -2933,13 +2940,10 @@ function console_log(logFlag, message) {
   }
   return false
 }
-function setfontSize() {
-  fontSize = document.getElementById('fontSize').value
-}
-SVGDraw.prototype.apifontSize = function(fontsize) {
+SVGDraw.prototype.apiFontSize = function(fontsize) {
   if(isNumeric(fontsize)) fontSize = fontsize
 };
-SVGDraw.prototype.apifontFamily = function(font) {
+SVGDraw.prototype.apiFontFamily = function(font) {
   fontFamily = font
 };
 SVGDraw.prototype.apiArrowClosed = function(checked) {
@@ -2949,18 +2953,14 @@ SVGDraw.prototype.apiArrowFixed = function(checked) {
   arrowFixed = checked
 };
 SVGDraw.prototype.apiArrowLength = function(length) {
-  if(length) {
-    if(isNumeric(length)) {
-      arrowheadLength = length
-    }
-    else {
-      let testArrowLength = document.getElementById('arrowHeadLength');
-      if(testArrowLength) {arrowheadLength = parseInt(testArrowLength.value)}
-    }
+  if(isNumeric(length)) {
+    arrowheadLength = length
   }
 };
 SVGDraw.prototype.apiArrowPercent = function(percent) {
-  if(isNumeric(percent)) arrowPercent = percent
+  if(isNumeric(percent)) {
+    arrowPercent = percent
+  }
 };
 SVGDraw.prototype.apiStroke = function(color) {
   setStroke(color);      // not completely safe, but there are many color variants

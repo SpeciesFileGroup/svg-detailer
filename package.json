@@ -33,8 +33,8 @@
   },
   "dependencies": {
     "core-js": "^2.6.5",
-    "mocha": "^7.0.1",
-    "selenium-webdriver": "^4.0.0-alpha.5",
+    "mocha": "^7.1.2",
+    "selenium-webdriver": "^4.0.0-alpha.7",
     "vue": "^2.6.10"
   },
   "devDependencies": {
