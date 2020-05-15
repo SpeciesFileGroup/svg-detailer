@@ -5,7 +5,7 @@ Revised version of svg-detailer/svgDraw 06MAR2020
 var xC = 0;
 var yC = 0;
 var cursorMode = "MOVE";
-var stroke;
+var stroke = '#000000';   // init to black
 var zoom;                 // set on initialization from baseZoom @ full image
 var baseBubbleRadius = 6;
 // transform below to functions?
@@ -1517,10 +1517,10 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       }   // preempt divide by 0
       let dx = deltaX / lineLength;
       let dy = deltaY / lineLength;
-      let barbLength
-      if (document.getElementById('arrowHeadPixels').checked) {
-        barbLength = document.getElementById('arrowHeadLength').value;
-      } else {
+      let barbLength;
+      if (arrowFixed) {
+        barbLength = arrowheadLength;
+      } else {                              // either fixed pixel length or percentage
         barbLength = lineLength * arrowPercent / 100;
       }
       let pctX = parseFloat(thisX2) - (dx * barbLength);   //  baseline for barb trailing end
@@ -1547,7 +1547,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       rightBarb.setAttributeNS(null, 'stroke-width', thisStrokeWidth);
       // thisGroup.appendChild(rightBarb);
 
-      if (document.getElementById('arrowHeadClosed').checked) {
+      if (arrowClosed) {
         let baseBarb = newElement('polygon');
         let barbPoints = thisX2 + ',' + thisY2 + ' ' + x3 + ',' + y3 + ' ' + x4 + ',' + y4;
         baseBarb.setAttributeNS(null, 'points', barbPoints);
@@ -2559,8 +2559,10 @@ function indicateMode(mode) {
   if (mode == 'rect') {
     coverRect = 'rectangle';        // replace anomalous rect with rectangle
   }
-  document.getElementById("mode").textContent = coverRect.toUpperCase();
-  document.getElementById('zoom').innerHTML = "Zoom:" + zoom.toFixed(4);
+  let testMode = document.getElementById("mode")
+  if(testMode) testMode.textContent = coverRect.toUpperCase();
+  let testZoom = document.getElementById('zoom')
+  if(testZoom) testZoom.innerHTML = "Zoom:" + zoom.toFixed(4);
 }
 
 function collectSVG(verbatim) {   // verbatim true includes all markup, false means stripped
@@ -2823,7 +2825,6 @@ SVGDraw.prototype.apiJsonSVG = function (verbatim) {      // package SVG into JS
            // thisButton.setAttribute('onclick', "this.blur();");
            thisSpan.appendChild(thisButton);
            thisButton.addEventListener('click', (event) => {
-             // thisButton.blur();
              arrowClosed = document.getElementById('arrowHeadClosed').checked
            });
 
@@ -2831,10 +2832,8 @@ SVGDraw.prototype.apiJsonSVG = function (verbatim) {      // package SVG into JS
            thisButton = document.createElement('input');
            thisButton.setAttribute('id', 'arrowHeadPixels');
            thisButton.setAttribute('type', 'checkbox');
-           // thisButton.setAttribute('onclick', "this.blur();");
            thisSpan.appendChild(thisButton);
            thisButton.addEventListener('click', (event) => {
-             // thisButton.blur();
              arrowFixed = document.getElementById('arrowHeadPixels').checked
            });
 
@@ -2847,11 +2846,8 @@ SVGDraw.prototype.apiJsonSVG = function (verbatim) {      // package SVG into JS
            // thisButton.setAttribute('step', '10');
            // thisButton.setAttribute('max', '150');
            thisButton.setAttribute('style', 'width: 4em');
-           // thisButton.setAttribute('onchange', 'this.blur();');
            thisSpan.appendChild(thisButton);
            thisButton.addEventListener('change', (event) => {
-             // thisButton.blur();
-             // arrowheadLength = parseFloat(document.getElementById('arrowHeadLength').value)
              SVGDraw.prototype.apiArrowLength()
            })
 
@@ -2866,7 +2862,6 @@ SVGDraw.prototype.apiJsonSVG = function (verbatim) {      // package SVG into JS
            thisButton.setAttribute('value', '10');
            thisSpan.appendChild(thisButton);
            thisSpan.addEventListener('change', (event) => {
-             thisButton.blur();
              arrowPercent = parseFloat(document.getElementById('arrowHeadPercent').value);
            });
            svgMenu.appendChild(thisSpan);
@@ -2876,7 +2871,6 @@ SVGDraw.prototype.apiJsonSVG = function (verbatim) {      // package SVG into JS
            thisButton.setAttribute('id', 'saveSVG');
            thisButton.setAttribute('type', 'button');
            thisButton.setAttribute('value', 'Extract SVG');
-           // thisButton.setAttribute('onclick', 'this.blur(); showSVG(true);');
            svgMenu.appendChild(thisButton);
            thisButton.addEventListener('click', (event) => {
              thisButton.blur();
@@ -2887,8 +2881,6 @@ SVGDraw.prototype.apiJsonSVG = function (verbatim) {      // package SVG into JS
            thisButton.setAttribute('id', 'plainSVG');
            thisButton.setAttribute('type', 'button');
            thisButton.setAttribute('value', 'Plain SVG');
-           // thisButton.setAttribute('onclick', 'this.blur(); showSVG(false);');
-           // thisButton.setAttribute('onclick', 'showSVG(false);');
            svgMenu.appendChild(thisButton);
            thisButton.addEventListener('click', (event) => {
              thisButton.blur();
@@ -2899,8 +2891,6 @@ SVGDraw.prototype.apiJsonSVG = function (verbatim) {      // package SVG into JS
            thisButton.setAttribute('id', 'bareSVG');
            thisButton.setAttribute('type', 'button');
            thisButton.setAttribute('value', 'Bare SVG');
-           // thisButton.setAttribute('onclick', 'this.blur(); showSVG(false);');
-           // thisButton.setAttribute('onclick', 'showSVG(false);');
            svgMenu.appendChild(thisButton);
            thisButton.addEventListener('click', (event) => {
              thisButton.blur();
@@ -2961,11 +2951,12 @@ SVGDraw.prototype.apiArrowFixed = function(checked) {
 SVGDraw.prototype.apiArrowLength = function(length) {
   if(length) {
     if(isNumeric(length)) {
-    arrowheadLength = length
+      arrowheadLength = length
     }
-  }
-  else {
-    arrowheadLength = parseFloat(document.getElementById('arrowHeadLength').value);
+    else {
+      let testArrowLength = document.getElementById('arrowHeadLength');
+      if(testArrowLength) {arrowheadLength = parseInt(testArrowLength.value)}
+    }
   }
 };
 SVGDraw.prototype.apiArrowPercent = function(percent) {
