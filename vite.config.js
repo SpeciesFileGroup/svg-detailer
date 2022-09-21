@@ -6,8 +6,8 @@ export default defineConfig({
   build: {
     lib: {
       entry: resolve(__dirname, 'src/svg-detailer.js'),
-      name: 'svg-detailer',
-      fileName: 'svg-detailer'
+      name: 'SVGDetailer',
+      fileName: format => `svg-detailer.${format}.js`
     },
     rollupOptions: {
       external: [],

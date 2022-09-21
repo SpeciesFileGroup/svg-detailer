@@ -2,13 +2,13 @@
   "name": "@sfgrp/svg-detailer",
   "version": "0.1.1",
   "private": false,
-  "main": "./dist/svg-detailer.umd.cjs",
-  "module": "./dist/svg-detailer.js",
+  "main": "./dist/svg-detailer.umd.js",
+  "module": "./dist/svg-detailer.es.js",
   "type": "module",
   "exports": {
     ".": {
-      "import": "./dist/svg-detailer.js",
-      "require": "./dist/svg-detailer.umd.cjs"
+      "import": "./dist/svg-detailer.es.js",
+      "require": "./dist/svg-detailer.umd.js"
     }
   },
   "keywords": [
