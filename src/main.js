@@ -1,9 +1,8 @@
-import SVGDraw from './svg-detailer.js'
+import { SVGDraw } from './svg-detailer.js'
 
 const svgContainer = document.getElementById('container');
 const imageInput = document.getElementById('image_file');
-
-var svgDraw = new SVGDraw(document.getElementById("container"));
+const svgDraw = new SVGDraw(document.getElementById("container"));
 
 imageInput.addEventListener('change', (event) => {
   getImage(event);

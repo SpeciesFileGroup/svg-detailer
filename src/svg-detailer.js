@@ -1,7 +1,5 @@
-// construct svgLayer from container's attributes and data-attributes
-/*
-Revised version of svg-detailer/svgDraw 06MAR2020
- */
+import { drawMode } from "./constants/drawMode"
+
 var xC = 0;
 var yC = 0;
 var cursorMode = "MOVE";
@@ -129,13 +127,10 @@ var _SHIFTMAP = {
   '/': '?',
   '\\': '|'
 };
-var _drawModes = [
-  'clear', 'polygon', 'polyline', 'line', 'arrow',
-  'rectangle', 'circle', 'ellipse', 'cubic', 'quadratic',
-  'draw', 'text', 'MOVE'
-];
 
 function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
+
+  this.containerElement = containerID
 
   svgImage = new Image();
   thisSVGpoints = [];            // collect points as [x,y]
@@ -212,7 +207,7 @@ function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
 
     zoom_trans(0, 0, zoom);             //////////// IMPORTANT !!!!!!!!!!!
 
-    setCursorMode('MOVE');
+    setCursorMode(drawMode.MOVE);
 
     self.renderFunction = self.updateSvgByElement;
     //self.touchSupported = Modernizr.touch;
@@ -265,7 +260,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         return false;
       }
     }
-    if (cursorMode == 'polygon') {     // mouseDown sets initial point, subsequent points set by mouseDown after mouseUp
+    if (cursorMode == drawMode.POLYGON) {     // mouseDown sets initial point, subsequent points set by mouseDown after mouseUp
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
         savedCursorMode = cursorMode;     // plant this to prevent immediate post-creation clearing
         thisSVGpoints[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
@@ -275,7 +270,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         group.setAttributeNS(null, 'class', cursorMode);
         thisGroup = group;
         document.getElementById("xlt").appendChild(group);
-        let element = newElement('polyline');        //YES, I KNOW... polyline behavior mimics google maps better
+        let element = newElement(drawMode.POLYLINE);        //YES, I KNOW... polyline behavior mimics google maps better
 
         group.appendChild(element);
         thisElement = group.children[0];
@@ -292,7 +287,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         thisElement.attributes['points'].value = thesePoints.concat(thisPoint);
       }
     }
-    if (cursorMode == 'polyline') {    // mouseDown sets initial point, subsequent points set by mouseDown after mouseUp
+    if (cursorMode == drawMode.POLYLINE) {    // mouseDown sets initial point, subsequent points set by mouseDown after mouseUp
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
         savedCursorMode = cursorMode;     // plant this to prevent immediate post-creation clearing
         thisSVGpoints[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
@@ -302,7 +297,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         group.setAttributeNS(null, 'id', newGroupID);
         group.setAttributeNS(null, 'class', cursorMode);
         document.getElementById("xlt").appendChild(group);
-        let element = newElement('polyline');
+        let element = newElement(drawMode.POLYLINE);
 
         group.appendChild(element);
         thisElement = group.children[0];
@@ -342,7 +337,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
       }
 // now using mouseUp event to terminate rect
     }
-    if (cursorMode == 'line') {     //  mouseDown starts creation, after, drag mouseUp ends
+    if (cursorMode == drawMode.LINE) {     //  mouseDown starts creation, after, drag mouseUp ends
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
         savedCursorMode = cursorMode;     // plant this to prevent immediate post-creation clearing
         thisSVGpoints[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
@@ -352,7 +347,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         group.setAttributeNS(null, 'id', newGroupID);
         group.setAttributeNS(null, 'class', cursorMode);
         document.getElementById("xlt").appendChild(group);
-        let element = newElement('line');
+        let element = newElement(drawMode.LINE);
 
         group.appendChild(element);
         thisElement = group.children[0];
@@ -367,7 +362,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         // unbindMouseHandlers(self);
       }
     }
-    if (cursorMode == 'arrow') {     //  mouseDown starts creation, after, drag mouseUp ends
+    if (cursorMode == drawMode.ARROW) {     //  mouseDown starts creation, after, drag mouseUp ends
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
         savedCursorMode = cursorMode;     // plant this to prevent immediate post-creation clearing
         thisSVGpoints[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
@@ -377,7 +372,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         group.setAttributeNS(null, 'id', newGroupID);
         group.setAttributeNS(null, 'class', cursorMode);
         document.getElementById("xlt").appendChild(group);
-        let element = newElement('line');
+        let element = newElement(drawMode.LINE);
 
         group.appendChild(element);
         thisElement = group.children[0];
@@ -392,7 +387,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         // unbindMouseHandlers(self);
       }
     }
-    if (cursorMode == 'circle') {     // mouseDown    // modified to use common element for handlers
+    if (cursorMode == drawMode.CIRCLE) {     // mouseDown    // modified to use common element for handlers
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
         if (thisGroup != null) {      //  ////////////// ???
           clearEditElement(thisGroup);    // this group is the one with bubbles, to be obviated
@@ -416,7 +411,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
       }
       // now using mouseup event exclusively to terminate circle
     }
-    if (cursorMode == 'ellipse') {     // mouseDown
+    if (cursorMode == drawMode.ELLIPSE) {     // mouseDown
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
         savedCursorMode = cursorMode;     // plant this to prevent immediate post-creation clearing
         thisSVGpoints[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
@@ -426,7 +421,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         group.setAttributeNS(null, 'id', newGroupID);
         group.setAttributeNS(null, 'class', cursorMode);
         document.getElementById("xlt").appendChild(group);
-        let element = newElement('ellipse');
+        let element = newElement(drawMode.ELLIPSE);
 
         group.appendChild(element);
         thisElement = group.children[0];
@@ -441,7 +436,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         // unbindMouseHandlers(self);
       }
     }
-    if (cursorMode == 'draw') {     // mouseDown
+    if (cursorMode == drawMode.DRAW) {     // mouseDown
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
         savedCursorMode = cursorMode;     // plant this to prevent immediate post-creation clearing
         thisSVGpoints[0] = [(self.lastMousePoint.x - xC) / zoom, (self.lastMousePoint.y - yC) / zoom];
@@ -452,7 +447,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         group.setAttributeNS(null, 'class', cursorMode);
         document.getElementById("xlt").appendChild(group);
         //for (j = 0; j < thisSVGpoints.length; j++) {              // for text mode there is only one
-        let element = newElement('polyline');
+        let element = newElement(drawMode.POLYLINE);
 
         group.appendChild(element);
         thisElement = group.children[0];
@@ -466,7 +461,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         // unbindMouseHandlers(self);
       }
     }
-    if ((cursorMode == 'cubic') || (cursorMode == 'quadratic')) {     // mouseDown
+    if ((cursorMode == drawMode.CUBIC) || (cursorMode == drawMode.QUADRATIC)) {     // mouseDown
                                                                       // The cubic Bezier curve requires non-symbolic integer values for its path parameters.
                                                                       // This will necessitate the dynamic reconstruction of the "d" attribute using parseInt
                                                                       // on each value.  The edit sister group will have 4 bubbles, ids: p1, c1, c2, p2 to decode
@@ -495,7 +490,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         // unbindMouseHandlers(self);
       }
     }
-    if (cursorMode == "text") {     // mouseDown - could be initial click, revised position click, or preemie
+    if (cursorMode == drawMode.TEXT) {     // mouseDown - could be initial click, revised position click, or preemie
       let group
       if (thisElement) {
         finishTextGroup();
@@ -525,7 +520,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         svgInProgress = 'text';     // mark in progress
       }
     }
-    if (cursorMode == 'MOVE') {     // mouseDown
+    if (cursorMode == drawMode.MOVE) {     // mouseDown
       if (svgInProgress == false) {
         svgInProgress = cursorMode;
       }
@@ -549,7 +544,7 @@ function getIDcount() {
 }
 
 function getCurvePath(x1, y1, cx1, cy1, cx2, cy2, x2, y2) {
-  if (cursorMode == 'cubic') {
+  if (cursorMode == drawMode.CUBIC) {
     return "M " + pathPoint(x1, y1) + " C " + curvePoint(cx1, cy1) + curvePoint(cx2, cy2) + pathPoint(x2, y2);
   } else return "M " + pathPoint(x1, y1) + " Q " + curvePoint(cx1, cy1) + pathPoint(x2, y2);
 }
@@ -644,9 +639,9 @@ function setEditElement(group) {    // add bubble elements to the group containi
         cursorMode = group.firstChild.tagName;
       }
     } else {                  // now that there are both cubic and quadratic curves, we must detect this one's class
-      cursorMode = 'cubic';   // ///////// finesse path
+      cursorMode = drawMode.CUBIC;   // ///////// finesse path
       if (group.firstChild.attributes.d.value.indexOf('C ') == -1) {   // is the path quadratic because it's not cubic?
-        cursorMode = 'quadratic';
+        cursorMode = drawMode.QUADRATIC;
       }
     }
   }
@@ -684,10 +679,10 @@ function clearEditElement(group) {   // given containing group; invoked by mouse
     return
   }
   if (group.childNodes.length > 1) {   // do I have bubbles? i.e., is there more than just the golden chile?
-    if ((group.lastChild.tagName == 'circle') || (group.lastChild.tagName == 'g')) { // poly- bubbles have a child group
+    if ((group.lastChild.tagName == drawMode.CIRCLE) || (group.lastChild.tagName == 'g')) { // poly- bubbles have a child group
       group.lastChild.remove();         // this is the group of bubbles (and maybe nested ones) if not just a SHIFT bubble
       thisBubble = null;
-      cursorMode = 'MOVE';    // was savedCursorMode;   // on exit of edit mode, restore
+      cursorMode = drawMode.MOVE;    // was savedCursorMode;   // on exit of edit mode, restore
       indicateMode(cursorMode);
       svgInProgress = false;
       thisElement = null;
@@ -702,12 +697,12 @@ function clearEditElement(group) {   // given containing group; invoked by mouse
   }
   //group./*firstChild.*/attributes['onmouseenter'].value = "this.firstChild.attributes['stroke-width'].value = '" + 1.5 * strokeWidth + "'; setEditElement(this.firstChild);"    // replant the listener in the real element
   setElementMouseEnterLeave(group);
-  cursorMode = 'MOVE';    // was savedCursorMode;   // on exit of edit mode, restore
+  cursorMode = drawMode.MOVE;    // was savedCursorMode;   // on exit of edit mode, restore
   indicateMode(cursorMode);
   svgInProgress = false;
   thisElement = null;
   thisGroup = null;
-//  eliminated savedCursorMode = 'MOVE';
+//  eliminated savedCursorMode = drawMode.MOVE;
 }
 
 function checkElementConflict(group) {  // only invoked by mouseenter listeners
@@ -789,7 +784,7 @@ function setSizeElement(bubble) {    // end of SHIFT leaves single bubble; shoul
   thisElement = group.firstChild;
   thisBubble = group.lastChild.firstChild;      // this is the center/first bubble
   cursorMode = thisElement.tagName;
-  if ((cursorMode == 'circle') || (cursorMode == 'ellipse'))
+  if ((cursorMode == drawMode.CIRCLE) || (cursorMode == drawMode.ELLIPSE))
     {
       let endK = group.lastChild.childElementCount;        // total bubbles, leave the first one (thisElement)
       for (let k = endK; k > 0; k--) {
@@ -886,7 +881,7 @@ function createBubbleGroup(group) {
   // var bubble;
 
   switch (element.tagName) {
-    case 'circle':    // 1 relocation bubble, 4 compass-point resize bubbles (flagged SHIFT and SIZE respecively)
+    case drawMode.CIRCLE:    // 1 relocation bubble, 4 compass-point resize bubbles (flagged SHIFT and SIZE respecively)
       bubbleGroup.setAttributeNS(null, 'class', 'bubbles');
       let cx = svgAttrs['cx'];
       let cy = svgAttrs['cy'];
@@ -897,7 +892,7 @@ function createBubbleGroup(group) {
       bubbleGroup.appendChild(createSizeBubble(cx - cr, cy, 'W'));    // this is the W resize point
       bubbleGroup.appendChild(createSizeBubble(cx, cy - cr, 'N'));    // this is the N resize point
       return bubbleGroup;
-    case 'ellipse':    // 1 relocation bubble, 4 compass-point resize bubbles (flagged SHIFT and SIZE respecively)
+    case drawMode.ELLIPSE:    // 1 relocation bubble, 4 compass-point resize bubbles (flagged SHIFT and SIZE respecively)
       cx = svgAttrs['cx'];
       cy = svgAttrs['cy'];
       let rx = svgAttrs['rx'];
@@ -916,7 +911,7 @@ function createBubbleGroup(group) {
       bubbleGroup.appendChild(createShiftBubble(x, y, 'shift'));     // this is the rectangle origin, anomalous as it may be
       bubbleGroup.appendChild(createSizeBubble(x + w, y + h));    // this is the resize point
       return bubbleGroup;
-    case 'line':
+    case drawMode.LINE:
       let x1 = svgAttrs['x1'];
       let y1 = svgAttrs['y1'];
       let x2 = svgAttrs['x2'];
@@ -963,8 +958,8 @@ function createBubbleGroup(group) {
         bubbleGroup.appendChild(createCurveBubble(theseCoords[4], theseCoords[5], 'c2'));   // second control point
       }
       return bubbleGroup;
-    case 'polygon':
-    case 'polyline':      // create a parallel structure to the point attr, using its coords
+    case drawMode.POLYGON:
+    case drawMode.POLYLINE:      // create a parallel structure to the point attr, using its coords
       let thesePoints = element.attributes['points'].value.trim();      // trim to eliminate extraneous empty string
       splitPoints = thesePoints.split(' ');
       let thisPoint = splitPoints[0].split(',');   // prime the pump for iteration
@@ -1006,7 +1001,7 @@ function createBubbleGroup(group) {
         }
       }
 
-      if (element.tagName == 'polygon') {       // additional step for polygon, since there is an implicit closure
+      if (element.tagName == drawMode.POLYGON) {       // additional step for polygon, since there is an implicit closure
         thisPoint = splitPoints[0].split(',');   // get the first point again
         thisX = parseFloat(thisPoint[0]);
         thisY = parseFloat(thisPoint[1]);
@@ -1100,7 +1095,7 @@ function createCurveBubble(cx, cy, id) {    // used for <path...> inter-vertex c
 }
 
 function createControlLine(x1, y1, x2, y2, id) {
-  let line = newElement('line');
+  let line = newElement(drawMode.LINE);
   line.setAttributeNS(null, 'x1', x1);
   line.setAttributeNS(null, 'y1', y1);
   line.setAttributeNS(null, 'x2', x2);
@@ -1111,7 +1106,7 @@ function createControlLine(x1, y1, x2, y2, id) {
 }
 
 function createBoundsPoly(coords) {        // used by createBubbleGroup.path
-  let poly = newElement('polyline');
+  let poly = newElement(drawMode.POLYLINE);
   poly.setAttributeNS(null, 'id', 'poly');
   poly.setAttributeNS(null, 'points', getCurvePoints(coords));
   poly.setAttributeNS(null, 'stroke-opacity', '0.0');
@@ -1119,7 +1114,7 @@ function createBoundsPoly(coords) {        // used by createBubbleGroup.path
 }
 
 function createBubbleStub(offsetX, offsetY) {   // create same-size bubble
-  let bubble = newElement('circle');      // this is constant, since it is a bubble
+  let bubble = newElement(drawMode.CIRCLE);      // this is constant, since it is a bubble
   if (isNaN(offsetX)) {
     alert('offsetX: ' + offsetX.toString());
   }
@@ -1145,11 +1140,11 @@ function getModel(element) {            // by svg element type, return its salie
   let p1 = 1;
   let p2 = 1;
   switch (element) {
-    case 'polyline':
+    case drawMode.POLYLINE:
       return {
         'points': p1
       };
-    case 'polygon':
+    case drawMode.POLYGON:
       return {
         'points': p1
       };
@@ -1157,15 +1152,15 @@ function getModel(element) {            // by svg element type, return its salie
       return {
         'x': ox, 'y': oy, 'width': p1, 'height': p2
       };
-    case 'line':
+    case drawMode.LINE:
       return {
         'x1': ox, 'y1': oy, 'x2': p1, 'y2': p2
       };
-    case 'circle':
+    case drawMode.CIRCLE:
       return {
         'cx': ox, 'cy': oy, 'r': p1
       };
-    case 'ellipse':
+    case drawMode.ELLIPSE:
       return {
         'cx': ox, 'cy': oy, 'rx': p1, 'ry': p2
       };
@@ -1214,16 +1209,22 @@ let Trig = {
   }
 };
 
-SVGDraw.prototype.updateMousePosition = function (event) {
-  let target;
-  if (this.touchSupported) {
-    target = event.originalEvent.touches[0]
-  } else {
-    target = event;
+SVGDraw.prototype._getMousePosition = function (event) {
+  const rect = this.containerElement.getBoundingClientRect()
+
+  return { 
+    x: event.clientX - rect.left,
+    y: event.clientY - rect.top
   }
-  let offset = svgOffset;    //  was this.canvas.offset();
-  this.lastMousePoint.x = target.pageX - offset.left;
-  this.lastMousePoint.y = target.pageY - offset.top;
+}
+
+SVGDraw.prototype.updateMousePosition = function (event) {
+  const target = this.touchSupported
+    ? event.originalEvent.touches[0]
+    : event
+
+  this.lastMousePoint = this._getMousePosition(target);
+
   lastMouseX = this.lastMousePoint.x;
   lastMouseY = this.lastMousePoint.y;
 };
@@ -1254,7 +1255,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
    */
 
   if (cursorMode != "MOVE") {          // if we are not moving(dragging) the SVG check the known tags
-    if ((cursorMode == "polygon") || ((cursorMode == 'polyline') && (svgInProgress == 'polygon'))) {
+    if ((cursorMode == "polygon") || ((cursorMode == drawMode.POLYLINE) && (svgInProgress == drawMode.POLYGON))) {
       if (svgInProgress == false) {
         return;
       }     // could be POINT or NEW or polygon
@@ -1459,7 +1460,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       }
     }
 
-    else if (cursorMode == 'arrow') {
+    else if (cursorMode == drawMode.ARROW) {
       lastMouseX = this.lastMousePoint.x;
       lastMouseY = this.lastMousePoint.y;
       let linePoints
@@ -1530,7 +1531,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       let x4 = (pctX - barbLength * dy / 2).toFixed(4);
       let y4 = (pctY + barbLength * dx / 2).toFixed(4);
 
-      let leftBarb = newElement('line');
+      let leftBarb = newElement(drawMode.LINE);
       leftBarb.setAttributeNS(null, 'x1', thisX2);       // start x of barbs
       leftBarb.setAttributeNS(null, 'y1', thisY2);      // start y of barbs
       leftBarb.setAttributeNS(null, 'x2', x3);      // end x
@@ -1538,7 +1539,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       leftBarb.setAttributeNS(null, 'stroke', thisColor);
       leftBarb.setAttributeNS(null, 'stroke-width', thisStrokeWidth);
       // thisGroup.appendChild(leftBarb);
-      let rightBarb = newElement('line');
+      let rightBarb = newElement(drawMode.LINE);
       rightBarb.setAttributeNS(null, 'x1', thisX2);       // start x of barbs
       rightBarb.setAttributeNS(null, 'y1', thisY2);      // start y of barbs
       rightBarb.setAttributeNS(null, 'x2', x4);      // end x
@@ -1548,7 +1549,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       // thisGroup.appendChild(rightBarb);
 
       if (arrowClosed) {
-        let baseBarb = newElement('polygon');
+        let baseBarb = newElement(drawMode.POLYGON);
         let barbPoints = thisX2 + ',' + thisY2 + ' ' + x3 + ',' + y3 + ' ' + x4 + ',' + y4;
         baseBarb.setAttributeNS(null, 'points', barbPoints);
         baseBarb.setAttributeNS(null, 'stroke', thisColor);
@@ -1698,7 +1699,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       }
     }     // end of Draw case
 
-    else if ((cursorMode == 'cubic') || (cursorMode == 'quadratic')) {
+    else if ((cursorMode == drawMode.CUBIC) || (cursorMode == drawMode.QUADRATIC)) {
       lastMouseX = this.lastMousePoint.x;
       lastMouseY = this.lastMousePoint.y;
       if ((event.type == 'mousedown') || (svgInProgress == false)) {    // extra condition for line
@@ -1793,7 +1794,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         let thisY2 = (lastMouseY - yC) / zoom;
         let thisD;
         let thisPathType = ' C ';              // set quadratic control point at midpoint, cubic's at 40% and 60% p1:p2
-        if (cursorMode == 'quadratic') thisPathType = ' Q ';
+        if (cursorMode == drawMode.QUADRATIC) thisPathType = ' Q ';
         let theseCurvePoints = thisDvalue.split(thisPathType);      // isolate control point(s) and p2
         let thisP1 = theseCurvePoints[0].split('M ');               // isolate p1
         thisP1 = thisP1[1].split(', ');
@@ -1807,7 +1808,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           theseControlPoints[1] = (thisY1 - 0.4 * dy).toFixed(4);   // for quadratic
           thisD = theseCurvePoints[0] + thisPathType + curvePoint(theseControlPoints[0], theseControlPoints[1]);
         } else {
-          // if (cursorMode == 'cubic')
+          // if (cursorMode == drawMode.CUBIC)
           theseControlPoints[0] = (thisX1 - 0.4 * dx).toFixed(4);
           theseControlPoints[1] = (thisY1 - 0.4 * dy).toFixed(4);
           theseControlPoints[2] = (thisX1 - 0.6 * dx).toFixed(4);
@@ -1847,9 +1848,9 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
     }
   }
 
-  else if (cursorMode == 'MOVE') {    // Revert to MOVE: this version assumes manipulating the transform <xlt> of the SVG via xC, yC
+  else if (cursorMode == drawMode.MOVE) {    // Revert to MOVE: this version assumes manipulating the transform <xlt> of the SVG via xC, yC
 
-    if (svgInProgress == 'MOVE') {
+    if (svgInProgress == drawMode.MOVE) {
 
       let oldX = this.lastMousePoint.x;
       let oldY = this.lastMousePoint.y;
@@ -1880,11 +1881,11 @@ SVGDraw.prototype.onSvgMouseUp = function (event) {
       setElementMouseEnterLeave(thisElement.parentNode);   // this element is a SHIFT bubble
     } else if (cursorMode == 'bubble') {      // /////// all assignments of cursorMode to bubble have been disabled
       svgInProgress = false;
-    } else if (cursorMode == 'draw') {
+    } else if (cursorMode == drawMode.DRAW) {
       svgInProgress = false;
       setElementMouseEnterLeave(thisGroup);
       // unbindMouseHandlers(self);
-    } else if ((cursorMode == 'cubic') || (cursorMode == 'quadratic')) {
+    } else if ((cursorMode == drawMode.CUBIC) || (cursorMode == drawMode.QUADRATIC)) {
       svgInProgress = false;
       setElementMouseEnterLeave(thisGroup);
       // unbindMouseHandlers(self);
@@ -1898,21 +1899,21 @@ SVGDraw.prototype.onSvgMouseUp = function (event) {
       thisBubble = null;
       thisElement = null;
       thisGroup = null;
-    } else if (cursorMode == 'line') {
+    } else if (cursorMode == drawMode.LINE) {
       svgInProgress = false;
       setElementMouseEnterLeave(thisGroup);
       // unbindMouseHandlers(self);
       thisBubble = null;
       thisElement = null;
       thisGroup = null;
-    } else if (cursorMode == 'arrow') {
+    } else if (cursorMode == drawMode.ARROW) {
       svgInProgress = false;
       setElementMouseEnterLeave(thisGroup);
       // unbindMouseHandlers(self);
       thisBubble = null;
       thisElement = null;
       thisGroup = null;
-    } else if (cursorMode == 'polygon') {
+    } else if (cursorMode == drawMode.POLYGON) {
       if (thisBubble == null) {
 
       } else {
@@ -1923,7 +1924,7 @@ SVGDraw.prototype.onSvgMouseUp = function (event) {
         thisElement = null;
         thisGroup = null;
       }
-    } else if (cursorMode == 'polyline') {
+    } else if (cursorMode == drawMode.POLYLINE) {
       if (thisBubble == null) {
 
       } else {
@@ -1934,14 +1935,14 @@ SVGDraw.prototype.onSvgMouseUp = function (event) {
         thisElement = null;
         thisGroup = null;
       }
-    } else if (cursorMode == 'circle') {
+    } else if (cursorMode == drawMode.CIRCLE) {
       //checkLeftoverElement();
       svgInProgress = false;
       setElementMouseEnterLeave(thisGroup);
       thisBubble = null;
       thisElement = null;
       thisGroup = null;
-    } else if (cursorMode == 'ellipse') {
+    } else if (cursorMode == drawMode.ELLIPSE) {
       //thisCircle = thisElement;   // patch/hack to have routine below happy
       //checkLeftoverElement();
       svgInProgress = false;
@@ -1952,7 +1953,7 @@ SVGDraw.prototype.onSvgMouseUp = function (event) {
     } else if (cursorMode == "text") {    // focus on the text entry input since this fails in mouseDown
       //document.getElementById('text4svg').focus();        // control eliminated
       if (svgInProgress == false) {
-        if (thisGroup.lastChild.tagName == 'circle') {
+        if (thisGroup.lastChild.tagName == drawMode.CIRCLE) {
           // thisGroup.lastChild.remove();
           clearEditElement(group);
         }
@@ -2036,31 +2037,31 @@ SVGDraw.prototype.keyHandler = function () {
 
     if ((event.key == 'Enter') || thisKeyCode == 13) {    // added literal decimal value for chrome/safari
       switch (cursorMode) {
-        case 'polygon':
+        case drawMode.POLYGON:
           dblClick();
           return;
-        case 'polyline':
+        case drawMode.POLYLINE:
           dblClick();
           return;
-        case 'line':
+        case drawMode.LINE:
           doMouseUp();
           return;
-        case 'rectangle':
+        case drawMode.RECTANGLE:
           doMouseUp();
           return;
-        case 'circle':
+        case drawMode.CIRCLE:
           doMouseUp();
           return;
-        case 'ellipse':
+        case drawMode.ELLIPSE:
           doMouseUp();
           return;
-        case 'cubic':
+        case drawMode.CUBIC:
           doMouseUp();
           return;
-        case 'quadratic':
+        case drawMode.QUADRATIC:
           doMouseUp();
           return;
-        case 'draw':
+        case drawMode.DRAW:
           doMouseUp();
           return;
       }
@@ -2084,7 +2085,7 @@ SVGDraw.prototype.keyHandler = function () {
     }
     if ((event.key == 'Escape') || (thisKeyCode == 27)) {
       switch (cursorMode) {
-        case 'polygon', 'polyline':
+        case drawMode.POLYGON, drawMode.POLYLINE:
           if (svgInProgress == cursorMode) {    // remove last point and reset previous point to dynamic
             deleteLastPoint(thisElement);
             return;
@@ -2145,7 +2146,7 @@ function lookUpKey(event) {     // sort out the keyboard mess and return the key
 function doMouseUp() {
   svgInProgress = false;
   setElementMouseEnterLeave(thisGroup);
-  setCursorMode('MOVE');
+  setCursorMode(drawMode.MOVE);
   // unbindMouseHandlers(self);
   thisBubble = null;
   thisElement = null;
@@ -2160,15 +2161,15 @@ SVGDraw.prototype.doubleClickHandler = function () {
 };
 
 function dblClick() {
-  if ((cursorMode == 'polygon') || (cursorMode == 'polyline')) {
+  if ((cursorMode == drawMode.POLYGON) || (cursorMode == drawMode.POLYLINE)) {
     svgInProgress = false;
     switch (cursorMode) {
-      case 'polygon':
+      case drawMode.POLYGON:
         deleteDuplicatePoints(thisElement);
-        thisGroup.innerHTML = thisGroup.innerHTML.replace('polyline', 'polygon').replace('polyline', 'polygon');
+        thisGroup.innerHTML = thisGroup.innerHTML.replace(drawMode.POLYLINE, drawMode.POLYGON).replace(drawMode.POLYLINE, drawMode.POLYGON);
         setElementMouseEnterLeave(thisGroup);
         break;
-      case 'polyline':
+      case drawMode.POLYLINE:
         deleteDuplicatePoints(thisElement);
         setElementMouseEnterLeave(thisGroup);
         break;
@@ -2255,31 +2256,31 @@ function setCursorMode(mode) {      // detect current mode not completed prior t
     clearEditElement(thisGroup);        //  TODO: make sure all cases complete
   }
   // }
-  if (mode.toUpperCase() == 'MOVE') {
+  if (mode.toUpperCase() == drawMode.MOVE) {
     cursorMode = mode;
     console_log(enable_log, '@setCursorMode1 cursorMode = ' + cursorMode)
   } else {
     cursorMode = mode.toLowerCase();
-    if (cursorMode == 'text') {
+    if (cursorMode == drawMode.TEXT) {
       //document.getElementById("text4svg").removeAttribute('disabled');
       //document.getElementById("text4svg").focus();        // this control eliminated
     }
-    if (mode == 'rectangle') {      // there are  few cases where the tagName of the element != cursorMode
+    if (mode == drawMode.RECTANGLE) {      // there are  few cases where the tagName of the element != cursorMode
       cursorMode = 'rect';          // also cubic and quadratic, whose tagName is path and draw which is polyline
       console_log(enable_log, '@setCursorMode2 cursorMode = ' + cursorMode)
     }
-    if(mode == 'clear') {
+    if(mode == drawMode.CLEAR) {
       clearLastGroup();
-      cursorMode = 'MOVE';
+      cursorMode = drawMode.MOVE;
     }
     if(mode == 'reset') {
       zoom_trans(0, 0, baseZoom);
-      cursorMode = 'MOVE';
+      cursorMode = drawMode.MOVE;
     }
   }
   // cursorMode WILL BE set at this point
-  savedCursorMode = 'MOVE';      ////////////// eliminated but reinstated
-  if (cursorMode.toUpperCase() != 'MOVE') {
+  savedCursorMode = drawMode.MOVE;      ////////////// eliminated but reinstated
+  if (cursorMode.toUpperCase() != drawMode.MOVE) {
     waitElement = true;
     console_log(enable_log, '@setCursorMode3 waitElement = ' + cursorMode)
   }
@@ -2292,8 +2293,8 @@ SVGDraw.prototype.apiSetMode = function(mode) {
 
 function checkLeftoverElement() {       // this function is only called when svgInProgress is false (?)
   switch (cursorMode) {
-    case 'polyline':
-    case 'polygon':
+    case drawMode.POLYLINE:
+    case drawMode.POLYGON:
       // this seems to ONLY delete the last point, so disabled pending better treatment
 //                    var thesePoints = thisElement.attributes['points'].value.trim();
 //                    var splitPoints = thesePoints.split(' ');
@@ -2311,7 +2312,7 @@ function checkLeftoverElement() {       // this function is only called when svg
 //                    }
 //                    thisElement.attributes['points'].value = thesePoints;
 //                    break;
-    case 'circle':
+    case drawMode.CIRCLE:
       if (thisElement == null) return;
       if (((thisElement.attributes['cy'].value - thisElement.attributes['r'].value) < 0)     // off svgLayer
         || (thisElement.attributes['r'].value < 2))                                  // single click
@@ -2319,7 +2320,7 @@ function checkLeftoverElement() {       // this function is only called when svg
         clearLastGroup();       // this was a leftover
       }
       break;
-    case 'ellipse':
+    case drawMode.ELLIPSE:
       if (thisElement == null) return;
       if ((thisElement.attributes['cy'].value - thisElement.attributes['ry'].value) < 0) {
         clearLastGroup();       // this was a leftover
@@ -2331,7 +2332,7 @@ function checkLeftoverElement() {       // this function is only called when svg
         clearLastGroup();       // this was a leftover
       }
       break;
-    case 'line':
+    case drawMode.LINE:
       if ((thisElement.attributes['y2'].value) < 0) {
         clearLastGroup();       // this was a leftover
       }
@@ -2557,7 +2558,7 @@ function getUserColor() {
 function indicateMode(mode) {
   let coverRect = mode;
   if (mode == 'rect') {
-    coverRect = 'rectangle';        // replace anomalous rect with rectangle
+    coverRect = drawMode.RECTANGLE;        // replace anomalous rect with rectangle
   }
   let testMode = document.getElementById("mode")
   if(testMode) testMode.textContent = coverRect.toUpperCase();
@@ -2600,7 +2601,7 @@ function getBareSVG(noGroups) {   //  stripped
   thisXLT.children['xltImage'].remove();
   let thisG, i;
   let terminus = thisXLT.childElementCount;
-  let groups = ['arrow', 'cubic', 'quadratic', 'text'];
+  let groups = [drawMode.ARROW, drawMode.CUBIC, drawMode.QUADRATIC, 'text'];
   for (i = 0; i < terminus; i++) {              // i will range over the remaining children count
     thisG = thisXLT.childNodes[i];              // probably should be firstChild since iteratively
     if (thisG.attributes.class) {
@@ -2668,19 +2669,19 @@ SVGDraw.prototype.apiJsonSVG = function (verbatim) {      // package SVG into JS
        let thisFunction = buttons[i].function;
        let thisValue = buttons[i].value;
        switch (thisFunction) {
-         case 'clear':
-         case 'polygon':
-         case 'polyline':
-         case 'line':
-         case 'arrow':
-         case 'rectangle':
-         case 'circle':
-         case 'ellipse':
-         case 'quadratic':
-         case 'cubic':
-         case 'draw':
-         case 'text':
-         case 'MOVE':
+         case drawMode.CLEAR:
+         case drawMode.POLYGON:
+         case drawMode.POLYLINE:
+         case drawMode.LINE:
+         case drawMode.ARROW:
+         case drawMode.RECTANGLE:
+         case drawMode.CIRCLE:
+         case drawMode.ELLIPSE:
+         case drawMode.QUADRATIC:
+         case drawMode.CUBIC:
+         case drawMode.DRAW:
+         case drawMode.TEXT:
+         case drawMode.MOVE:
          case 'reset':
            thisButton = document.createElement('input');
            thisButton.setAttribute('type', 'button');
@@ -3000,4 +3001,7 @@ SVGDraw.prototype.apiDeleteHover = function(group) {
   if(group) clearThisGroup(group)
 };
 
-export default SVGDraw
+export {
+  drawMode,
+  SVGDraw
+}
