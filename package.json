@@ -1,13 +1,21 @@
 {
   "name": "@sfgrp/svg-detailer",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": false,
-  "main": "./dist/svg-detailer.common.js",
+  "main": "./dist/svg-detailer.umd.cjs",
+  "module": "./dist/svg-detailer.js",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/svg-detailer.js",
+      "require": "./dist/svg-detailer.umd.cjs"
+    }
+  },
   "keywords": [
     "species file group",
     "svg-detailer"
   ],
-  "homepage": "https://github.com/SpeciesFileGroup/svg-detailer/tree/npm_package",
+  "homepage": "https://github.com/SpeciesFileGroup/svg-detailer",
   "license": "NCSA",
   "repository": {
     "type": "git",
@@ -16,40 +24,16 @@
   "bugs": {
     "url": "https://github.com/SpeciesFileGroup/svg-detailer/issues"
   },
-  "files": [
-    "dist/*",
-    "src/*",
-    "public/*",
-    "*.json",
-    "*.js"
-  ],
+  "files": ["dist"],
   "scripts": {
-    "serve": "vue-cli-service serve",
-    "build": "vue-cli-service build",
-    "build:lib": "vue-cli-service build --target lib --name svg-detailer src/svg-detailer.js",
-    "lint": "vue-cli-service lint",
-    "test": "mocha",
-    "build:demo": "vue-cli-service build --target lib --name ../demo/svg-detailer src/demo.js"
-  },
-  "dependencies": {
-    "core-js": "^2.6.5",
-    "mocha": "^7.1.2",
-    "selenium-webdriver": "^4.0.0-alpha.7",
-    "vue": "^2.6.10"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "mocha"
   },
   "devDependencies": {
-    "@vue/cli-plugin-babel": "^3.11.0",
-    "@vue/cli-plugin-eslint": "^3.11.0",
-    "@vue/cli-plugin-unit-mocha": "^3.11.0",
-    "@vue/cli-service": "^3.11.0",
-    "@vue/eslint-config-standard": "^4.0.0",
-    "@vue/test-utils": "1.0.0-beta.29",
-    "babel-eslint": "^10.0.1",
-    "chai": "^4.1.2",
-    "eslint": "^5.16.0",
-    "eslint-plugin-vue": "^5.0.0",
-    "node-sass": "^4.9.0",
-    "sass-loader": "^7.1.0",
-    "vue-template-compiler": "^2.6.10"
+    "vite": "^3.1.0",
+    "mocha": "^7.1.2",
+    "selenium-webdriver": "^4.0.0-alpha.7"
   }
 }
