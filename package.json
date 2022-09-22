@@ -24,7 +24,9 @@
   "bugs": {
     "url": "https://github.com/SpeciesFileGroup/svg-detailer/issues"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -32,8 +34,9 @@
     "test": "mocha"
   },
   "devDependencies": {
-    "vite": "^3.1.0",
+    "eslint": "^8.23.1",
     "mocha": "^7.1.2",
-    "selenium-webdriver": "^4.0.0-alpha.7"
+    "selenium-webdriver": "^4.0.0-alpha.7",
+    "vite": "^3.1.0"
   }
 }
