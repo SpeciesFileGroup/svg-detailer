@@ -3,6 +3,7 @@ import {
   SVGType,
   KeyboardCode
 } from "./constants/index.js"
+import { buildSVGMenu } from './utils/createToolbar.js'
 
 var xC = 0;
 var yC = 0;
@@ -103,103 +104,122 @@ var _SHIFTMAP = {
   '\\': '|'
 };
 
-function SVGDraw(containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
-  const cWidth = parseInt(containerID.attributes['data-width'].value);        // this seems too explicit
-  const cHeight = parseInt(containerID.attributes['data-height'].value);      // shouldn't this be inherited from parent?
-  const self = this
+class SVGDraw {
+  constructor (containerID) {     // container:<svgLayer>:<xlt>:<svgImage>
+    const cWidth = parseInt(containerID.attributes['data-width'].value);        // this seems too explicit
+    const cHeight = parseInt(containerID.attributes['data-height'].value);      // shouldn't this be inherited from parent?
 
-  this.containerElement = containerID
-
-  svgImage = new Image();
-  thisSVGpoints = [];            // collect points as [x,y]
-
-  fontSize = 50;
-  fontFamily = 'Verdana';
-
-  svgImage.src = containerID.attributes['data-image'].value;
-  svgImage.onload = () => {
-    xC = 0;
-    yC = 0;
-    var cAR = cWidth / cHeight;
-    var iAR = svgImage.width / svgImage.height;
-
-    svgLayer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svgLayer.setAttributeNS(null, 'id', 'svgLayer');
-    svgLayer.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-    svgLayer.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
-    svgLayer.setAttributeNS(null, 'version', '1.1');
-    svgLayer.setAttributeNS(null, 'style', 'position: inherit;');
-    svgLayer.setAttributeNS(null, 'width', cWidth);
-    svgLayer.setAttributeNS(null, 'height', cHeight);
-    containerID.appendChild(svgLayer);
-
-    // scale to height if (similar aspect ratios AND image aspect ratio less than container's)
-    // OR the image is tall and the container is wide)
-    if ((((cAR >= 1 && iAR >= 1) || (cAR <= 1 && iAR <= 1)) && (iAR <= cAR)) || ((iAR <= 1) && (cAR >= 1))) {
-      baseZoom = svgLayer.height.baseVal.value / svgImage.height;     // scale to height on condition desc in comment
-    } else {
-      baseZoom = svgLayer.width.baseVal.value / svgImage.width;     // otherwise scale to width
+    this.containerElement = containerID
+    this.configuration = {
+      arrowClosed: false,
+      arrowFixed: false,
+      arrowPercent: 10,        // default arrow head size 10 percent of arrow length in pixels
+      arrowheadLength: 50,
+      fontSize: 50,
+      fontFamily: 'Verdana',
+      stroke: '#000000',
+      strokeWidth: 1,
+      strokeOpacity: 0.9,
+      fill: '',
+      fillOpacity: 0.0,
+      strokeLinecap: 'round',
+      baseZoom: 0,           // calculated from svg and image attributes
+      maxZoom: 4
     }
-  
-    zoom = baseZoom;      // at initialization
 
-    // strokeWidth = baseStrokeWidth.toString();    // NOT dynamically recomputed with zoom (not this one)
-    bubbleRadius = (baseBubbleRadius / zoom).toString(); // and transcoded from/to string (may not be required)
+    svgImage = new Image();
+    thisSVGpoints = [];            // collect points as [x,y]
 
-    lastMouseX = baseZoom * svgImage.width / 2;         // center of image
-    lastMouseY = baseZoom * svgImage.height / 2;
-    // insert the svg base image into the transformable group <g id='xlt'>
-    let xlt = document.createElementNS('http://www.w3.org/2000/svg', SVGType.GROUP);
-    xlt.setAttributeNS(null, 'id', 'xlt');
-    xlt.setAttributeNS(null, 'transform', 'translate(0,0) scale(' + parseFloat(zoom) + ')');
-    svgLayer.appendChild((xlt));
-    let xltImage = document.createElementNS('http://www.w3.org/2000/svg', SVGType.IMAGE);
-    xltImage.setAttributeNS(null, 'id', "xltImage");
-    xltImage.setAttributeNS(null, 'x', "0");
-    xltImage.setAttributeNS(null, 'y', "0");
-    xltImage.setAttributeNS(null, 'width', svgImage.width.toString());
-    xltImage.setAttributeNS(null, 'height', svgImage.height.toString());
-    xltImage.setAttributeNS(null, 'preserveAspectRatio', "none");
-    xltImage.setAttributeNS('http://www.w3.org/1999/xlink', 'href', svgImage.src);
-    xlt.appendChild(xltImage);
+    this.fontSize = 50;
+    fontFamily = 'Verdana';
 
-    SVGDraw.prototype.buildSVGmenu(containerID);       // populate the button-ology from the data element description (mostly)
+    svgImage.src = containerID.attributes['data-image'].value;
+    svgImage.onload = () => {
+      xC = 0;
+      yC = 0;
+      var cAR = cWidth / cHeight;
+      var iAR = svgImage.width / svgImage.height;
 
-    document.addEventListener('keydown', this.keyHandler);   /////////////// This is probably tooo broad   /////////////////
-    document.addEventListener('keyup', this.keyUpHandler);
-    //Mousetrap.bind('enter', self.doubleClickHandler());     // invokes handler vs handler's returned function
+      svgLayer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svgLayer.setAttributeNS(null, 'id', 'svgLayer');
+      svgLayer.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      svgLayer.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+      svgLayer.setAttributeNS(null, 'version', '1.1');
+      svgLayer.setAttributeNS(null, 'style', 'position: inherit;');
+      svgLayer.setAttributeNS(null, 'width', cWidth);
+      svgLayer.setAttributeNS(null, 'height', cHeight);
+      containerID.appendChild(svgLayer);
 
-    zoom_trans(0, 0, zoom);             //////////// IMPORTANT !!!!!!!!!!!
+      // scale to height if (similar aspect ratios AND image aspect ratio less than container's)
+      // OR the image is tall and the container is wide)
+      if ((((cAR >= 1 && iAR >= 1) || (cAR <= 1 && iAR <= 1)) && (iAR <= cAR)) || ((iAR <= 1) && (cAR >= 1))) {
+        baseZoom = svgLayer.height.baseVal.value / svgImage.height;     // scale to height on condition desc in comment
+      } else {
+        baseZoom = svgLayer.width.baseVal.value / svgImage.width;     // otherwise scale to width
+      }
+    
+      zoom = baseZoom;      // at initialization
 
-    setCursorMode(drawMode.MOVE);
+      // strokeWidth = baseStrokeWidth.toString();    // NOT dynamically recomputed with zoom (not this one)
+      bubbleRadius = (baseBubbleRadius / zoom).toString(); // and transcoded from/to string (may not be required)
 
-    this.renderFunction = this.updateSvgByElement;
-    this.touchSupported = 'ontouchstart' in document.documentElement;   // thanks, Edd Turtle !
-    this.containerID = containerID;
-    this.lastMousePoint = {x: 0, y: 0};
+      lastMouseX = baseZoom * svgImage.width / 2;         // center of image
+      lastMouseY = baseZoom * svgImage.height / 2;
+      // insert the svg base image into the transformable group <g id='xlt'>
+      let xlt = document.createElementNS('http://www.w3.org/2000/svg', SVGType.GROUP);
+      xlt.setAttributeNS(null, 'id', 'xlt');
+      xlt.setAttributeNS(null, 'transform', 'translate(0,0) scale(' + parseFloat(zoom) + ')');
+      svgLayer.appendChild((xlt));
+      let xltImage = document.createElementNS('http://www.w3.org/2000/svg', SVGType.IMAGE);
+      xltImage.setAttributeNS(null, 'id', "xltImage");
+      xltImage.setAttributeNS(null, 'x', "0");
+      xltImage.setAttributeNS(null, 'y', "0");
+      xltImage.setAttributeNS(null, 'width', svgImage.width.toString());
+      xltImage.setAttributeNS(null, 'height', svgImage.height.toString());
+      xltImage.setAttributeNS(null, 'preserveAspectRatio', "none");
+      xltImage.setAttributeNS('http://www.w3.org/1999/xlink', 'href', svgImage.src);
+      xlt.appendChild(xltImage);
 
-    if (this.touchSupported) {
-      this.mouseDownEvent = "touchstart";
-      this.mouseMoveEvent = "touchmove";
-      this.mouseUpEvent = "touchend";
-    } else {
-      this.mouseDownEvent = "mousedown";
-      this.mouseMoveEvent = "mousemove";
-      this.mouseUpEvent = "mouseup";
+      buildSVGMenu(this)
 
-      svgLayer.addEventListener('dblclick', this.doubleClickHandler);       // replace jquery reference
+      //SVGDraw.prototype.buildSVGmenu(containerID);       // populate the button-ology from the data element description (mostly)
 
-      // svgLayer.onwheel = self.mouseWheelScrollHandler();        // replace jquery reference
-      /////////////////// TEMPORARILY SUPPRESS WHEEL SCROLL
-    }
-    svgLayer.onmousedown = this.onSvgMouseDown();       // replace jquery reference
-    this.mouseMoveHandler = this.onSvgMouseMove;
-    this.mouseUpHandler = this.onSvgMouseUp;
+      document.addEventListener('keydown', this.keyHandler);   /////////////// This is probably tooo broad   /////////////////
+      document.addEventListener('keyup', this.keyUpHandler);
+      //Mousetrap.bind('enter', self.doubleClickHandler());     // invokes handler vs handler's returned function
 
-    svgLayer.onmouseup = this.mouseUpHandler();       // replace jquery reference
+      zoom_trans(0, 0, zoom);             //////////// IMPORTANT !!!!!!!!!!!
 
-    svgLayer.onmousemove = this.mouseMoveHandler();       // replace jquery reference
-  };
+      setCursorMode(drawMode.MOVE);
+
+      this.renderFunction = this.updateSvgByElement;
+      this.touchSupported = 'ontouchstart' in document.documentElement;   // thanks, Edd Turtle !
+      this.containerID = containerID;
+      this.lastMousePoint = {x: 0, y: 0};
+
+      if (this.touchSupported) {
+        this.mouseDownEvent = "touchstart";
+        this.mouseMoveEvent = "touchmove";
+        this.mouseUpEvent = "touchend";
+      } else {
+        this.mouseDownEvent = "mousedown";
+        this.mouseMoveEvent = "mousemove";
+        this.mouseUpEvent = "mouseup";
+
+        svgLayer.addEventListener('dblclick', this.doubleClickHandler);       // replace jquery reference
+
+        // svgLayer.onwheel = self.mouseWheelScrollHandler();        // replace jquery reference
+        /////////////////// TEMPORARILY SUPPRESS WHEEL SCROLL
+      }
+      svgLayer.onmousedown = this.onSvgMouseDown();       // replace jquery reference
+      this.mouseMoveHandler = this.onSvgMouseMove;
+      this.mouseUpHandler = this.onSvgMouseUp;
+
+      svgLayer.onmouseup = this.mouseUpHandler();       // replace jquery reference
+
+      svgLayer.onmousemove = this.mouseMoveHandler();       // replace jquery reference
+    };
+  }
 }
 
 SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop element generation on mouseDOWN (true?)
@@ -2047,7 +2067,6 @@ SVGDraw.prototype.keyHandler = function (event) {
     }
 
     if ((inFocus.tagName == 'BODY') || (inFocus.id == svgLayer.parentElement.id)) {
-      event.preventDefault();
       return;
     }
   }
@@ -2569,11 +2588,11 @@ function stripElement(element) {
 }
 
 SVGDraw.prototype.apiShowSVG = function(verbatim) {
-  svgMenu.children['textSVGorJSON'].textContent = collectSVG(verbatim).outerHTML;
+  return collectSVG(verbatim).outerHTML;
 };
 
 SVGDraw.prototype.apiBareSVG = function(noGroups = true) {
-  svgMenu.children['textSVGorJSON'].textContent = getBareSVG(noGroups).outerHTML;
+  return getBareSVG(noGroups).outerHTML;
 };
 
 SVGDraw.prototype.apiJsonSVG = function (verbatim) {      // package SVG into JSON object
@@ -2587,287 +2606,10 @@ SVGDraw.prototype.apiJsonSVG = function (verbatim) {      // package SVG into JS
       "attributes": clonedSVG.outerHTML
     }
   };
-  svgMenu.children['textSVGorJSON'].textContent = JSON.stringify(JSONsvg);
+
   return JSONsvg;
 };
 
-// buildSVGmenu refactored into standalone integrated function
- SVGDraw.prototype.buildSVGmenu = function(containerID) {
-   if (containerID.attributes['data-buttons']) {
-     let buttons = JSON.parse(containerID.attributes['data-buttons'].value).buttons;
-     svgMenu = document.createElement('div');        // this lengthy, tedious section generates the controls needed
-     svgMenu.setAttribute('id', 'svgMenu');
-     containerID.parentElement.appendChild(svgMenu);
-     let thisButton, thisSpan, i;
-     for (i = 0; i < buttons.length; i++) {                // these buttons explicitly enumerated in data-buttons
-       let thisFunction = buttons[i].function;
-       let thisValue = buttons[i].value;
-       switch (thisFunction) {
-         case drawMode.CLEAR:
-         case drawMode.POLYGON:
-         case drawMode.POLYLINE:
-         case drawMode.LINE:
-         case drawMode.ARROW:
-         case drawMode.RECTANGLE:
-         case drawMode.CIRCLE:
-         case drawMode.ELLIPSE:
-         case drawMode.QUADRATIC:
-         case drawMode.CUBIC:
-         case drawMode.DRAW:
-         case drawMode.TEXT:
-         case drawMode.MOVE:
-         case 'reset':
-           thisButton = document.createElement('input');
-           thisButton.setAttribute('type', 'button');
-           if(thisValue) {
-             thisButton.setAttribute('value', thisValue);
-           } else {
-           thisButton.setAttribute('value', buttons[i].function.charAt(0).toUpperCase() + buttons[i].function.slice(1));
-           }
-           thisButton.setAttribute('id', 'b_' + buttons[i].function.toLowerCase());
-           svgMenu.appendChild(thisButton);
-           let thisMode = buttons[i].function;
-           thisButton.addEventListener('click', (event) => {
-             setCursorMode(thisMode)
-           });
-           break;
-         case 'mode':
-           thisSpan = document.createElement('span');      // mode/status display area
-           thisSpan.setAttribute('id', 'mode');
-           svgMenu.appendChild(thisSpan);
-           break;
-         case 'zoomin':
-           thisButton = document.createElement('input');     // default ZOOM OUT button
-           thisButton.setAttribute('type', 'button');
-           thisButton.setAttribute('value', 'Zoom IN');
-           thisButton.setAttribute('id', 'b_zoomin');
-           svgMenu.appendChild(thisButton);
-           thisButton.addEventListener('click', (event) => {
-             thisButton.blur();
-             zoomIn();
-           });
-           break;
-         case 'zoom':
-           thisButton = document.createElement('span');      // ZOOM display area
-           thisButton.setAttribute('id', 'zoom');
-           thisButton.setAttribute('innerHTML', ' Zoom:  ----');
-           svgMenu.appendChild(thisButton);
-           break;
-         case 'zoomout':
-           thisButton = document.createElement('input');     // default ZOOM OUT button
-           thisButton.setAttribute('type', 'button');
-           thisButton.setAttribute('value', 'Zoom OUT');
-           thisButton.setAttribute('id', 'b_zoomout');
-           svgMenu.appendChild(thisButton);
-           thisButton.addEventListener('click', (event) => {
-             thisButton.blur();
-             zoomOut();
-           });
-           break;
-         case 'fontsize':
-           thisSpan = document.createElement('span');      // TEXT display area
-           thisSpan.setAttribute('id', 'textBlock');
-           svgMenu.appendChild(thisSpan);
-           let thisFontSizeTitle = document.createElement('span');
-           thisFontSizeTitle.innerHTML = ' Font Size: ';
-           thisSpan.appendChild(thisFontSizeTitle);
-           thisButton = document.createElement('input');     // default TEXT SIZE input
-           thisButton.setAttribute('id', 'fontSize');
-           thisButton.setAttribute('type', 'number');
-           thisButton.setAttribute('min', '5');
-           thisButton.setAttribute('step', '5');
-           thisButton.setAttribute('max', '300');
-           thisButton.setAttribute('style', 'width: 4em');
-           thisButton.setAttribute('value', fontSize.toString());
-           thisSpan.appendChild(thisButton);
-           thisButton.addEventListener('change', (event) => {
-             fontSize = parseInt(document.getElementById('fontSize').value)
-           });
-           break;
-         case 'newline':
-           svgMenu.appendChild(document.createElement('br'));
-           thisSpan = document.createElement('span');
-           thisSpan.innerHTML = 'Select color: ';
-           svgMenu.appendChild(thisSpan);
-           break;
-         case 'colorselect':
-           let colorSelect = {
-             "buttons": [     // select this color buttons: Red/Green/Blue/Black/UserDefined/Selected
-               {"color": "#FF0000"},
-               {"color": "#00FF00"},
-               {"color": "#0000FF"},
-               {"color": "#000000"},
-               {"color": "#666666"},
-               {"color": "#FF0000"}
-             ]
-           };
-           let j;
-           for (j = 0; j < colorSelect.buttons.length; j++) {                // buttons explicitly enumerated in data-buttons
-             if (j == 4) {                                  // insert the text area input after the first 4 color select buttons
-               thisButton = document.createElement('input');
-               thisButton.setAttribute('id', 'userColor');
-               thisButton.setAttribute('type', 'text');
-               thisButton.setAttribute('value', colorSelect.buttons[j].color);
-               thisButton.setAttribute('style', 'width: 5em');
-               svgMenu.appendChild(thisButton);
-               thisButton.addEventListener('change', (event) => {
-                 setUserColor(getUserColor());
-                 thisButton.blur();
-               });
-
-               thisButton = document.createElement('input');   // add the user-defined color select button
-               thisButton.setAttribute('id', 'selectUserColor');
-               thisButton.setAttribute('type', 'button');
-               thisButton.setAttribute('style', 'background-color: ' + colorSelect.buttons[j].color);
-               svgMenu.appendChild(thisButton);
-               thisButton.addEventListener('click', (event) => {
-                 setStroke(getUserColor());
-                 thisButton.blur();
-               })
-             }
-             if (j < colorSelect.buttons.length - 2) {       // for the first four (0:3) color select buttons, just set table color
-               thisButton = document.createElement('input');
-               thisButton.setAttribute('type', 'button');
-               thisButton.setAttribute('style', 'background-color: ' + colorSelect.buttons[j].color);
-               svgMenu.appendChild(thisButton);
-               let thisColor = colorSelect.buttons[j].color;
-               thisButton.addEventListener('click', (event) => {
-                 setStroke(thisColor);
-                 thisButton.blur();
-               })
-             }
-             if (j > colorSelect.buttons.length - 2) {   // insert the selected color block (5) (indicator only) as last
-               let thisColorTitle = document.createElement('span');
-               thisColorTitle.innerHTML = ' Selected Color >';
-               svgMenu.appendChild(thisColorTitle);
-               thisButton = document.createElement('input');
-               thisButton.setAttribute('id', 'stroke');
-               thisButton.setAttribute('type', 'button');
-               thisButton.setAttribute('style', 'background-color: ' + colorSelect.buttons[j].color);
-               svgMenu.appendChild(thisButton);
-               stroke = colorSelect.buttons[j].color;   // set the stroke from the nominal button arrangement
-             }
-           }
-           break;
-         case 'arrowspecs':
-           thisSpan = document.createElement('span');      // arrow display area
-           thisSpan.setAttribute('id', 'arrowBlock');
-           thisSpan.innerHTML += ' &nbsp;Arrowhead: Closed:';
-           svgMenu.appendChild(thisSpan);
-
-           thisButton = document.createElement('input');
-           thisButton.setAttribute('id', 'arrowHeadClosed');
-           thisButton.setAttribute('type', 'checkbox');
-           thisButton.addEventListener('click', (event) => {
-             arrowClosed = document.getElementById('arrowHeadClosed').checked
-           });
-           svgMenu.appendChild(thisButton);
-
-           thisSpan = document.createElement('span');      // arrow display area
-           thisSpan.innerHTML += ' &nbsp; Fixed:';
-           svgMenu.appendChild(thisSpan);
-
-           thisButton = document.createElement('input');
-           thisButton.setAttribute('id', 'arrowHeadPixels');
-           thisButton.setAttribute('type', 'checkbox');
-           thisButton.addEventListener('click', (event) => {
-             arrowFixed = document.getElementById('arrowHeadPixels').checked
-           });
-           svgMenu.appendChild(thisButton);
-
-           thisSpan = document.createElement('span');      // arrow display area
-           thisSpan.innerHTML += ' &nbsp; Length:';
-           svgMenu.appendChild(thisSpan);
-
-           thisButton = document.createElement('input');
-           thisButton.setAttribute('id', 'arrowHeadLength');
-           thisButton.setAttribute('type', 'number');
-           thisButton.setAttribute('value', '50');
-           thisButton.setAttribute('style', 'width: 4em');
-           thisButton.addEventListener('change', (event) => {
-             arrowheadLength = parseInt(document.getElementById('arrowHeadLength').value);
-           });
-           svgMenu.appendChild(thisButton);
-
-           thisSpan = document.createElement('span');      // arrow display area
-           thisSpan.innerHTML += ' &nbsp; Percent:';
-           svgMenu.appendChild(thisSpan);
-
-           thisButton = document.createElement('input');     // default TEXT SIZE input
-           thisButton.setAttribute('id', 'arrowHeadPercent');
-           thisButton.setAttribute('type', 'number');
-           thisButton.setAttribute('min', '5');
-           thisButton.setAttribute('step', '1');
-           thisButton.setAttribute('max', '30');
-           thisButton.setAttribute('style', 'width: 4em');
-           thisButton.setAttribute('value', '10');
-           thisButton.addEventListener('change', (event) => {
-             arrowPercent = parseInt(document.getElementById('arrowHeadPercent').value)
-           });
-           svgMenu.appendChild(thisButton);
-
-           break;
-
-         case 'json':
-           thisButton = document.createElement('input');
-           thisButton.setAttribute('id', 'saveSVG');
-           thisButton.setAttribute('type', 'button');
-           thisButton.setAttribute('value', 'Extract SVG');
-           svgMenu.appendChild(thisButton);
-           thisButton.addEventListener('click', (event) => {
-             thisButton.blur();
-             SVGDraw.prototype.apiShowSVG(true);
-           });
-
-           thisButton = document.createElement('input');
-           thisButton.setAttribute('id', 'plainSVG');
-           thisButton.setAttribute('type', 'button');
-           thisButton.setAttribute('value', 'Plain SVG');
-           svgMenu.appendChild(thisButton);
-           thisButton.addEventListener('click', (event) => {
-             thisButton.blur();
-             SVGDraw.prototype.apiShowSVG(false);
-           });
-
-           thisButton = document.createElement('input');
-           thisButton.setAttribute('id', 'bareSVG');
-           thisButton.setAttribute('type', 'button');
-           thisButton.setAttribute('value', 'Bare SVG');
-           svgMenu.appendChild(thisButton);
-           thisButton.addEventListener('click', (event) => {
-             thisButton.blur();
-             SVGDraw.prototype.apiBareSVG();
-           });
-
-           thisButton = document.createElement('input');
-           thisButton.setAttribute('id', 'svgJSON');
-           thisButton.setAttribute('type', 'button');
-           thisButton.setAttribute('value', 'JSON SVG');
-           svgMenu.appendChild(thisButton);
-           thisButton.addEventListener('click', (event) => {
-             SVGDraw.prototype.apiJsonSVG(false);
-           });
-
-           thisButton = document.createElement('input');        // special function for tests
-           thisButton.setAttribute('id', 'delHover');
-           thisButton.setAttribute('type', 'button');
-           thisButton.setAttribute('value', '?');
-           svgMenu.appendChild(thisButton);
-           thisButton.addEventListener('click', (event) => {
-             SVGDraw.prototype.apiDeleteHover(thisGroup);
-           });
-
-           svgMenu.appendChild(document.createElement('br'))
-
-           let thisTextArea = document.createElement('textarea');
-           thisTextArea.setAttribute('id', 'textSVGorJSON');
-           svgMenu.appendChild(thisTextArea);
-           break;
-       }
-     }
-  }
-
- };
 function console_log(logFlag, message) {
   if(logFlag) {
     console.log(message);
