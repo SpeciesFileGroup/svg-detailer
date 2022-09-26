@@ -12,7 +12,7 @@ export function buildSVGMenu (svgDetailer) {
 
   if (containerElement.attributes['data-buttons']) {
     const buttons = JSON.parse(containerElement.attributes['data-buttons'].value).buttons
-    const toolbar = createHTMLElement('div', { id: 'toolbar' })
+    const toolbar = createHTMLElement('div')
   
     containerElement.parentElement.appendChild(toolbar)
 

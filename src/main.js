@@ -23,3 +23,6 @@ function getImage(event) {
     fileReader.readAsDataURL(files[0])
   }
 }
+
+
+svgDraw.on('changemode', event => console.log(event))

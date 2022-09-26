@@ -10,6 +10,6 @@ export const drawMode = {
   POLYGON: 'polygon',
   POLYLINE: 'polyline', 
   QUADRATIC: 'quadratic',
-  RECTANGLE: 'rectangle', 
+  RECTANGLE: 'rect', 
   TEXT: 'text', 
 }
