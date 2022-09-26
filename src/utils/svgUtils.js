@@ -1,5 +1,18 @@
 import { SVGType } from "../constants/index.js"
 
+export function createSVGElement(klass, { stroke, strokeWidth, fill, fillOpacity, strokeOpacity, strokeLinecap }) {
+  const element = document.createElementNS('http://www.w3.org/2000/svg', klass)
+
+  element.setAttributeNS(null, 'stroke', stroke)
+  element.setAttributeNS(null, 'stroke-width', strokeWidth)
+  element.setAttributeNS(null, 'stroke-opacity', strokeOpacity)
+  element.setAttributeNS(null, 'fill', fill)
+  element.setAttributeNS(null, 'fill-opacity', fillOpacity)
+  element.setAttributeNS(null, 'stroke-linecap', strokeLinecap)
+
+  return element
+}
+
 export function getModel(element) {
   const ox = 0;
   const oy = 0;

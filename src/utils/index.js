@@ -4,3 +4,4 @@ export * from './htmlUtils';
 export * from './svgUtils';
 export * from './toolbarOptions'
 export * from './keyboard.js'
+export * from './svgUtils.js'

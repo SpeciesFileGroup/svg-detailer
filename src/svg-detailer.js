@@ -5,9 +5,8 @@ import {
 } from "./constants/index.js"
 import { EventEmitter, getModel, isMac } from "./utils/index.js"
 import { buildSVGMenu } from './utils/createToolbar.js'
+import { drawLine } from "./utils/shapes/index.js"
 
-var xC = 0;
-var yC = 0;
 var cursorMode = drawMode.MOVE;
 var stroke = '#000000';   // init to black
 var zoom;                 // set on initialization from baseZoom @ full image
@@ -128,7 +127,9 @@ class SVGDraw extends EventEmitter {
       mousePosition: {
         x: 0,
         y: 0
-      }
+      },
+      xC: 0,
+      yC: 0
     }
 
     svgImage = new Image();
@@ -139,8 +140,9 @@ class SVGDraw extends EventEmitter {
 
     svgImage.src = containerID.attributes['data-image'].value;
     svgImage.onload = () => {
-      xC = 0;
-      yC = 0;
+      this.state.xC = 0
+      this.state.yC = 0
+
       var cAR = cWidth / cHeight;
       var iAR = svgImage.width / svgImage.height;
 
@@ -152,7 +154,7 @@ class SVGDraw extends EventEmitter {
       svgLayer.setAttributeNS(null, 'style', 'position: inherit;');
       svgLayer.setAttributeNS(null, 'width', cWidth);
       svgLayer.setAttributeNS(null, 'height', cHeight);
-      containerID.appendChild(svgLayer);
+      this.containerElement.appendChild(svgLayer);
 
       // scale to height if (similar aspect ratios AND image aspect ratio less than container's)
       // OR the image is tall and the container is wide)
@@ -191,7 +193,7 @@ class SVGDraw extends EventEmitter {
       document.addEventListener('keydown', this.keyHandler);   /////////////// This is probably tooo broad   /////////////////
       document.addEventListener('keyup', this.keyUpHandler);
 
-      zoom_trans(0, 0, zoom);             //////////// IMPORTANT !!!!!!!!!!!
+      this.zoom_trans(0, 0, zoom);             //////////// IMPORTANT !!!!!!!!!!!
 
       this.setCursorMode(drawMode.MOVE);
 
@@ -231,7 +233,7 @@ class SVGDraw extends EventEmitter {
       }
 
       if (mode == 'reset') {
-        zoom_trans(0, 0, baseZoom);
+        this.zoom_trans(0, 0, baseZoom);
         cursorMode = drawMode.MOVE;
       }
 
@@ -256,41 +258,57 @@ class SVGDraw extends EventEmitter {
     setElementMouseEnterLeave(group);
   }
 
+  zoom_trans(x, y, scale) {
+    const xlt = this.containerElement.querySelector('#xlt')
+    const transform = 'translate(' + ((x)).toString() + ', ' + ((y)).toString() + ') scale(' + scale.toString() + ')'
+
+    zoom = scale
+    this.state.xC = x
+    this.state.yC = y
+
+    xlt.attributes['transform'].value = transform
+  }
+
   zoomIn () {
     if (zoom < maxZoom) {           // zoom of 1 is pixel-per-pixel on svgLayer
       let newZoom = zoom * (1.0 + zoomDelta);
       if (newZoom > maxZoom) {
         newZoom = maxZoom;
       }
-      xC = this.state.mousePosition.x - (this.state.mousePosition.x - xC) * newZoom / zoom;
-      yC = this.state.mousePosition.y - (this.state.mousePosition.y - yC) * newZoom / zoom;
-      zoom_trans(xC, yC, newZoom);
+      this.state.xC = this.state.mousePosition.x - (this.state.mousePosition.x - this.state.xC) * newZoom / zoom;
+      this.state.yC = this.state.mousePosition.y - (this.state.mousePosition.y - this.state.yC) * newZoom / zoom;
+      this.zoom_trans(this.state.xC, this.state.yC, newZoom);
       zoom = newZoom;
       bubbleRadius = (baseBubbleRadius / zoom).toString();
     }
   }
   
   zoomOut () {
-  //            var zoomDelta = 0.05;
     if (zoom > baseZoom / 3) {
       let newZoom = zoom / (1.0 + zoomDelta);
-      xC = this.state.mousePosition.x - (this.state.mousePosition.x - xC) * newZoom / zoom;
-      yC = this.state.mousePosition.y - (this.state.mousePosition.y - yC) * newZoom / zoom;
-      zoom_trans(xC, yC, newZoom);
+      this.state.xC = this.state.mousePosition.x - (this.state.mousePosition.x - this.state.xC) * newZoom / zoom;
+      this.state.yC = this.state.mousePosition.y - (this.state.mousePosition.y - this.state.yC) * newZoom / zoom;
+      this.zoom_trans(this.state.xC, this.state.yC, newZoom);
       zoom = newZoom;
       bubbleRadius = (baseBubbleRadius / zoom).toString();
     }
   }
   
   setZoom (scale) {
-    xC = this.state.mousePosition.x - (this.state.mousePosition.x - xC) * scale / zoom;
-    yC = this.state.mousePosition.y - (this.state.mousePosition.y - yC) * scale / zoom;
-    zoom_trans(xC, yC, scale);
+    this.state.xC = this.state.mousePosition.x - (this.state.mousePosition.x - this.state.xC) * scale / zoom;
+    this.state.yC = this.state.mousePosition.y - (this.state.mousePosition.y - this.state.yC) * scale / zoom;
+
+    this.zoom_trans(this.state.xC, this.state.yC, scale);
     zoom = scale;
   }
 
+  setStroke (color) {
+    stroke = color;
+    this.configuration.stroke = color
+  }
+
   apiFontSize (fontsize) {
-    if(isNumeric(fontsize)) fontSize = fontsize
+    if (isNumeric(fontsize)) fontSize = fontsize
   }
 
   apiFontFamily (font) {
@@ -318,7 +336,7 @@ class SVGDraw extends EventEmitter {
   }
 
   apiStroke (color) {
-    setStroke(color)
+    this.setStroke(color)
   }
   
   apiStrokeWidth (pixels) {
@@ -340,7 +358,7 @@ class SVGDraw extends EventEmitter {
   }
   
   apiFillOpacity (opacity) {
-    if(opacity >= 0 && opacity <= 1) {
+    if (opacity >= 0 && opacity <= 1) {
       fillOpacity = opacity.toString()
     }
   }
@@ -391,13 +409,13 @@ class SVGDraw extends EventEmitter {
 
 SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop element generation on mouseDOWN (true?)
     this.updateMousePosition(event);
+
     if (svgInProgress != false && svgInProgress !== cursorMode) {    // terminate in progress svg before continuing
       if (svgInProgress !== 'SHIFT') {
         svgInProgress = cursorMode;       //  ??
       }
       return
     }
-
 
     if (thisGroup) {
       if (thisGroup.childElementCount > 1 && cursorMode != drawMode.TEXT) {   // this is the case where there is a click on a mousentered
@@ -406,10 +424,13 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
       }
     }
 
+    const [x, y] = [(this.state.mousePosition.x - this.state.xC) / zoom, (this.state.mousePosition.y - this.state.yC) / zoom]
+    thisSVGpoints[0] = [x, y]
+
     if (cursorMode == drawMode.POLYGON) {     // mouseDown sets initial point, subsequent points set by mouseDown after mouseUp
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
 
-        thisSVGpoints[0] = [(this.state.mousePosition.x - xC) / zoom, (this.state.mousePosition.y - yC) / zoom];
+        thisSVGpoints[0] = [(this.state.mousePosition.x - this.state.xC) / zoom, (this.state.mousePosition.y - this.state.yC) / zoom];
         let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         let newGroupID = 'g' + getIDcount().toString();
         group.setAttributeNS(null, 'id', newGroupID);
@@ -428,14 +449,14 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
       } else {      // this is the fixation of this last point, so DON'T dissociate mouse move handler
         this.updateMousePosition(event);
         let thesePoints = thisElement.attributes['points'].value;   // to trim or not to trim?  if so, multiple implications here
-        let thisPoint = ((this.state.mousePosition.x - xC) / zoom).toFixed(4).toString()
-          + ',' + ((this.state.mousePosition.y - yC) / zoom).toFixed(4).toString() + ' ';
+        let thisPoint = ((this.state.mousePosition.x - this.state.xC) / zoom).toFixed(4).toString()
+          + ',' + ((this.state.mousePosition.y - this.state.yC) / zoom).toFixed(4).toString() + ' ';
         thisElement.attributes['points'].value = thesePoints.concat(thisPoint);
       }
     }
     if (cursorMode == drawMode.POLYLINE) {    // mouseDown sets initial point, subsequent points set by mouseDown after mouseUp
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
-        thisSVGpoints[0] = [(this.state.mousePosition.x - xC) / zoom, (this.state.mousePosition.y - yC) / zoom];
+        thisSVGpoints[0] = [(this.state.mousePosition.x - this.state.xC) / zoom, (this.state.mousePosition.y - this.state.yC) / zoom];
         let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         thisGroup = group;
         let newGroupID = 'g' + getIDcount().toString();
@@ -455,14 +476,14 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
       } else {      // this is the fixation of this last point, so DON'T dissociate mouse move handler
         this.updateMousePosition(event);
         let thesePoints = thisElement.attributes['points'].value;
-        let thisPoint = ((this.state.mousePosition.x - xC) / zoom).toFixed(4).toString()
-          + ',' + ((this.state.mousePosition.y - yC) / zoom).toFixed(4).toString() + ' ';
+        let thisPoint = ((this.state.mousePosition.x - this.state.xC) / zoom).toFixed(4).toString()
+          + ',' + ((this.state.mousePosition.y - this.state.yC) / zoom).toFixed(4).toString() + ' ';
         thisElement.attributes['points'].value = thesePoints.concat(thisPoint);
       }
     }
     if (cursorMode == drawMode.RECTANGLE) {     // mouseDown starts creation, after drag, mouseUp ends
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
-        thisSVGpoints[0] = [(this.state.mousePosition.x - xC) / zoom, (this.state.mousePosition.y - yC) / zoom];
+        thisSVGpoints[0] = [(this.state.mousePosition.x - this.state.xC) / zoom, (this.state.mousePosition.y - this.state.yC) / zoom];
         let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         let newGroupID = 'g' + getIDcount().toString();
         group.setAttributeNS(null, 'id', newGroupID);
@@ -483,22 +504,15 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
     }
     if (cursorMode == drawMode.LINE) {     //  mouseDown starts creation, after, drag mouseUp ends
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
-        thisSVGpoints[0] = [(this.state.mousePosition.x - xC) / zoom, (this.state.mousePosition.y - yC) / zoom];
-        let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        thisGroup = group;
-        let newGroupID = 'g' + getIDcount().toString();
-        group.setAttributeNS(null, 'id', newGroupID);
-        group.setAttributeNS(null, 'class', cursorMode);
-        document.getElementById("xlt").appendChild(group);
-        let element = newElement(drawMode.LINE);
-
-        group.appendChild(element);
-        thisElement = group.children[0];
-        element.setAttributeNS(null, 'x1', (thisSVGpoints[0][0]).toFixed(4));      // start x
-        element.setAttributeNS(null, 'y1', (thisSVGpoints[0][1]).toFixed(4));      // start y
-        element.setAttributeNS(null, 'x2', (thisSVGpoints[0][0]).toFixed(4));      // end x
-        element.setAttributeNS(null, 'y2', (thisSVGpoints[0][1]).toFixed(4));      // end y
+        
         svgInProgress = cursorMode;     // mark in progress
+
+        const { element, group } = drawLine({ x, y, mode: cursorMode, attributes: this.configuration })
+        group.setAttributeNS(null, 'id', 'g' + getIDcount().toString())
+        document.getElementById("xlt").appendChild(group);
+        thisElement = element
+        thisGroup = group
+
       } else {      // this is the terminus of this instance, so dissociate mouse move handler
         svgInProgress = false;
         setElementMouseEnterLeave(thisElement);
@@ -507,22 +521,14 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
     }
     if (cursorMode == drawMode.ARROW) {     //  mouseDown starts creation, after, drag mouseUp ends
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
-        thisSVGpoints[0] = [(this.state.mousePosition.x - xC) / zoom, (this.state.mousePosition.y - yC) / zoom];
-        let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        thisGroup = group;
-        let newGroupID = 'g' + getIDcount().toString();
-        group.setAttributeNS(null, 'id', newGroupID);
-        group.setAttributeNS(null, 'class', cursorMode);
-        document.getElementById("xlt").appendChild(group);
-        let element = newElement(drawMode.LINE);
+        const { element, group } = drawLine({ x, y, mode: cursorMode, attributes: this.configuration })
 
-        group.appendChild(element);
-        thisElement = group.children[0];
-        element.setAttributeNS(null, 'x1', (thisSVGpoints[0][0]).toFixed(4));      // start x
-        element.setAttributeNS(null, 'y1', (thisSVGpoints[0][1]).toFixed(4));      // start y
-        element.setAttributeNS(null, 'x2', (thisSVGpoints[0][0]).toFixed(4));      // end x
-        element.setAttributeNS(null, 'y2', (thisSVGpoints[0][1]).toFixed(4));      // end y
-        svgInProgress = cursorMode;     // mark in progress
+        svgInProgress = cursorMode;
+        group.setAttributeNS(null, 'id', 'g' + getIDcount().toString())
+        document.getElementById("xlt").appendChild(group);
+        thisElement = element
+        thisGroup = group
+
       } else {      // this is the terminus of this instance, so dissociate mouse move handler
         svgInProgress = false;
         setElementMouseEnterLeave(thisElement);
@@ -534,7 +540,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         if (thisGroup != null) {      //  ////////////// ???
           clearEditElement(thisGroup);    // this group is the one with bubbles, to be obviated
         }
-        thisSVGpoints[0] = [(this.state.mousePosition.x - xC) / zoom, (this.state.mousePosition.y - yC) / zoom];
+        thisSVGpoints[0] = [(this.state.mousePosition.x - this.state.xC) / zoom, (this.state.mousePosition.y - this.state.yC) / zoom];
         let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         let newGroupID = 'g' + getIDcount().toString();
         group.setAttributeNS(null, 'id', newGroupID);
@@ -554,7 +560,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
     }
     if (cursorMode == drawMode.ELLIPSE) {     // mouseDown
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
-        thisSVGpoints[0] = [(this.state.mousePosition.x - xC) / zoom, (this.state.mousePosition.y - yC) / zoom];
+        thisSVGpoints[0] = [(this.state.mousePosition.x - this.state.xC) / zoom, (this.state.mousePosition.y - this.state.yC) / zoom];
         let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         thisGroup = group;
         let newGroupID = 'g' + getIDcount().toString();
@@ -578,7 +584,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
     }
     if (cursorMode == drawMode.DRAW) {     // mouseDown
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
-        thisSVGpoints[0] = [(this.state.mousePosition.x - xC) / zoom, (this.state.mousePosition.y - yC) / zoom];
+        thisSVGpoints[0] = [(this.state.mousePosition.x - this.state.xC) / zoom, (this.state.mousePosition.y - this.state.yC) / zoom];
         let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         thisGroup = group;
         let newGroupID = 'g' + getIDcount().toString();
@@ -607,7 +613,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
                                                                       // the control points' mousemove action.  Make control points the same as the endpoints initially,
                                                                       // then annotate with bubbles to shape the curve.  This is an extra step more than other elements.
       if (svgInProgress == false) {       // this is a new instance of this svg type (currently by definition)
-        thisSVGpoints[0] = [(this.state.mousePosition.x - xC) / zoom, (this.state.mousePosition.y - yC) / zoom];
+        thisSVGpoints[0] = [(this.state.mousePosition.x - this.state.xC) / zoom, (this.state.mousePosition.y - this.state.yC) / zoom];
         let group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         thisGroup = group;
         let newGroupID = 'g' + getIDcount().toString();
@@ -634,7 +640,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {    // in general, start or stop
         finishTextGroup();
       }
       if (svgInProgress == false) {
-        thisSVGpoints[0] = [(this.state.mousePosition.x - xC) / zoom, (this.state.mousePosition.y - yC) / zoom];
+        thisSVGpoints[0] = [(this.state.mousePosition.x - this.state.xC) / zoom, (this.state.mousePosition.y - this.state.yC) / zoom];
         group = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         thisGroup = group;
         let newGroupID = 'g' + getIDcount().toString();
@@ -1368,12 +1374,12 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         if (thisBubble != null) {       // thisBubble set on mousedown
           let cx = parseFloat(thisBubble.attributes['cx'].value);   // old
           let cy = parseFloat(thisBubble.attributes['cy'].value);   // x, y
-          let cx2 = (this.state.mousePosition.x - xC) / zoom;                       // new x
-          let cy2 = (this.state.mousePosition.y - yC) / zoom;                       // , y
+          let cx2 = (this.state.mousePosition.x - this.state.xC) / zoom;                       // new x
+          let cy2 = (this.state.mousePosition.y - this.state.yC) / zoom;                       // , y
           let dx = (cx2 - cx);
           let dy = (cy2 - cy);
-          thisBubble.attributes['cx'].value = (this.state.mousePosition.x - xC) / zoom;     // translate the bubble
-          thisBubble.attributes['cy'].value = (this.state.mousePosition.y - yC) / zoom;
+          thisBubble.attributes['cx'].value = (this.state.mousePosition.x - this.state.xC) / zoom;     // translate the bubble
+          thisBubble.attributes['cy'].value = (this.state.mousePosition.y - this.state.yC) / zoom;
 
           // splitShiftPoints all need to be shifted by the deltas
           // so iterate over all points, in initially a very pedantic way
@@ -1394,13 +1400,13 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         }
       }
       else {
-        let thisPoint = ((this.state.mousePosition.x - xC) / zoom).toFixed(4).toString()
-          + ',' + ((this.state.mousePosition.y - yC) / zoom).toFixed(4).toString();
+        let thisPoint = ((this.state.mousePosition.x - this.state.xC) / zoom).toFixed(4).toString()
+          + ',' + ((this.state.mousePosition.y - this.state.yC) / zoom).toFixed(4).toString();
         let thesePoints = thisElement.attributes['points'].value.trim();
         let splitPoints = thesePoints.split(' ');
         if (thisBubble != null) {       // look for bubble to denote just move THIS point only
-          thisBubble.attributes['cx'].value = (this.state.mousePosition.x - xC) / zoom;     // translate the bubble
-          thisBubble.attributes['cy'].value = (this.state.mousePosition.y - yC) / zoom;
+          thisBubble.attributes['cx'].value = (this.state.mousePosition.x - this.state.xC) / zoom;     // translate the bubble
+          thisBubble.attributes['cy'].value = (this.state.mousePosition.y - this.state.yC) / zoom;
           if (isNumeric(thisBubble.id)) {       // presume integer for now
             splitPoints[parseInt(thisBubble.id)] = thisPoint;
             thesePoints = '';
@@ -1431,12 +1437,12 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         if (thisBubble != null) {       // thisBubble set on mousedown
           let cx = parseFloat(thisBubble.attributes['cx'].value);   // old
           let cy = parseFloat(thisBubble.attributes['cy'].value);   // x, y
-          let cx2 = (this.state.mousePosition.x - xC) / zoom;                       // new x
-          let cy2 = (this.state.mousePosition.y - yC) / zoom;                       // , y
+          let cx2 = (this.state.mousePosition.x - this.state.xC) / zoom;                       // new x
+          let cy2 = (this.state.mousePosition.y - this.state.yC) / zoom;                       // , y
           let dx = (cx2 - cx)
           let dy = (cy2 - cy)
-          thisBubble.attributes['cx'].value = (this.state.mousePosition.x - xC) / zoom;     // translate the bubble
-          thisBubble.attributes['cy'].value = (this.state.mousePosition.y - yC) / zoom;
+          thisBubble.attributes['cx'].value = (this.state.mousePosition.x - this.state.xC) / zoom;     // translate the bubble
+          thisBubble.attributes['cy'].value = (this.state.mousePosition.y - this.state.yC) / zoom;
 
           // splitShiftPoints all need to be shifted by the deltas
           // so iterate over all points, in initially a very pedantic way
@@ -1457,13 +1463,13 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         }
       }
       else {
-        let thisPoint = ((this.state.mousePosition.x - xC) / zoom).toFixed(4).toString()
-          + ',' + ((this.state.mousePosition.y - yC) / zoom).toFixed(4).toString();
+        let thisPoint = ((this.state.mousePosition.x - this.state.xC) / zoom).toFixed(4).toString()
+          + ',' + ((this.state.mousePosition.y - this.state.yC) / zoom).toFixed(4).toString();
         let thesePoints = thisElement.attributes['points'].value.trim();
         let splitPoints = thesePoints.split(' ');
         if (thisBubble != null) {       // look for bubble to denote just move THIS point only
-          thisBubble.attributes['cx'].value = (this.state.mousePosition.x - xC) / zoom;     // translate the bubble
-          thisBubble.attributes['cy'].value = (this.state.mousePosition.y - yC) / zoom;
+          thisBubble.attributes['cx'].value = (this.state.mousePosition.x - this.state.xC) / zoom;     // translate the bubble
+          thisBubble.attributes['cy'].value = (this.state.mousePosition.y - this.state.yC) / zoom;
           if (isNumeric(thisBubble.id)) {       // presume integer for now
             splitPoints[parseInt(thisBubble.id)] = thisPoint;   // replace this point
             thesePoints = '';
@@ -1489,21 +1495,21 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       }
       if (svgInProgress == 'SHIFT') {
         this.updateMousePosition(event);
-        thisBubble.attributes['cx'].value = (this.state.mousePosition.x - xC) / zoom;     // translate the bubble
-        thisBubble.attributes['cy'].value = (this.state.mousePosition.y - yC) / zoom;
-        thisElement.attributes['x'].value = ((this.state.mousePosition.x - xC) / zoom).toFixed(4);    // correspondingly translate thisElement
-        thisElement.attributes['y'].value = ((this.state.mousePosition.y - yC) / zoom).toFixed(4);
+        thisBubble.attributes['cx'].value = (this.state.mousePosition.x - this.state.xC) / zoom;     // translate the bubble
+        thisBubble.attributes['cy'].value = (this.state.mousePosition.y - this.state.yC) / zoom;
+        thisElement.attributes['x'].value = ((this.state.mousePosition.x - this.state.xC) / zoom).toFixed(4);    // correspondingly translate thisElement
+        thisElement.attributes['y'].value = ((this.state.mousePosition.y - this.state.yC) / zoom).toFixed(4);
       } else {
         let thisRectX = thisElement.attributes['x'].value;
         let thisRectY = thisElement.attributes['y'].value;
 
         this.updateMousePosition(event);
-        thisElement.attributes['width'].value = ((this.state.mousePosition.x - xC) / zoom - thisRectX).toFixed(4);
-        thisElement.attributes['height'].value = ((this.state.mousePosition.y - yC) / zoom - thisRectY).toFixed(4);
+        thisElement.attributes['width'].value = ((this.state.mousePosition.x - this.state.xC) / zoom - thisRectX).toFixed(4);
+        thisElement.attributes['height'].value = ((this.state.mousePosition.y - this.state.yC) / zoom - thisRectY).toFixed(4);
         if (thisBubble) {
           thisBubble = event.target
-          thisBubble.attributes['cx'].value = (this.state.mousePosition.x - xC) / zoom;     // translate the bubble
-          thisBubble.attributes['cy'].value = (this.state.mousePosition.y - yC) / zoom;
+          thisBubble.attributes['cx'].value = (this.state.mousePosition.x - this.state.xC) / zoom;     // translate the bubble
+          thisBubble.attributes['cy'].value = (this.state.mousePosition.y - this.state.yC) / zoom;
         }
       }
     }
@@ -1523,8 +1529,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         // thisBubble set on mousedown
         let cx = parseFloat(thisBubble.attributes['cx'].value)
         let cy = parseFloat(thisBubble.attributes['cy'].value)
-        let cx2 = (this.state.mousePosition.x - xC) / zoom
-        let cy2 = (this.state.mousePosition.y - yC) / zoom
+        let cx2 = (this.state.mousePosition.x - this.state.xC) / zoom
+        let cy2 = (this.state.mousePosition.y - this.state.yC) / zoom
         let dx = (cx - cx2)
         let dy = (cy2 - cy)
 
@@ -1540,8 +1546,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         this.updateMousePosition(event);
         linePoints = ['x2', 'y2'];          // preset for normal post-creation mode
         if (thisBubble != null) {       // look for bubble to denote just move THIS point only
-          thisBubble.attributes['cx'].value = (this.state.mousePosition.x - xC) / zoom;     // translate the bubble
-          thisBubble.attributes['cy'].value = (this.state.mousePosition.y - yC) / zoom;
+          thisBubble.attributes['cx'].value = (this.state.mousePosition.x - this.state.xC) / zoom;     // translate the bubble
+          thisBubble.attributes['cy'].value = (this.state.mousePosition.y - this.state.yC) / zoom;
           if (!isNumeric(thisBubble.id)) {                 // presume either 'x1-y1' or 'x2-y2'
             linePoints = (thisBubble.id).split('-');      // this will result in ['x1', 'y1'] or  ['x2', 'y2'] used below
           }
@@ -1549,9 +1555,9 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
             thisGroup.lastChild.firstChild.remove();        // kill off the move line bubble
           }
         }
-        thisElement.attributes[linePoints[0]].value = ((this.state.mousePosition.x - xC) / zoom).toFixed(4);
-        thisElement.attributes[linePoints[1]].value = ((this.state.mousePosition.y - yC) / zoom).toFixed(4);
-        console_log(enable_log, 'x: ' + ((this.state.mousePosition.x - xC) / zoom).toString() + ' / y: ' + ((this.state.mousePosition.y - yC) / zoom).toString())
+        thisElement.attributes[linePoints[0]].value = ((this.state.mousePosition.x - this.state.xC) / zoom).toFixed(4);
+        thisElement.attributes[linePoints[1]].value = ((this.state.mousePosition.y - this.state.yC) / zoom).toFixed(4);
+        console_log(enable_log, 'x: ' + ((this.state.mousePosition.x - this.state.xC) / zoom).toString() + ' / y: ' + ((this.state.mousePosition.y - this.state.yC) / zoom).toString())
       }
     }
 
@@ -1571,8 +1577,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         if(!thisBubble) {thisBubble = mainLine.parentElement.lastChild.children['shift']}
         let cx = parseFloat(thisBubble.attributes['cx'].value)
         let cy = parseFloat(thisBubble.attributes['cy'].value)
-        let cx2 = (this.state.mousePosition.x - xC) / zoom
-        let cy2 = (this.state.mousePosition.y - yC) / zoom
+        let cx2 = (this.state.mousePosition.x - this.state.xC) / zoom
+        let cy2 = (this.state.mousePosition.y - this.state.yC) / zoom
         let dx = (cx - cx2)
         let dy = (cy2 - cy)
         thisBubble.attributes['cx'].value = cx2;      // translate the bubble
@@ -1585,14 +1591,14 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       } else {
         linePoints = ['x2', 'y2'];          // preset for normal post-creation mode
         if (thisBubble != null) {       // look for bubble to denote just move THIS point only
-          thisBubble.attributes['cx'].value = (this.state.mousePosition.x - xC) / zoom;     // translate the bubble
-          thisBubble.attributes['cy'].value = (this.state.mousePosition.y - yC) / zoom;
+          thisBubble.attributes['cx'].value = (this.state.mousePosition.x - this.state.xC) / zoom;     // translate the bubble
+          thisBubble.attributes['cy'].value = (this.state.mousePosition.y - this.state.yC) / zoom;
           if (!isNumeric(thisBubble.id)) {       // presume either 'x1-y1' or 'x2-y2'
             linePoints = (thisBubble.id).split('-');      // this will result in ['x1', 'y1'] or  ['x2', 'y2'] used below
           }
         }
-        mainLine.attributes[linePoints[0]].value = ((this.state.mousePosition.x - xC) / zoom).toFixed(4);
-        mainLine.attributes[linePoints[1]].value = ((this.state.mousePosition.y - yC) / zoom).toFixed(4);
+        mainLine.attributes[linePoints[0]].value = ((this.state.mousePosition.x - this.state.xC) / zoom).toFixed(4);
+        mainLine.attributes[linePoints[1]].value = ((this.state.mousePosition.y - this.state.yC) / zoom).toFixed(4);
       }
       while (thisGroup.childElementCount > 1) {   // remove everything except the main line
         thisGroup.lastChild.remove();             // ///////////////////  VERY TEMPORARY METHOD
@@ -1662,17 +1668,17 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       }
       if (svgInProgress == 'SHIFT') {             // changing position of this element
         this.updateMousePosition(event);
-        thisBubble.attributes['cx'].value = (this.state.mousePosition.x - xC) / zoom;     // translate the bubble
-        thisBubble.attributes['cy'].value = (this.state.mousePosition.y - yC) / zoom;
-        thisElement.attributes['cx'].value = ((this.state.mousePosition.x - xC) / zoom).toFixed(4);    // correspondingly translate thisElement
-        thisElement.attributes['cy'].value = ((this.state.mousePosition.y - yC) / zoom).toFixed(4);
+        thisBubble.attributes['cx'].value = (this.state.mousePosition.x - this.state.xC) / zoom;     // translate the bubble
+        thisBubble.attributes['cy'].value = (this.state.mousePosition.y - this.state.yC) / zoom;
+        thisElement.attributes['cx'].value = ((this.state.mousePosition.x - this.state.xC) / zoom).toFixed(4);    // correspondingly translate thisElement
+        thisElement.attributes['cy'].value = ((this.state.mousePosition.y - this.state.yC) / zoom).toFixed(4);
       } else {                                // either resizing or originally sizing
         //this.context.moveTo(this.state.mousePosition.x, this.state.mousePosition.y);
         let thisCircX = thisElement.attributes['cx'].value;
         let thisCircY = thisElement.attributes['cy'].value;
         this.updateMousePosition(event);
 
-        let radius = length2points(thisCircX, thisCircY, (this.state.mousePosition.x - xC) / zoom, (this.state.mousePosition.y - yC) / zoom);
+        let radius = length2points(thisCircX, thisCircY, (this.state.mousePosition.x - this.state.xC) / zoom, (this.state.mousePosition.y - this.state.yC) / zoom);
         thisElement.attributes['r'].value = radius.toFixed(4);
         if (thisBubble) {
           thisBubble = event.target
@@ -1707,18 +1713,18 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       }
       if (svgInProgress == 'SHIFT') {             // changing position of this element
         this.updateMousePosition(event);
-        thisBubble.attributes['cx'].value = (this.state.mousePosition.x - xC) / zoom;     // translate the bubble
-        thisBubble.attributes['cy'].value = (this.state.mousePosition.y - yC) / zoom;
-        thisElement.attributes['cx'].value = ((this.state.mousePosition.x - xC) / zoom).toFixed(4);    // correspondingly translate thisElement
-        thisElement.attributes['cy'].value = ((this.state.mousePosition.y - yC) / zoom).toFixed(4);
+        thisBubble.attributes['cx'].value = (this.state.mousePosition.x - this.state.xC) / zoom;     // translate the bubble
+        thisBubble.attributes['cy'].value = (this.state.mousePosition.y - this.state.yC) / zoom;
+        thisElement.attributes['cx'].value = ((this.state.mousePosition.x - this.state.xC) / zoom).toFixed(4);    // correspondingly translate thisElement
+        thisElement.attributes['cy'].value = ((this.state.mousePosition.y - this.state.yC) / zoom).toFixed(4);
       } else {                        // resizing: cursor NOW osculates ellipse as in circle, diagonally positioned
         let thisEllipseX = thisElement.attributes['cx'].value;
         let thisEllipseY = thisElement.attributes['cy'].value;
 
         this.updateMousePosition(event);
 
-        thisElement.attributes['rx'].value = (Math.abs(thisEllipseX - (this.state.mousePosition.x - xC) / zoom) * 1.414).toFixed(4);
-        thisElement.attributes['ry'].value = (Math.abs(thisEllipseY - (this.state.mousePosition.y - yC) / zoom) * 1.414).toFixed(4);
+        thisElement.attributes['rx'].value = (Math.abs(thisEllipseX - (this.state.mousePosition.x - this.state.xC) / zoom) * 1.414).toFixed(4);
+        thisElement.attributes['ry'].value = (Math.abs(thisEllipseY - (this.state.mousePosition.y - this.state.yC) / zoom) * 1.414).toFixed(4);
       }
     }
 
@@ -1733,12 +1739,12 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         if (thisBubble != null) {       // thisBubble set on mousedown
           let cx = parseFloat(thisBubble.attributes['cx'].value);   // old
           let cy = parseFloat(thisBubble.attributes['cy'].value);   // x, y
-          let cx2 = (this.state.mousePosition.x - xC) / zoom;                       // new x
-          let cy2 = (this.state.mousePosition.y - yC) / zoom;                       // , y
+          let cx2 = (this.state.mousePosition.x - this.state.xC) / zoom;                       // new x
+          let cy2 = (this.state.mousePosition.y - this.state.yC) / zoom;                       // , y
           let dx = (cx2 - cx)
           let dy = (cy2 - cy)
-          thisBubble.attributes['cx'].value = (this.state.mousePosition.x - xC) / zoom;     // translate the bubble
-          thisBubble.attributes['cy'].value = (this.state.mousePosition.y - yC) / zoom;
+          thisBubble.attributes['cx'].value = (this.state.mousePosition.x - this.state.xC) / zoom;     // translate the bubble
+          thisBubble.attributes['cy'].value = (this.state.mousePosition.y - this.state.yC) / zoom;
 
           // splitShiftPoints all need to be shifted by the deltas
           // so iterate over all points, in initially a very pedantic way
@@ -1759,15 +1765,15 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         }
       }   // end of SHIFT draw case
       else {    // edit point by bubble
-        let thisPoint = ((this.state.mousePosition.x - xC) / zoom).toFixed(4).toString()
-          + ',' + ((this.state.mousePosition.y - yC) / zoom).toFixed(4).toString();
+        let thisPoint = ((this.state.mousePosition.x - this.state.xC) / zoom).toFixed(4).toString()
+          + ',' + ((this.state.mousePosition.y - this.state.yC) / zoom).toFixed(4).toString();
         let thesePoints = thisElement.attributes['points'].value.trim();
         let splitPoints = thesePoints.split(' ');
         if (thisBubble != null) {       // look for bubble to denote just move THIS point only
           // currently, no distinction is made between existing vertex and new point
           // however, this may change in the future JRF 23NOV15
-          thisBubble.attributes['cx'].value = (this.state.mousePosition.x - xC) / zoom;     // translate the bubble
-          thisBubble.attributes['cy'].value = (this.state.mousePosition.y - yC) / zoom;
+          thisBubble.attributes['cx'].value = (this.state.mousePosition.x - this.state.xC) / zoom;     // translate the bubble
+          thisBubble.attributes['cy'].value = (this.state.mousePosition.y - this.state.yC) / zoom;
           if (isNumeric(thisBubble.id)) {       // presume integer for now
             splitPoints[parseInt(thisBubble.id)] = thisPoint;   // replace this point
             thesePoints = '';
@@ -1779,8 +1785,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         }   // end of edit point case
         else {    // add new point at end during creation case
         let thesePoints = thisElement.attributes['points'].value;
-        let thisPoint = ((this.state.mousePosition.x - xC) / zoom).toFixed(4).toString()
-          + ',' + ((this.state.mousePosition.y - yC) / zoom).toFixed(4).toString() + ' ';
+        let thisPoint = ((this.state.mousePosition.x - this.state.xC) / zoom).toFixed(4).toString()
+          + ',' + ((this.state.mousePosition.y - this.state.yC) / zoom).toFixed(4).toString() + ' ';
         thisElement.attributes['points'].value = thesePoints.concat(thisPoint);
         }   // end of new point at end case
       }
@@ -1796,8 +1802,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       if (thisBubble != null) {       // look for bubble to denote just move THIS point only
         // currently, no distinction is made between existing vertex and new point
         // however, this may change in the future JRF 23NOV15
-        let thisX = (this.state.mousePosition.x - xC) / zoom;
-        let thisY = (this.state.mousePosition.y - yC) / zoom;
+        let thisX = (this.state.mousePosition.x - this.state.xC) / zoom;
+        let thisY = (this.state.mousePosition.y - this.state.yC) / zoom;
         let thisX2 = parseFloat(thisBubble.attributes['cx'].value)
         let thisY2 = parseFloat(thisBubble.attributes['cy'].value)
         console_log(enable_log, 'endpoints: [' + thisX + ', ' + thisY + '], [' + thisX2 + ', ' + thisY2 + ']')
@@ -1875,8 +1881,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         }
       } else {
         // defining initial curve as straight line, i.e., rubber-banding p2 until mouseup
-        let thisX2 = (this.state.mousePosition.x - xC) / zoom;
-        let thisY2 = (this.state.mousePosition.y - yC) / zoom;
+        let thisX2 = (this.state.mousePosition.x - this.state.xC) / zoom;
+        let thisY2 = (this.state.mousePosition.y - this.state.yC) / zoom;
         let thisD;
         let thisPathType = ' C ';              // set quadratic control point at midpoint, cubic's at 40% and 60% p1:p2
         if (cursorMode == drawMode.QUADRATIC) thisPathType = ' Q ';
@@ -1916,8 +1922,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         if(!thisBubble) {
           thisBubble = event.target;
         }
-        let dx = (this.state.mousePosition.x - xC) / zoom;
-        let dy = (this.state.mousePosition.y - yC) / zoom;
+        let dx = (this.state.mousePosition.x - this.state.xC) / zoom;
+        let dy = (this.state.mousePosition.y - this.state.yC) / zoom;
         thisBubble.attributes['cx'].value = dx;     // translate the bubble
         thisBubble.attributes['cy'].value = dy;
         for (let i = 0; i < thisGroup.children.length; i++) {      // for any text lines in this group (skip bubble)
@@ -1933,7 +1939,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
     }
   }
 
-  else if (cursorMode == drawMode.MOVE) {    // Revert to MOVE: this version assumes manipulating the transform <xlt> of the SVG via xC, yC
+  else if (cursorMode == drawMode.MOVE) {    // Revert to MOVE: this version assumes manipulating the transform <xlt> of the SVG via this.state.xC, this.state.yC
 
     if (svgInProgress == drawMode.MOVE) {
 
@@ -1942,9 +1948,9 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       this.updateMousePosition(event);
       //this.state.mousePosition.x = this.state.mousePosition.x;
       //this.state.mousePosition.y = this.state.mousePosition.y;
-      xC = xC - (oldX - this.state.mousePosition.x);
-      yC = yC - (oldY - this.state.mousePosition.y);
-      zoom_trans(xC, yC, zoom);                   // effects the translation to xC, yC in the transform
+      this.state.xC = this.state.xC - (oldX - this.state.mousePosition.x);
+      this.state.yC = this.state.yC - (oldY - this.state.mousePosition.y);
+      this.zoom_trans(this.state.xC, this.state.yC, zoom);                   // effects the translation to this.state.xC, this.state.yC in the transform
     }
   }
   return event.preventDefault() && false;
@@ -2341,15 +2347,6 @@ function clearThisGroup(group) {
   }
 }
 
-function zoom_trans(x, y, scale) {
-  let xlt = document.getElementById('xlt');         // DOM svg element g xlt
-  let transform = 'translate(' + ((x)).toString() + ', ' + ((y)).toString() + ') scale(' + scale.toString() + ')';
-  zoom = scale;
-  xC = x;
-  yC = y;
-  xlt.attributes['transform'].value = transform;
-}
-
 function updateSvgText(event) {                       // modified to eliminate mousetrap
   thisKey = event.key;                            // this attribute only works for FireFox
   let thisKeyCode = event.keyCode;
@@ -2362,10 +2359,6 @@ function updateSvgText(event) {                       // modified to eliminate m
     return false
   }
   if ((event.keyCode == 13) && (event.shiftKey)) {      // terminate this text block chain on Shift-Enter
-    // setElementMouseEnterLeave(thisGroup);
-    // removeCursorFromSvgText();
-    // closeSvgText();
-    // checkLeftoverElement();
     finishTextGroup();
     return false;
   }
@@ -2454,16 +2447,6 @@ function closeSvgText() {
   thisSVGpoints = [];               // clear the container
   thisElement = null;
   svgInProgress = false;
-}
-
-function setStroke(color) {
-  const colorButton = document.getElementById('stroke');
-
-  stroke = color;
-
-  if (colorButton) {
-    colorButton.attributes['style'].value = 'background-color: ' + stroke;
-  }
 }
 
 function collectSVG(isVerbatim) {   // verbatim true includes all markup, false means stripped
