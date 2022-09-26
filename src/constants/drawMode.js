@@ -6,7 +6,7 @@ export const drawMode = {
   DRAW: 'draw', 
   ELLIPSE: 'ellipse', 
   LINE: 'line', 
-  MOVE: 'MOVE',
+  MOVE: 'move',
   POLYGON: 'polygon',
   POLYLINE: 'polyline', 
   QUADRATIC: 'quadratic',
