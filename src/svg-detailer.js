@@ -1856,8 +1856,10 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         )
         if (thisBubble) {
           thisBubble = event.target
-          thisBubble.attributes['cx'].value = this.currentMouseX // translate the bubble
-          thisBubble.attributes['cy'].value = this.currentMouseY
+          if ('cx' in thisBubble.attributes && 'cy' in thisBubble.attributes) {
+            thisBubble.attributes['cx'].value = this.currentMouseX // translate the bubble
+            thisBubble.attributes['cy'].value = this.currentMouseY
+          }
         }
       }
     } else if (cursorMode == drawMode.LINE) {
