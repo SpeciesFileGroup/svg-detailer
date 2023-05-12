@@ -2565,6 +2565,8 @@ SVGDraw.prototype.keyHandler = function (event) {
     switch (cursorMode) {
       case drawMode.POLYGON:
       case drawMode.POLYLINE:
+        dblClick()
+        return
       case drawMode.LINE:
       case drawMode.RECTANGLE:
       case drawMode.CIRCLE:
