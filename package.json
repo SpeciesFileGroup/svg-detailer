@@ -1,6 +1,6 @@
 {
   "name": "@sfgrp/svg-detailer",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "private": false,
   "main": "./dist/svg-detailer.umd.js",
   "module": "./dist/svg-detailer.es.js",
