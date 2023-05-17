@@ -756,7 +756,16 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       element.setAttributeNS(
         null,
         'd',
-        getCurvePath(thisX, thisY, thisX, thisY, thisX, thisY, thisX, thisY)
+        this.getCurvePath(
+          thisX,
+          thisY,
+          thisX,
+          thisY,
+          thisX,
+          thisY,
+          thisX,
+          thisY
+        )
       )
       svgInProgress = this.cursorMode // mark in progress
     } else {
@@ -823,7 +832,7 @@ function getIDcount() {
   return idCount
 }
 
-function getCurvePath(x1, y1, cx1, cy1, cx2, cy2, x2, y2) {
+SVGDraw.prototype.getCurvePath = function (x1, y1, cx1, cy1, cx2, cy2, x2, y2) {
   if (this.cursorMode == drawMode.CUBIC) {
     return (
       'M ' +
@@ -2298,7 +2307,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
             theseCoords[6] = theseCoords[4] // populate template curve p2
             theseCoords[7] = theseCoords[5] // coordinates from quadratic p2 values
           }
-          thisElement.attributes['d'].value = getCurvePath(
+          thisElement.attributes['d'].value = this.getCurvePath(
             theseCoords[0],
             theseCoords[1],
             theseCoords[2],
@@ -2344,7 +2353,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
             theseCoords[5] = theseCoords[3] // points to be the same point
           }
           // 'd' is the string containing the path parameters; set it to the updated values
-          thisElement.attributes['d'].value = getCurvePath(
+          thisElement.attributes['d'].value = this.getCurvePath(
             theseCoords[0],
             theseCoords[1],
             theseCoords[2],
