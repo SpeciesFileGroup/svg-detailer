@@ -25,8 +25,6 @@ var fontSize = 50
 var fontFamily = 'Verdana'
 var arrowPercent = 10 // default arrow head size 10 percent of arrow length in pixels
 var arrowheadLength = 50 // or 50 pixels
-var arrowFixed = false // paired with above
-var arrowClosed = false
 var waitElement = false // interlock flag to prevent mouseenter mode change after selecting a create mode
 
 var thisGroup // should be the parent of the current element
@@ -90,12 +88,15 @@ var _SHIFTMAP = {
 }
 
 class SVGDraw extends EventEmitter {
-  constructor(containerID) {
+  constructor(containerID, opts = {}) {
     // container:<svgLayer>:<xlt>:<svgImage>
-    const cWidth = parseInt(containerID.attributes['data-width'].value) // this seems too explicit
-    const cHeight = parseInt(containerID.attributes['data-height'].value) // shouldn't this be inherited from parent?
-
     super()
+    this.cWidth = parseInt(
+      opts.width || containerID.attributes['data-width'].value
+    ) // this seems too explicit
+    this.cHeight = parseInt(
+      opts.height || containerID.attributes['data-height'].value
+    ) // shouldn't this be inherited from parent?
     this.containerElement = containerID
     this.configuration = {
       arrowClosed: false,
@@ -138,8 +139,8 @@ class SVGDraw extends EventEmitter {
     svgLayer.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink')
     svgLayer.setAttributeNS(null, 'version', '1.1')
     svgLayer.setAttributeNS(null, 'style', 'position: inherit;')
-    svgLayer.setAttributeNS(null, 'width', cWidth)
-    svgLayer.setAttributeNS(null, 'height', cHeight)
+    svgLayer.setAttributeNS(null, 'width', this.cWidth)
+    svgLayer.setAttributeNS(null, 'height', this.cHeight)
 
     this.containerElement.appendChild(svgLayer)
     this.svgLayer = svgLayer
@@ -153,18 +154,53 @@ class SVGDraw extends EventEmitter {
 
     svgLayer.appendChild(xlt)
 
-    svgImage = new Image()
     thisSVGpoints = [] // collect points as [x,y]
 
     this.fontSize = 50
     fontFamily = 'Verdana'
 
-    svgImage.src = containerID.attributes['data-image'].value
+    const imageSrc = opts.imageSrc || containerID.attributes['data-image'].value
+
+    if (!imageSrc) {
+      throw 'Missing image src'
+    }
+    this.loadImage(imageSrc)
+
+    if (opts.svg) {
+      this.apiLoadSVG(opts.svg)
+    }
+
+    buildSVGMenu(this)
+
+    document.addEventListener('keydown', this.handleKeyHandler) /////////////// This is probably tooo broad   /////////////////
+    document.addEventListener('keyup', this.handleKeyUpHandler)
+
+    //this.zoom_trans(0, 0, this.configuration.baseZoom) //////////// IMPORTANT !!!!!!!!!!!
+
+    this.updateCursorMode(drawMode.MOVE)
+
+    this.renderFunction = this.updateSvgByElement
+    this.touchSupported = 'ontouchstart' in document.documentElement // thanks, Edd Turtle !
+    this.containerID = containerID
+    this.state.mousePosition = { x: 0, y: 0 }
+
+    if (!this.touchSupported) {
+      svgLayer.addEventListener('dblclick', this.doubleClickHandler.bind(this))
+    }
+
+    this.svgLayer.addEventListener('mousedown', this.onSvgMouseDown.bind(this))
+    this.svgLayer.addEventListener('mouseup', this.onSvgMouseUp.bind(this))
+    this.svgLayer.addEventListener('mousemove', this.onSvgMouseMove.bind(this))
+  }
+
+  loadImage(src) {
+    svgImage = new Image()
+    svgImage.src = src
     svgImage.onload = () => {
       this.state.xC = 0
       this.state.yC = 0
 
-      var cAR = cWidth / cHeight
+      var cAR = this.cWidth / this.cHeight
       var iAR = svgImage.width / svgImage.height
 
       // scale to height if (similar aspect ratios AND image aspect ratio less than container's)
@@ -180,10 +216,8 @@ class SVGDraw extends EventEmitter {
           svgLayer.width.baseVal.value / svgImage.width // otherwise scale to width
       }
 
-      zoom = this.configuration.baseZoom // at initialization
-
       // strokeWidth = baseStrokeWidth.toString();    // NOT dynamically recomputed with zoom (not this one)
-      bubbleRadius = (baseBubbleRadius / zoom).toString() // and transcoded from/to string (may not be required)
+      bubbleRadius = (baseBubbleRadius / this.configuration.baseZoom).toString() // and transcoded from/to string (may not be required)
 
       this.state.mousePosition.x =
         (this.configuration.baseZoom * svgImage.width) / 2 // center of image
@@ -191,14 +225,14 @@ class SVGDraw extends EventEmitter {
         (this.configuration.baseZoom * svgImage.height) / 2
       // insert the svg base image into the transformable group <g id='xlt'>
 
-      xlt.setAttributeNS(null, 'id', 'xlt')
-      xlt.setAttributeNS(
+      this.xlt.setAttributeNS(null, 'id', 'xlt')
+      this.xlt.setAttributeNS(
         null,
         'transform',
-        'translate(0,0) scale(' + parseFloat(zoom) + ')'
+        'translate(0,0) scale(' + parseFloat(this.configuration.baseZoom) + ')'
       )
 
-      let xltImage = document.createElementNS(
+      const xltImage = document.createElementNS(
         'http://www.w3.org/2000/svg',
         SVGType.IMAGE
       )
@@ -213,34 +247,11 @@ class SVGDraw extends EventEmitter {
         'href',
         svgImage.src
       )
-      xlt.prepend(xltImage)
 
-      buildSVGMenu(this)
+      this.zoom_trans(0, 0, this.configuration.baseZoom) //////////// IMPORTANT !!!!!!!!!!!
 
-      //SVGDraw.prototype.buildSVGmenu(containerID);       // populate the button-ology from the data element description (mostly)
-
-      document.addEventListener('keydown', this.handleKeyHandler) /////////////// This is probably tooo broad   /////////////////
-      document.addEventListener('keyup', this.handleKeyUpHandler)
-
-      this.zoom_trans(0, 0, zoom) //////////// IMPORTANT !!!!!!!!!!!
-
-      this.updateCursorMode(drawMode.MOVE)
-
-      this.renderFunction = this.updateSvgByElement
-      this.touchSupported = 'ontouchstart' in document.documentElement // thanks, Edd Turtle !
-      this.containerID = containerID
-      this.state.mousePosition = { x: 0, y: 0 }
-
-      if (!this.touchSupported) {
-        svgLayer.addEventListener(
-          'dblclick',
-          this.doubleClickHandler.bind(this)
-        )
-      }
-
-      svgLayer.addEventListener('mousedown', this.onSvgMouseDown.bind(this))
-      svgLayer.addEventListener('mouseup', this.onSvgMouseUp.bind(this))
-      svgLayer.addEventListener('mousemove', this.onSvgMouseMove.bind(this))
+      this.xltImage = xltImage
+      this.xlt.prepend(xltImage)
     }
   }
 
@@ -305,15 +316,19 @@ class SVGDraw extends EventEmitter {
     this.setElementMouseEnterLeave(group)
   }
 
+  getIDcount() {
+    this.idCount += 1
+    return this.idCount
+  }
+
   zoom_trans(x, y, scale) {
-    const xlt = this.containerElement.querySelector('#xlt')
     const transform = `translate(${x.toString()}, ${y.toString()}) scale(${scale.toString()})`
 
     zoom = scale
     this.state.xC = x
     this.state.yC = y
 
-    xlt.attributes['transform'].value = transform
+    this.xlt.attributes['transform'].value = transform
   }
 
   zoomIn() {
@@ -380,11 +395,11 @@ class SVGDraw extends EventEmitter {
   }
 
   apiArrowClosed(checked) {
-    arrowClosed = checked
+    this.arrowClosed = checked
   }
 
   apiArrowFixed(checked) {
-    arrowFixed = checked
+    this.arrowFixed = checked
   }
 
   apiArrowLength(length) {
@@ -473,24 +488,27 @@ class SVGDraw extends EventEmitter {
     return JSONsvg
   }
 
-  apiLoadSVG = function (svg) {
+  apiLoadSVG = function (svg, opts = { clearPrevious: true }) {
     const svgElement = document.createElementNS(
       'http://www.w3.org/2000/svg',
-      SVGType.GROUP
+      SVGType.SVG
     )
     svgElement.innerHTML = svg
-    const g = [...svgElement.firstChild.querySelectorAll(SVGType.GROUP)]
+
+    const groupElement = svgElement.querySelector(SVGType.GROUP)
+    const g = [...groupElement.querySelectorAll(SVGType.GROUP)]
+
+    if (opts.clearPrevious) {
+      const previousGroups = this.xlt.querySelectorAll(SVGType.GROUP)
+
+      previousGroups.forEach((g) => g.remove())
+    }
 
     g.forEach((el) => {
       el.setAttribute('id', `g${this.getIDcount()}`)
       this.setElementMouseEnterLeave(el)
       this.xlt.appendChild(el)
     })
-  }
-
-  getIDcount() {
-    this.idCount += 1
-    return this.idCount
   }
 }
 
@@ -2071,7 +2089,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       let dx = deltaX / lineLength
       let dy = deltaY / lineLength
       let barbLength
-      if (arrowFixed) {
+      if (this.arrowFixed) {
         barbLength = arrowheadLength
       } else {
         // either fixed pixel length or percentage
@@ -2101,7 +2119,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       rightBarb.setAttributeNS(null, 'stroke-width', thisStrokeWidth)
       // thisGroup.appendChild(rightBarb);
 
-      if (arrowClosed) {
+      if (this.arrowClosed) {
         let baseBarb = newElement(drawMode.POLYGON)
         let barbPoints =
           thisX2 + ',' + thisY2 + ' ' + x3 + ',' + y3 + ' ' + x4 + ',' + y4

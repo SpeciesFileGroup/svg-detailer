@@ -1,14 +1,15 @@
 export const SVGType = {
-  RECT: 'rect',
-  PATH: 'path',
-  CIRCLE: 'circle', 
-  CUBIC: 'cubic', 
-  ELLIPSE: 'ellipse', 
-  LINE: 'line', 
-  POLYGON: 'polygon',
-  POLYLINE: 'polyline', 
-  QUADRATIC: 'quadratic',
-  TEXT: 'text',
+  CIRCLE: 'circle',
+  CUBIC: 'cubic',
+  ELLIPSE: 'ellipse',
   GROUP: 'g',
-  IMAGE: 'image'
+  IMAGE: 'image',
+  LINE: 'line',
+  PATH: 'path',
+  POLYGON: 'polygon',
+  POLYLINE: 'polyline',
+  QUADRATIC: 'quadratic',
+  RECT: 'rect',
+  SVG: 'svg',
+  TEXT: 'text'
 }
