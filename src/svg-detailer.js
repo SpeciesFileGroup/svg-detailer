@@ -37,9 +37,7 @@ var thisBubble // the bubble mousedown-ed in the currently edited element
 
 var svgInProgress = false
 
-var idCount = 0
-
-var enable_log = false // default to NOT log debug output
+var enable_log = true // default to NOT log debug output
 
 // var logMouse = false;       // debug
 // var logStatus = false;      // flags
@@ -118,6 +116,8 @@ class SVGDraw extends EventEmitter {
       cursorMode: drawMode.MOVE
     }
 
+    this.idCount = 0
+
     this.state = {
       mousePosition: {
         x: 0,
@@ -132,6 +132,27 @@ class SVGDraw extends EventEmitter {
     this.handleKeyHandler = this.keyHandler.bind(this)
     this.handleKeyUpHandler = this.keyUpHandler.bind(this)
 
+    svgLayer = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+    svgLayer.setAttributeNS(null, 'id', 'svgLayer')
+    svgLayer.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+    svgLayer.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink')
+    svgLayer.setAttributeNS(null, 'version', '1.1')
+    svgLayer.setAttributeNS(null, 'style', 'position: inherit;')
+    svgLayer.setAttributeNS(null, 'width', cWidth)
+    svgLayer.setAttributeNS(null, 'height', cHeight)
+
+    this.containerElement.appendChild(svgLayer)
+    this.svgLayer = svgLayer
+
+    let xlt = document.createElementNS(
+      'http://www.w3.org/2000/svg',
+      SVGType.GROUP
+    )
+
+    this.xlt = xlt
+
+    svgLayer.appendChild(xlt)
+
     svgImage = new Image()
     thisSVGpoints = [] // collect points as [x,y]
 
@@ -145,16 +166,6 @@ class SVGDraw extends EventEmitter {
 
       var cAR = cWidth / cHeight
       var iAR = svgImage.width / svgImage.height
-
-      svgLayer = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-      svgLayer.setAttributeNS(null, 'id', 'svgLayer')
-      svgLayer.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
-      svgLayer.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink')
-      svgLayer.setAttributeNS(null, 'version', '1.1')
-      svgLayer.setAttributeNS(null, 'style', 'position: inherit;')
-      svgLayer.setAttributeNS(null, 'width', cWidth)
-      svgLayer.setAttributeNS(null, 'height', cHeight)
-      this.containerElement.appendChild(svgLayer)
 
       // scale to height if (similar aspect ratios AND image aspect ratio less than container's)
       // OR the image is tall and the container is wide)
@@ -179,17 +190,14 @@ class SVGDraw extends EventEmitter {
       this.state.mousePosition.y =
         (this.configuration.baseZoom * svgImage.height) / 2
       // insert the svg base image into the transformable group <g id='xlt'>
-      let xlt = document.createElementNS(
-        'http://www.w3.org/2000/svg',
-        SVGType.GROUP
-      )
+
       xlt.setAttributeNS(null, 'id', 'xlt')
       xlt.setAttributeNS(
         null,
         'transform',
         'translate(0,0) scale(' + parseFloat(zoom) + ')'
       )
-      svgLayer.appendChild(xlt)
+
       let xltImage = document.createElementNS(
         'http://www.w3.org/2000/svg',
         SVGType.IMAGE
@@ -205,7 +213,7 @@ class SVGDraw extends EventEmitter {
         'href',
         svgImage.src
       )
-      xlt.appendChild(xltImage)
+      xlt.prepend(xltImage)
 
       buildSVGMenu(this)
 
@@ -464,6 +472,26 @@ class SVGDraw extends EventEmitter {
 
     return JSONsvg
   }
+
+  apiLoadSVG = function (svg) {
+    const svgElement = document.createElementNS(
+      'http://www.w3.org/2000/svg',
+      SVGType.GROUP
+    )
+    svgElement.innerHTML = svg
+    const g = [...svgElement.firstChild.querySelectorAll(SVGType.GROUP)]
+
+    g.forEach((el) => {
+      el.setAttribute('id', `g${this.getIDcount()}`)
+      this.setElementMouseEnterLeave(el)
+      this.xlt.appendChild(el)
+    })
+  }
+
+  getIDcount() {
+    this.idCount += 1
+    return this.idCount
+  }
 }
 
 SVGDraw.prototype.onSvgMouseDown = function () {
@@ -496,7 +524,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
 
       thisSVGpoints[0] = [this.currentMouseX, this.currentMouseY]
       let group = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-      let newGroupID = 'g' + getIDcount().toString()
+      let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
       thisGroup = group
@@ -537,7 +565,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       thisSVGpoints[0] = [this.currentMouseX, this.currentMouseY]
       let group = document.createElementNS('http://www.w3.org/2000/svg', 'g')
       thisGroup = group
-      let newGroupID = 'g' + getIDcount().toString()
+      let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
       document.getElementById('xlt').appendChild(group)
@@ -578,7 +606,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       thisSVGpoints[0] = [this.currentMouseX, this.currentMouseY]
 
       let group = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-      let newGroupID = 'g' + getIDcount().toString()
+      let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
       document.getElementById('xlt').appendChild(group)
@@ -608,7 +636,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
         mode: this.cursorMode,
         attributes: this.configuration
       })
-      group.setAttributeNS(null, 'id', 'g' + getIDcount().toString())
+      group.setAttributeNS(null, 'id', 'g' + this.getIDcount().toString())
       document.getElementById('xlt').appendChild(group)
       thisElement = element
       thisGroup = group
@@ -631,7 +659,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       })
 
       svgInProgress = this.cursorMode
-      group.setAttributeNS(null, 'id', 'g' + getIDcount().toString())
+      group.setAttributeNS(null, 'id', 'g' + this.getIDcount().toString())
       document.getElementById('xlt').appendChild(group)
       thisElement = element
       thisGroup = group
@@ -652,7 +680,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       }
       thisSVGpoints[0] = [this.currentMouseX, this.currentMouseY]
       let group = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-      let newGroupID = 'g' + getIDcount().toString()
+      let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
       document.getElementById('xlt').appendChild(group)
@@ -675,7 +703,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       thisSVGpoints[0] = [this.currentMouseX, this.currentMouseY]
       let group = document.createElementNS('http://www.w3.org/2000/svg', 'g')
       thisGroup = group
-      let newGroupID = 'g' + getIDcount().toString()
+      let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
       document.getElementById('xlt').appendChild(group)
@@ -702,7 +730,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       thisSVGpoints[0] = [this.currentMouseX, this.currentMouseY]
       let group = document.createElementNS('http://www.w3.org/2000/svg', 'g')
       thisGroup = group
-      let newGroupID = 'g' + getIDcount().toString()
+      let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
       document.getElementById('xlt').appendChild(group)
@@ -743,7 +771,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       thisSVGpoints[0] = [this.currentMouseX, this.currentMouseY]
       let group = document.createElementNS('http://www.w3.org/2000/svg', 'g')
       thisGroup = group
-      let newGroupID = 'g' + getIDcount().toString()
+      let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
       document.getElementById('xlt').appendChild(group)
@@ -785,7 +813,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       thisSVGpoints[0] = [this.currentMouseX, this.currentMouseY]
       group = document.createElementNS('http://www.w3.org/2000/svg', 'g')
       thisGroup = group
-      let newGroupID = 'g' + getIDcount().toString()
+      let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
       document.getElementById('xlt').appendChild(group)
@@ -825,11 +853,6 @@ function pathPoint(x, y) {
 
 function curvePoint(x, y) {
   return pathPoint(x, y) + ' '
-}
-
-function getIDcount() {
-  idCount += 1
-  return idCount
 }
 
 SVGDraw.prototype.getCurvePath = function (x1, y1, cx1, cy1, cx2, cy2, x2, y2) {
@@ -2891,11 +2914,9 @@ SVGDraw.prototype.checkLeftoverElement = function () {
 }
 
 SVGDraw.prototype.clearLastGroup = function () {
-  const xlt = document.getElementById('xlt')
-
-  if (xlt.childElementCount > 1) {
+  if (this.xlt.childElementCount > 1) {
     // don't remove the base image
-    const group = xlt.lastChild
+    const group = this.xlt.lastChild
 
     group.removeEventListener('mouseenter', this.handleMouseEnterFunction) // disable mousenter on real element's containing group
     group.removeEventListener('mouseleave', this.handleMouseLeaveFunction) // disable mouseleaver on real element's containing group
