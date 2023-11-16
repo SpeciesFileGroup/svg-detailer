@@ -25,8 +25,6 @@ var fontSize = 50
 var fontFamily = 'Verdana'
 var arrowPercent = 10 // default arrow head size 10 percent of arrow length in pixels
 var arrowheadLength = 50 // or 50 pixels
-var arrowFixed = false // paired with above
-var arrowClosed = false
 var waitElement = false // interlock flag to prevent mouseenter mode change after selecting a create mode
 
 var thisGroup // should be the parent of the current element
@@ -37,9 +35,7 @@ var thisBubble // the bubble mousedown-ed in the currently edited element
 
 var svgInProgress = false
 
-var idCount = 0
-
-var enable_log = false // default to NOT log debug output
+var enable_log = true // default to NOT log debug output
 
 // var logMouse = false;       // debug
 // var logStatus = false;      // flags
@@ -92,12 +88,15 @@ var _SHIFTMAP = {
 }
 
 class SVGDraw extends EventEmitter {
-  constructor(containerID) {
+  constructor(containerID, opts = {}) {
     // container:<svgLayer>:<xlt>:<svgImage>
-    const cWidth = parseInt(containerID.attributes['data-width'].value) // this seems too explicit
-    const cHeight = parseInt(containerID.attributes['data-height'].value) // shouldn't this be inherited from parent?
-
     super()
+    this.cWidth = parseInt(
+      opts.width || containerID.attributes['data-width'].value
+    ) // this seems too explicit
+    this.cHeight = parseInt(
+      opts.height || containerID.attributes['data-height'].value
+    ) // shouldn't this be inherited from parent?
     this.containerElement = containerID
     this.configuration = {
       arrowClosed: false,
@@ -118,6 +117,8 @@ class SVGDraw extends EventEmitter {
       cursorMode: drawMode.MOVE
     }
 
+    this.idCount = 0
+
     this.state = {
       mousePosition: {
         x: 0,
@@ -132,29 +133,75 @@ class SVGDraw extends EventEmitter {
     this.handleKeyHandler = this.keyHandler.bind(this)
     this.handleKeyUpHandler = this.keyUpHandler.bind(this)
 
-    svgImage = new Image()
+    svgLayer = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+    svgLayer.setAttributeNS(null, 'id', 'svgLayer')
+    svgLayer.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+    svgLayer.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink')
+    svgLayer.setAttributeNS(null, 'version', '1.1')
+    svgLayer.setAttributeNS(null, 'style', 'position: inherit;')
+    svgLayer.setAttributeNS(null, 'width', this.cWidth)
+    svgLayer.setAttributeNS(null, 'height', this.cHeight)
+
+    this.containerElement.appendChild(svgLayer)
+    this.svgLayer = svgLayer
+
+    let xlt = document.createElementNS(
+      'http://www.w3.org/2000/svg',
+      SVGType.GROUP
+    )
+
+    this.xlt = xlt
+
+    svgLayer.appendChild(xlt)
+
     thisSVGpoints = [] // collect points as [x,y]
 
     this.fontSize = 50
     fontFamily = 'Verdana'
 
-    svgImage.src = containerID.attributes['data-image'].value
+    const imageSrc = opts.imageSrc || containerID.attributes['data-image'].value
+
+    if (!imageSrc) {
+      throw 'Missing image src'
+    }
+    this.loadImage(imageSrc)
+
+    if (opts.svg) {
+      this.apiLoadSVG(opts.svg)
+    }
+
+    buildSVGMenu(this)
+
+    document.addEventListener('keydown', this.handleKeyHandler) /////////////// This is probably tooo broad   /////////////////
+    document.addEventListener('keyup', this.handleKeyUpHandler)
+
+    //this.zoom_trans(0, 0, this.configuration.baseZoom) //////////// IMPORTANT !!!!!!!!!!!
+
+    this.updateCursorMode(drawMode.MOVE)
+
+    this.renderFunction = this.updateSvgByElement
+    this.touchSupported = 'ontouchstart' in document.documentElement // thanks, Edd Turtle !
+    this.containerID = containerID
+    this.state.mousePosition = { x: 0, y: 0 }
+
+    if (!this.touchSupported) {
+      svgLayer.addEventListener('dblclick', this.doubleClickHandler.bind(this))
+    }
+
+    this.svgLayer.addEventListener('mousedown', this.onSvgMouseDown.bind(this))
+    this.svgLayer.addEventListener('mouseup', this.onSvgMouseUp.bind(this))
+    this.svgLayer.addEventListener('mousemove', this.onSvgMouseMove.bind(this))
+  }
+
+  loadImage(src) {
+    svgImage = new Image()
+    svgImage.src = src
     svgImage.onload = () => {
       this.state.xC = 0
       this.state.yC = 0
 
-      var cAR = cWidth / cHeight
+      var cAR = this.cWidth / this.cHeight
       var iAR = svgImage.width / svgImage.height
-
-      svgLayer = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
-      svgLayer.setAttributeNS(null, 'id', 'svgLayer')
-      svgLayer.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
-      svgLayer.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink')
-      svgLayer.setAttributeNS(null, 'version', '1.1')
-      svgLayer.setAttributeNS(null, 'style', 'position: inherit;')
-      svgLayer.setAttributeNS(null, 'width', cWidth)
-      svgLayer.setAttributeNS(null, 'height', cHeight)
-      this.containerElement.appendChild(svgLayer)
 
       // scale to height if (similar aspect ratios AND image aspect ratio less than container's)
       // OR the image is tall and the container is wide)
@@ -169,28 +216,23 @@ class SVGDraw extends EventEmitter {
           svgLayer.width.baseVal.value / svgImage.width // otherwise scale to width
       }
 
-      zoom = this.configuration.baseZoom // at initialization
-
       // strokeWidth = baseStrokeWidth.toString();    // NOT dynamically recomputed with zoom (not this one)
-      bubbleRadius = (baseBubbleRadius / zoom).toString() // and transcoded from/to string (may not be required)
+      bubbleRadius = (baseBubbleRadius / this.configuration.baseZoom).toString() // and transcoded from/to string (may not be required)
 
       this.state.mousePosition.x =
         (this.configuration.baseZoom * svgImage.width) / 2 // center of image
       this.state.mousePosition.y =
         (this.configuration.baseZoom * svgImage.height) / 2
       // insert the svg base image into the transformable group <g id='xlt'>
-      let xlt = document.createElementNS(
-        'http://www.w3.org/2000/svg',
-        SVGType.GROUP
-      )
-      xlt.setAttributeNS(null, 'id', 'xlt')
-      xlt.setAttributeNS(
+
+      this.xlt.setAttributeNS(null, 'id', 'xlt')
+      this.xlt.setAttributeNS(
         null,
         'transform',
-        'translate(0,0) scale(' + parseFloat(zoom) + ')'
+        'translate(0,0) scale(' + parseFloat(this.configuration.baseZoom) + ')'
       )
-      svgLayer.appendChild(xlt)
-      let xltImage = document.createElementNS(
+
+      const xltImage = document.createElementNS(
         'http://www.w3.org/2000/svg',
         SVGType.IMAGE
       )
@@ -205,34 +247,11 @@ class SVGDraw extends EventEmitter {
         'href',
         svgImage.src
       )
-      xlt.appendChild(xltImage)
 
-      buildSVGMenu(this)
+      this.zoom_trans(0, 0, this.configuration.baseZoom) //////////// IMPORTANT !!!!!!!!!!!
 
-      //SVGDraw.prototype.buildSVGmenu(containerID);       // populate the button-ology from the data element description (mostly)
-
-      document.addEventListener('keydown', this.handleKeyHandler) /////////////// This is probably tooo broad   /////////////////
-      document.addEventListener('keyup', this.handleKeyUpHandler)
-
-      this.zoom_trans(0, 0, zoom) //////////// IMPORTANT !!!!!!!!!!!
-
-      this.updateCursorMode(drawMode.MOVE)
-
-      this.renderFunction = this.updateSvgByElement
-      this.touchSupported = 'ontouchstart' in document.documentElement // thanks, Edd Turtle !
-      this.containerID = containerID
-      this.state.mousePosition = { x: 0, y: 0 }
-
-      if (!this.touchSupported) {
-        svgLayer.addEventListener(
-          'dblclick',
-          this.doubleClickHandler.bind(this)
-        )
-      }
-
-      svgLayer.addEventListener('mousedown', this.onSvgMouseDown.bind(this))
-      svgLayer.addEventListener('mouseup', this.onSvgMouseUp.bind(this))
-      svgLayer.addEventListener('mousemove', this.onSvgMouseMove.bind(this))
+      this.xltImage = xltImage
+      this.xlt.prepend(xltImage)
     }
   }
 
@@ -297,15 +316,19 @@ class SVGDraw extends EventEmitter {
     this.setElementMouseEnterLeave(group)
   }
 
+  getIDcount() {
+    this.idCount += 1
+    return this.idCount
+  }
+
   zoom_trans(x, y, scale) {
-    const xlt = this.containerElement.querySelector('#xlt')
     const transform = `translate(${x.toString()}, ${y.toString()}) scale(${scale.toString()})`
 
     zoom = scale
     this.state.xC = x
     this.state.yC = y
 
-    xlt.attributes['transform'].value = transform
+    this.xlt.attributes['transform'].value = transform
   }
 
   zoomIn() {
@@ -372,11 +395,11 @@ class SVGDraw extends EventEmitter {
   }
 
   apiArrowClosed(checked) {
-    arrowClosed = checked
+    this.arrowClosed = checked
   }
 
   apiArrowFixed(checked) {
-    arrowFixed = checked
+    this.arrowFixed = checked
   }
 
   apiArrowLength(length) {
@@ -464,6 +487,29 @@ class SVGDraw extends EventEmitter {
 
     return JSONsvg
   }
+
+  apiLoadSVG = function (svg, opts = { clearPrevious: true }) {
+    const svgElement = document.createElementNS(
+      'http://www.w3.org/2000/svg',
+      SVGType.SVG
+    )
+    svgElement.innerHTML = svg
+
+    const groupElement = svgElement.querySelector(SVGType.GROUP)
+    const g = [...groupElement.querySelectorAll(SVGType.GROUP)]
+
+    if (opts.clearPrevious) {
+      const previousGroups = this.xlt.querySelectorAll(SVGType.GROUP)
+
+      previousGroups.forEach((g) => g.remove())
+    }
+
+    g.forEach((el) => {
+      el.setAttribute('id', `g${this.getIDcount()}`)
+      this.setElementMouseEnterLeave(el)
+      this.xlt.appendChild(el)
+    })
+  }
 }
 
 SVGDraw.prototype.onSvgMouseDown = function () {
@@ -496,7 +542,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
 
       thisSVGpoints[0] = [this.currentMouseX, this.currentMouseY]
       let group = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-      let newGroupID = 'g' + getIDcount().toString()
+      let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
       thisGroup = group
@@ -537,7 +583,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       thisSVGpoints[0] = [this.currentMouseX, this.currentMouseY]
       let group = document.createElementNS('http://www.w3.org/2000/svg', 'g')
       thisGroup = group
-      let newGroupID = 'g' + getIDcount().toString()
+      let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
       document.getElementById('xlt').appendChild(group)
@@ -578,7 +624,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       thisSVGpoints[0] = [this.currentMouseX, this.currentMouseY]
 
       let group = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-      let newGroupID = 'g' + getIDcount().toString()
+      let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
       document.getElementById('xlt').appendChild(group)
@@ -608,7 +654,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
         mode: this.cursorMode,
         attributes: this.configuration
       })
-      group.setAttributeNS(null, 'id', 'g' + getIDcount().toString())
+      group.setAttributeNS(null, 'id', 'g' + this.getIDcount().toString())
       document.getElementById('xlt').appendChild(group)
       thisElement = element
       thisGroup = group
@@ -631,7 +677,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       })
 
       svgInProgress = this.cursorMode
-      group.setAttributeNS(null, 'id', 'g' + getIDcount().toString())
+      group.setAttributeNS(null, 'id', 'g' + this.getIDcount().toString())
       document.getElementById('xlt').appendChild(group)
       thisElement = element
       thisGroup = group
@@ -652,7 +698,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       }
       thisSVGpoints[0] = [this.currentMouseX, this.currentMouseY]
       let group = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-      let newGroupID = 'g' + getIDcount().toString()
+      let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
       document.getElementById('xlt').appendChild(group)
@@ -675,7 +721,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       thisSVGpoints[0] = [this.currentMouseX, this.currentMouseY]
       let group = document.createElementNS('http://www.w3.org/2000/svg', 'g')
       thisGroup = group
-      let newGroupID = 'g' + getIDcount().toString()
+      let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
       document.getElementById('xlt').appendChild(group)
@@ -702,7 +748,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       thisSVGpoints[0] = [this.currentMouseX, this.currentMouseY]
       let group = document.createElementNS('http://www.w3.org/2000/svg', 'g')
       thisGroup = group
-      let newGroupID = 'g' + getIDcount().toString()
+      let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
       document.getElementById('xlt').appendChild(group)
@@ -743,7 +789,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       thisSVGpoints[0] = [this.currentMouseX, this.currentMouseY]
       let group = document.createElementNS('http://www.w3.org/2000/svg', 'g')
       thisGroup = group
-      let newGroupID = 'g' + getIDcount().toString()
+      let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
       document.getElementById('xlt').appendChild(group)
@@ -785,7 +831,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       thisSVGpoints[0] = [this.currentMouseX, this.currentMouseY]
       group = document.createElementNS('http://www.w3.org/2000/svg', 'g')
       thisGroup = group
-      let newGroupID = 'g' + getIDcount().toString()
+      let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
       document.getElementById('xlt').appendChild(group)
@@ -825,11 +871,6 @@ function pathPoint(x, y) {
 
 function curvePoint(x, y) {
   return pathPoint(x, y) + ' '
-}
-
-function getIDcount() {
-  idCount += 1
-  return idCount
 }
 
 SVGDraw.prototype.getCurvePath = function (x1, y1, cx1, cy1, cx2, cy2, x2, y2) {
@@ -2048,7 +2089,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       let dx = deltaX / lineLength
       let dy = deltaY / lineLength
       let barbLength
-      if (arrowFixed) {
+      if (this.arrowFixed) {
         barbLength = arrowheadLength
       } else {
         // either fixed pixel length or percentage
@@ -2078,7 +2119,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       rightBarb.setAttributeNS(null, 'stroke-width', thisStrokeWidth)
       // thisGroup.appendChild(rightBarb);
 
-      if (arrowClosed) {
+      if (this.arrowClosed) {
         let baseBarb = newElement(drawMode.POLYGON)
         let barbPoints =
           thisX2 + ',' + thisY2 + ' ' + x3 + ',' + y3 + ' ' + x4 + ',' + y4
@@ -2891,11 +2932,9 @@ SVGDraw.prototype.checkLeftoverElement = function () {
 }
 
 SVGDraw.prototype.clearLastGroup = function () {
-  const xlt = document.getElementById('xlt')
-
-  if (xlt.childElementCount > 1) {
+  if (this.xlt.childElementCount > 1) {
     // don't remove the base image
-    const group = xlt.lastChild
+    const group = this.xlt.lastChild
 
     group.removeEventListener('mouseenter', this.handleMouseEnterFunction) // disable mousenter on real element's containing group
     group.removeEventListener('mouseleave', this.handleMouseLeaveFunction) // disable mouseleaver on real element's containing group

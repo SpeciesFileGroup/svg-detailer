@@ -1,6 +1,6 @@
 {
   "name": "@sfgrp/svg-detailer",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "private": false,
   "main": "./dist/svg-detailer.umd.js",
   "module": "./dist/svg-detailer.es.js",
@@ -34,9 +34,9 @@
     "test": "mocha"
   },
   "devDependencies": {
-    "eslint": "^8.40.0",
+    "eslint": "^8.53.0",
     "mocha": "^10.2.0",
-    "selenium-webdriver": "^4.9.2",
-    "vite": "^4.3.5"
+    "selenium-webdriver": "^4.15.0",
+    "vite": "^5.0.0"
   }
 }
