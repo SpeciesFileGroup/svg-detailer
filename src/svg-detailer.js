@@ -35,7 +35,7 @@ var thisBubble // the bubble mousedown-ed in the currently edited element
 
 var svgInProgress = false
 
-var enable_log = true // default to NOT log debug output
+var enable_log = false // default to NOT log debug output
 
 // var logMouse = false;       // debug
 // var logStatus = false;      // flags
@@ -488,7 +488,7 @@ class SVGDraw extends EventEmitter {
     return JSONsvg
   }
 
-  apiLoadSVG = function (svg, opts = { clearPrevious: true }) {
+  apiLoadSVG = function (svg, opts = { clearPrevious: true, editable: true }) {
     const svgElement = document.createElementNS(
       'http://www.w3.org/2000/svg',
       SVGType.SVG
@@ -505,8 +505,22 @@ class SVGDraw extends EventEmitter {
     }
 
     g.forEach((el) => {
+      const shapeElement = el.firstChild
       el.setAttribute('id', `g${this.getIDcount()}`)
-      this.setElementMouseEnterLeave(el)
+
+      if (opts.shapeClass) {
+        shapeElement.classList.add(opts.shapeClass)
+      }
+
+      if (opts.fill) {
+        shapeElement.setAttribute('fill', opts.fill)
+        shapeElement.setAttribute('fill-opacity', 1)
+      }
+
+      if (opts.editable) {
+        this.setElementMouseEnterLeave(el)
+      }
+
       this.xlt.appendChild(el)
     })
   }
