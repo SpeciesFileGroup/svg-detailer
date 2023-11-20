@@ -4,7 +4,6 @@ import { buildSVGMenu } from './utils/createToolbar.js'
 import { drawLine } from './utils/shapes/index.js'
 
 var stroke = '#000000' // init to black
-var zoom // set on initialization from baseZoom @ full image
 var baseBubbleRadius = 6
 // transform below to functions?
 var strokeWidth = 1 //= (baseStrokeWidth / zoom).toString();    // NOT dynamically recomputed with zoom (not this one)
@@ -20,7 +19,6 @@ var thisSVGpoints = [] // collect points as [x,y]
 var capsLock = false
 var thisKey
 // converted to thisElement: var thisSvgText;            // pointer to svg text element currently being populated
-var text4svg = '_' // buffer replacing HTML input control previously used for text, prime with underscore cursor
 var fontSize = 50
 var fontFamily = 'Verdana'
 var arrowPercent = 10 // default arrow head size 10 percent of arrow length in pixels
@@ -91,6 +89,7 @@ class SVGDraw extends EventEmitter {
   constructor(containerID, opts = {}) {
     // container:<svgLayer>:<xlt>:<svgImage>
     super()
+    this.text4svg = '_'
     this.cWidth = parseInt(
       opts.width || containerID.attributes['data-width'].value
     ) // this seems too explicit
@@ -125,7 +124,8 @@ class SVGDraw extends EventEmitter {
         y: 0
       },
       xC: 0,
-      yC: 0
+      yC: 0,
+      zoom: 0
     }
 
     this.handleMouseEnterFunction = this.mouseEnterFunction.bind(this)
@@ -256,11 +256,11 @@ class SVGDraw extends EventEmitter {
   }
 
   get currentMouseX() {
-    return (this.state.mousePosition.x - this.state.xC) / zoom
+    return (this.state.mousePosition.x - this.state.xC) / this.state.zoom
   }
 
   get currentMouseY() {
-    return (this.state.mousePosition.y - this.state.yC) / zoom
+    return (this.state.mousePosition.y - this.state.yC) / this.state.zoom
   }
 
   setCursorMode(mode) {
@@ -324,7 +324,7 @@ class SVGDraw extends EventEmitter {
   zoom_trans(x, y, scale) {
     const transform = `translate(${x.toString()}, ${y.toString()}) scale(${scale.toString()})`
 
-    zoom = scale
+    this.state.zoom = scale
     this.state.xC = x
     this.state.yC = y
 
@@ -334,51 +334,37 @@ class SVGDraw extends EventEmitter {
   zoomIn() {
     const { zoomDelta, maxZoom } = this.configuration
 
-    if (zoom < maxZoom) {
+    if (this.state.zoom < maxZoom) {
       // zoom of 1 is pixel-per-pixel on svgLayer
-      let newZoom = zoom * (1.0 + zoomDelta)
+      let newZoom = this.state.zoom * (1.0 + zoomDelta)
 
       if (newZoom > maxZoom) {
         newZoom = maxZoom
       }
 
-      this.state.xC =
-        this.state.mousePosition.x -
-        ((this.state.mousePosition.x - this.state.xC) * newZoom) / zoom
-      this.state.yC =
-        this.state.mousePosition.y -
-        ((this.state.mousePosition.y - this.state.yC) * newZoom) / zoom
-      this.zoom_trans(this.state.xC, this.state.yC, newZoom)
-      zoom = newZoom
-      bubbleRadius = (baseBubbleRadius / zoom).toString()
+      this.setZoom(newZoom)
     }
   }
 
   zoomOut() {
-    if (zoom > this.configuration.baseZoom / 3) {
-      let newZoom = zoom / (1.0 + this.configuration.zoomDelta)
-      this.state.xC =
-        this.state.mousePosition.x -
-        ((this.state.mousePosition.x - this.state.xC) * newZoom) / zoom
-      this.state.yC =
-        this.state.mousePosition.y -
-        ((this.state.mousePosition.y - this.state.yC) * newZoom) / zoom
-      this.zoom_trans(this.state.xC, this.state.yC, newZoom)
-      zoom = newZoom
-      bubbleRadius = (baseBubbleRadius / zoom).toString()
+    if (this.state.zoom > this.configuration.baseZoom / 3) {
+      const scale = this.state.zoom / (1.0 + this.configuration.zoomDelta)
+
+      this.setZoom(scale)
     }
   }
 
   setZoom(scale) {
     this.state.xC =
       this.state.mousePosition.x -
-      ((this.state.mousePosition.x - this.state.xC) * scale) / zoom
+      ((this.state.mousePosition.x - this.state.xC) * scale) / this.state.zoom
     this.state.yC =
       this.state.mousePosition.y -
-      ((this.state.mousePosition.y - this.state.yC) * scale) / zoom
+      ((this.state.mousePosition.y - this.state.yC) * scale) / this.state.zoom
 
     this.zoom_trans(this.state.xC, this.state.yC, scale)
-    zoom = scale
+    this.state.zoom = scale
+    bubbleRadius = (baseBubbleRadius / this.state.zoom).toString()
   }
 
   setStroke(color) {
@@ -1939,14 +1925,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         this.updateMousePosition(event)
         thisBubble.attributes['cx'].value = this.currentMouseX // translate the bubble
         thisBubble.attributes['cy'].value = this.currentMouseY
-        thisElement.attributes['x'].value = (
-          (this.state.mousePosition.x - this.state.xC) /
-          zoom
-        ).toFixed(4) // correspondingly translate thisElement
-        thisElement.attributes['y'].value = (
-          (this.state.mousePosition.y - this.state.yC) /
-          zoom
-        ).toFixed(4)
+        thisElement.attributes['x'].value = this.currentMouseX.toFixed(4) // correspondingly translate thisElement
+        thisElement.attributes['y'].value = this.currentMouseY.toFixed(4)
       } else {
         let thisRectX = thisElement.attributes['x'].value
         let thisRectY = thisElement.attributes['y'].value
@@ -2019,14 +1999,10 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
             thisGroup.lastChild.firstChild.remove() // kill off the move line bubble
           }
         }
-        thisElement.attributes[linePoints[0]].value = (
-          (this.state.mousePosition.x - this.state.xC) /
-          zoom
-        ).toFixed(4)
-        thisElement.attributes[linePoints[1]].value = (
-          (this.state.mousePosition.y - this.state.yC) /
-          zoom
-        ).toFixed(4)
+        thisElement.attributes[linePoints[0]].value =
+          this.currentMouseX.toFixed(4)
+        thisElement.attributes[linePoints[1]].value =
+          this.currentMouseY.toFixed(4)
         console_log(
           enable_log,
           'x: ' +
@@ -2075,14 +2051,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
             linePoints = thisBubble.id.split('-') // this will result in ['x1', 'y1'] or  ['x2', 'y2'] used below
           }
         }
-        mainLine.attributes[linePoints[0]].value = (
-          (this.state.mousePosition.x - this.state.xC) /
-          zoom
-        ).toFixed(4)
-        mainLine.attributes[linePoints[1]].value = (
-          (this.state.mousePosition.y - this.state.yC) /
-          zoom
-        ).toFixed(4)
+        mainLine.attributes[linePoints[0]].value = this.currentMouseX.toFixed(4)
+        mainLine.attributes[linePoints[1]].value = this.currentMouseY.toFixed(4)
       }
       while (thisGroup.childElementCount > 1) {
         // remove everything except the main line
@@ -2157,14 +2127,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         this.updateMousePosition(event)
         thisBubble.attributes['cx'].value = this.currentMouseX // translate the bubble
         thisBubble.attributes['cy'].value = this.currentMouseY
-        thisElement.attributes['cx'].value = (
-          (this.state.mousePosition.x - this.state.xC) /
-          zoom
-        ).toFixed(4) // correspondingly translate thisElement
-        thisElement.attributes['cy'].value = (
-          (this.state.mousePosition.y - this.state.yC) /
-          zoom
-        ).toFixed(4)
+        thisElement.attributes['cx'].value = this.currentMouseX.toFixed(4) // correspondingly translate thisElement
+        thisElement.attributes['cy'].value = this.currentMouseY.toFixed(4)
       } else {
         // either resizing or originally sizing
         //this.context.moveTo(this.state.mousePosition.x, this.state.mousePosition.y);
@@ -2214,14 +2178,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         this.updateMousePosition(event)
         thisBubble.attributes['cx'].value = this.currentMouseX // translate the bubble
         thisBubble.attributes['cy'].value = this.currentMouseY
-        thisElement.attributes['cx'].value = (
-          (this.state.mousePosition.x - this.state.xC) /
-          zoom
-        ).toFixed(4) // correspondingly translate thisElement
-        thisElement.attributes['cy'].value = (
-          (this.state.mousePosition.y - this.state.yC) /
-          zoom
-        ).toFixed(4)
+        thisElement.attributes['cx'].value = this.currentMouseX.toFixed(4) // correspondingly translate thisElement
+        thisElement.attributes['cy'].value = this.currentMouseY.toFixed(4)
       } else {
         // resizing: cursor NOW osculates ellipse as in circle, diagonally positioned
         let thisEllipseX = thisElement.attributes['cx'].value
@@ -2540,7 +2498,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       //this.state.mousePosition.y = this.state.mousePosition.y;
       this.state.xC = this.state.xC - (oldX - this.state.mousePosition.x)
       this.state.yC = this.state.yC - (oldY - this.state.mousePosition.y)
-      this.zoom_trans(this.state.xC, this.state.yC, zoom) // effects the translation to this.state.xC, this.state.yC in the transform
+      this.zoom_trans(this.state.xC, this.state.yC, this.state.zoom) // effects the translation to this.state.xC, this.state.yC in the transform
     }
   }
   return event.preventDefault() && false
@@ -2806,7 +2764,7 @@ SVGDraw.prototype.dblClick = function () {
         break
     }
     if (this.cursorMode == drawMode.TEXT) {
-      closeSvgText()
+      this.closeSvgText()
     }
     thisElement = null
     thisGroup = null
@@ -2987,20 +2945,20 @@ SVGDraw.prototype.updateSvgText = function (event) {
     return false
   }
   let text4svgValue // text4svg is string
-  text4svgValue = text4svg.slice(0, text4svg.length - 1) // remove text cursor (underscore)
+  text4svgValue = this.text4svg.slice(0, this.text4svg.length - 1) // remove text cursor (underscore)
 
   if (thisKeyCode > 31) {
     // space or other printing character
-    text4svg = text4svgValue + thisKey + '_'
+    this.text4svg = text4svgValue + thisKey + '_'
   }
   if (thisKeyCode == 8) {
-    text4svg = text4svgValue.slice(0, text4svgValue.length - 1) + '_'
+    this.text4svg = text4svgValue.slice(0, text4svgValue.length - 1) + '_'
     event.preventDefault() // prevent Backspace from invoking BACK browser function
   }
   if (!thisKey && thisKeyCode != 13 && thisKeyCode != 8) {
     return
   } // only pass printing keys, Delete, and Return/Enter
-  thisElement.innerHTML = parseHTML(text4svg) // this needs to be pair-parsed into ' '&nbsp;
+  thisElement.innerHTML = parseHTML(this.text4svg) // this needs to be pair-parsed into ' '&nbsp;
   thisElement.attributes['stroke'].value = stroke // allow in-line whole line color/font/size over-ride
   thisElement.attributes['style'].value =
     'font-family: ' + fontFamily + '; fill: ' + stroke + ';' //  including fill
@@ -3018,7 +2976,7 @@ SVGDraw.prototype.updateSvgText = function (event) {
     thisElement.parentElement.appendChild(nextLine)
     thisElement = nextLine
     thisElement.innerHTML = '_'
-    text4svg = '_'
+    this.text4svg = '_'
     event.preventDefault()
   }
 }
@@ -3044,7 +3002,7 @@ SVGDraw.prototype.finishTextGroup = function () {
     // if no child nodes, it is empty and should be
     thisGroup.remove() // removed
   }
-  closeSvgText()
+  this.closeSvgText()
   // checkLeftoverElement();         // //////////// does not consider <text> === useless
   thisGroup = null
 }
@@ -3059,13 +3017,13 @@ SVGDraw.prototype.removeCursorFromSvgText = function () {
     if (thisElement.parentElement.lastChild.innerHTML == '_') {
       // if ONLY underscore cursor
       thisElement.parentElement.lastChild.remove() // remove the <text> element
-      text4svg = '_' // initialize for later
+      this.text4svg = '_' // initialize for later
       thisElement = null // kill the element
     } else {
       if (svgInProgress == 'text') {
         //   ///////////////  newly added stronger condition
         thisElement.innerHTML = parseHTML(
-          text4svg.slice(0, text4svg.length - 1)
+          this.text4svg.slice(0, this.text4svg.length - 1)
         ) // remove cursor at end of line
         if (thisElement.innerHTML == '') {
           thisElement.remove()
@@ -3080,8 +3038,8 @@ SVGDraw.prototype.removeCursorFromSvgText = function () {
   }
 }
 
-function closeSvgText() {
-  text4svg = '_'
+SVGDraw.prototype.closeSvgText = function () {
+  this.text4svg = '_'
   thisSVGpoints = [] // clear the container
   thisElement = null
   svgInProgress = false
