@@ -535,7 +535,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
       this.state.currentGroup = group
-      document.getElementById('xlt').appendChild(group)
+      this.xlt.appendChild(group)
       let element = newElement({
         tag: drawMode.POLYLINE,
         attributes: this.getSVGAttributes()
@@ -568,7 +568,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
-      document.getElementById('xlt').appendChild(group)
+      this.xlt.appendChild(group)
       let element = newElement({
         tag: drawMode.POLYLINE,
         attributes: this.getSVGAttributes()
@@ -602,7 +602,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
-      document.getElementById('xlt').appendChild(group)
+      this.xlt.appendChild(group)
       let element = newElement({
         tag: SVGType.RECT,
         attributes: this.getSVGAttributes()
@@ -641,7 +641,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
         attributes: this.configuration
       })
       group.setAttributeNS(null, 'id', 'g' + this.getIDcount().toString())
-      document.getElementById('xlt').appendChild(group)
+      this.xlt.appendChild(group)
       this.state.currentElement = element
       this.state.currentGroup = group
     } else {
@@ -664,7 +664,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
 
       this.state.svgInProgress = this.cursorMode
       group.setAttributeNS(null, 'id', 'g' + this.getIDcount().toString())
-      document.getElementById('xlt').appendChild(group)
+      this.xlt.appendChild(group)
       this.state.currentElement = element
       this.state.currentGroup = group
     } else {
@@ -687,7 +687,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
-      document.getElementById('xlt').appendChild(group)
+      this.xlt.appendChild(group)
       let element = newElement({
         tag: SVGType.CIRCLE,
         attributes: this.getSVGAttributes()
@@ -721,7 +721,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
-      document.getElementById('xlt').appendChild(group)
+      this.xlt.appendChild(group)
       let element = newElement({
         tag: drawMode.ELLIPSE,
         attributes: this.getSVGAttributes()
@@ -759,7 +759,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
-      document.getElementById('xlt').appendChild(group)
+      this.xlt.appendChild(group)
       //for (j = 0; j < thisSVGpoints.length; j++) {              // for text mode there is only one
       let element = newElement({
         tag: drawMode.POLYLINE,
@@ -805,7 +805,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
-      document.getElementById('xlt').appendChild(group)
+      this.xlt.appendChild(group)
       let element = newElement({
         tag: SVGType.PATH,
         attributes: this.getSVGAttributes()
@@ -850,7 +850,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
-      document.getElementById('xlt').appendChild(group)
+      this.xlt.appendChild(group)
       //for (j = 0; j < thisSVGpoints.length; j++) {              // for text mode there is only one
       let element
       element = document.createElementNS('http://www.w3.org/2000/svg', 'text')
