@@ -10,29 +10,12 @@ import { EventEmitter, getModel, isMac } from './utils/index.js'
 import { buildSVGMenu } from './utils/createToolbar.js'
 import { drawLine } from './utils/shapes/index.js'
 
-// transform below to functions?
-var svgLayer
-var svgImage
-
-var capsLock = false
-// converted to thisElement: var thisSvgText;            // pointer to svg text element currently being populated
-var enable_log = false // default to NOT log debug output
-
-// var logMouse = false;       // debug
-// var logStatus = false;      // flags
-// var logIndex = 0;           // limit counter for above
-
 class SVGDraw extends EventEmitter {
   constructor(containerID, opts = {}) {
     // container:<svgLayer>:<xlt>:<svgImage>
     super()
     this.text4svg = '_'
-    this.cWidth = parseInt(
-      opts.width || containerID.attributes['data-width'].value
-    ) // this seems too explicit
-    this.cHeight = parseInt(
-      opts.height || containerID.attributes['data-height'].value
-    ) // shouldn't this be inherited from parent?
+
     this.containerElement = containerID
     this.configuration = {
       arrowClosed: false,
@@ -50,10 +33,9 @@ class SVGDraw extends EventEmitter {
       baseZoom: 0, // calculated from svg and image attributes
       maxZoom: 4,
       zoomDelta: 0.02, // this can be altered to discriminate legacy firefox dommousescroll event
-      cursorMode: drawMode.MOVE
+      cursorMode: drawMode.MOVE,
+      debugLog: opts.debugLog || false
     }
-
-    this.idCount = 0
 
     this.state = {
       mousePosition: {
@@ -71,25 +53,41 @@ class SVGDraw extends EventEmitter {
       bubbleRadius: undefined,
       baseBubbleRadius: 6,
       waitElement: false,
-      svgInProgress: false
+      svgInProgress: false,
+      svgLayer: undefined,
+      svgImage: undefined,
+      cWidth: 0,
+      cHeight: 0,
+      groupIdCount: 0,
+      capsLock: false
     }
+
+    this.state.cWidth = parseInt(
+      opts.width || containerID.attributes['data-width'].value
+    )
+    this.state.cHeight = parseInt(
+      opts.height || containerID.attributes['data-height'].value
+    )
 
     this.handleMouseEnterFunction = this.mouseEnterFunction.bind(this)
     this.handleMouseLeaveFunction = this.mouseLeaveFunction.bind(this)
     this.handleKeyHandler = this.keyHandler.bind(this)
     this.handleKeyUpHandler = this.keyUpHandler.bind(this)
 
-    svgLayer = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+    const svgLayer = document.createElementNS(
+      'http://www.w3.org/2000/svg',
+      'svg'
+    )
     svgLayer.setAttributeNS(null, 'id', 'svgLayer')
     svgLayer.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
     svgLayer.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink')
     svgLayer.setAttributeNS(null, 'version', '1.1')
     svgLayer.setAttributeNS(null, 'style', 'position: inherit;')
-    svgLayer.setAttributeNS(null, 'width', this.cWidth)
-    svgLayer.setAttributeNS(null, 'height', this.cHeight)
+    svgLayer.setAttributeNS(null, 'width', this.state.cWidth)
+    svgLayer.setAttributeNS(null, 'height', this.state.cHeight)
 
     this.containerElement.appendChild(svgLayer)
-    this.svgLayer = svgLayer
+    this.state.svgLayer = svgLayer
 
     let xlt = document.createElementNS(
       'http://www.w3.org/2000/svg',
@@ -128,23 +126,35 @@ class SVGDraw extends EventEmitter {
     this.state.mousePosition = { x: 0, y: 0 }
 
     if (!this.touchSupported) {
-      svgLayer.addEventListener('dblclick', this.doubleClickHandler.bind(this))
+      this.state.svgLayer.addEventListener(
+        'dblclick',
+        this.doubleClickHandler.bind(this)
+      )
     }
 
-    this.svgLayer.addEventListener('mousedown', this.onSvgMouseDown.bind(this))
-    this.svgLayer.addEventListener('mouseup', this.onSvgMouseUp.bind(this))
-    this.svgLayer.addEventListener('mousemove', this.onSvgMouseMove.bind(this))
+    this.state.svgLayer.addEventListener(
+      'mousedown',
+      this.onSvgMouseDown.bind(this)
+    )
+    this.state.svgLayer.addEventListener(
+      'mouseup',
+      this.onSvgMouseUp.bind(this)
+    )
+    this.state.svgLayer.addEventListener(
+      'mousemove',
+      this.onSvgMouseMove.bind(this)
+    )
   }
 
   loadImage(src) {
-    svgImage = new Image()
-    svgImage.src = src
-    svgImage.onload = () => {
+    this.state.svgImage = new Image()
+    this.state.svgImage.src = src
+    this.state.svgImage.onload = () => {
       this.state.xC = 0
       this.state.yC = 0
 
-      var cAR = this.cWidth / this.cHeight
-      var iAR = svgImage.width / svgImage.height
+      var cAR = this.state.cWidth / this.state.cHeight
+      var iAR = this.state.svgImage.width / this.state.svgImage.height
 
       // scale to height if (similar aspect ratios AND image aspect ratio less than container's)
       // OR the image is tall and the container is wide)
@@ -153,10 +163,10 @@ class SVGDraw extends EventEmitter {
         (iAR <= 1 && cAR >= 1)
       ) {
         this.configuration.baseZoom =
-          svgLayer.height.baseVal.value / svgImage.height // scale to height on condition desc in comment
+          this.state.svgLayer.height.baseVal.value / this.state.svgImage.height // scale to height on condition desc in comment
       } else {
         this.configuration.baseZoom =
-          svgLayer.width.baseVal.value / svgImage.width // otherwise scale to width
+          this.state.svgLayer.width.baseVal.value / this.state.svgImage.width // otherwise scale to width
       }
 
       // strokeWidth = baseStrokeWidth.toString();    // NOT dynamically recomputed with zoom (not this one)
@@ -165,9 +175,9 @@ class SVGDraw extends EventEmitter {
       ).toString() // and transcoded from/to string (may not be required)
 
       this.state.mousePosition.x =
-        (this.configuration.baseZoom * svgImage.width) / 2 // center of image
+        (this.configuration.baseZoom * this.state.svgImage.width) / 2 // center of image
       this.state.mousePosition.y =
-        (this.configuration.baseZoom * svgImage.height) / 2
+        (this.configuration.baseZoom * this.state.svgImage.height) / 2
       // insert the svg base image into the transformable group <g id='xlt'>
 
       this.xlt.setAttributeNS(null, 'id', 'xlt')
@@ -184,13 +194,21 @@ class SVGDraw extends EventEmitter {
       xltImage.setAttributeNS(null, 'id', 'xltImage')
       xltImage.setAttributeNS(null, 'x', '0')
       xltImage.setAttributeNS(null, 'y', '0')
-      xltImage.setAttributeNS(null, 'width', svgImage.width.toString())
-      xltImage.setAttributeNS(null, 'height', svgImage.height.toString())
+      xltImage.setAttributeNS(
+        null,
+        'width',
+        this.state.svgImage.width.toString()
+      )
+      xltImage.setAttributeNS(
+        null,
+        'height',
+        this.state.svgImage.height.toString()
+      )
       xltImage.setAttributeNS(null, 'preserveAspectRatio', 'none')
       xltImage.setAttributeNS(
         'http://www.w3.org/1999/xlink',
         'href',
-        svgImage.src
+        this.state.svgImage.src
       )
 
       this.zoom_trans(0, 0, this.configuration.baseZoom) //////////// IMPORTANT !!!!!!!!!!!
@@ -263,8 +281,9 @@ class SVGDraw extends EventEmitter {
   }
 
   getIDcount() {
-    this.idCount += 1
-    return this.idCount
+    this.state.groupIdCount += 1
+
+    return this.state.groupIdCount
   }
 
   zoom_trans(x, y, scale) {
@@ -402,11 +421,11 @@ class SVGDraw extends EventEmitter {
   }
 
   apiShowSVG(verbatim) {
-    return collectSVG(verbatim).outerHTML
+    return collectSVG(verbatim, { svgLayer: this.state.svgLayer }).outerHTML
   }
 
   apiBareSVG(noGroups = true) {
-    return getBareSVG(noGroups).outerHTML
+    return getBareSVG(noGroups, { svgLayer: this.state.svgLayer }).outerHTML
   }
 
   apiJsonSVG() {
@@ -967,7 +986,7 @@ SVGDraw.prototype.mouseEnterFunction = function (event) {
   let thisElementParent = this.state.currentElement?.parentElement.id || 'null'
 
   console_log(
-    enable_log,
+    this.configuration.debugLog,
     'mouseenter' +
       ' eventTarget=' +
       event.target.id +
@@ -990,7 +1009,7 @@ SVGDraw.prototype.mouseLeaveFunction = function (event) {
   let thisElementParent = this.state.currentElement?.parentElement.id || 'null'
 
   console_log(
-    enable_log,
+    this.configuration.debugLog,
     'mouseleave' +
       ' eventTarget=' +
       event.target.id +
@@ -1032,10 +1051,13 @@ SVGDraw.prototype.setEditElement = function (group) {
     })
   ) {
     // returns true if conflict
-    console_log(enable_log, 'Element conflict: ' + group.attributes.class.value)
+    console_log(
+      this.configuration.debugLog,
+      'Element conflict: ' + group.attributes.class.value
+    )
     return
   }
-  console_log(enable_log, 'setEditElement no conflict')
+  console_log(this.configuration.debugLog, 'setEditElement no conflict')
   if (this.state.currentGroup == null) {
     // no conflicts detected, so if thisGroup is null,
     let msg = 'thisGroup is NULL'
@@ -1043,7 +1065,10 @@ SVGDraw.prototype.setEditElement = function (group) {
       msg += ', thisElement = ' + this.state.currentElement.toString()
     }
 
-    console_log(enable_log, group.attributes.class.value + ' ' + msg)
+    console_log(
+      this.configuration.debugLog,
+      group.attributes.class.value + ' ' + msg
+    )
     this.state.currentGroup = group // there is probably no creation activity
   }
   //if (group.firstChild.tagName != this.cursorMode) {    // start editing an element not in the current mode
@@ -1077,7 +1102,7 @@ SVGDraw.prototype.setEditElement = function (group) {
   const bubbleGroup = this.createBubbleGroup(group) // since bubble groups are heterogeneous in structure
   group.appendChild(bubbleGroup) // make the new bubble group in a no-id <g>
   console_log(
-    enable_log,
+    this.configuration.debugLog,
     'setEditElement ' + group.id + ' ' + group.attributes.class.value
   )
   // group.removeEventListener('mouseleave', mouseLeaveFunction)
@@ -1087,7 +1112,7 @@ SVGDraw.prototype.clearEditElement = function (group) {
   // given containing group; invoked by mouseleave, so order of statements reordered
   let thisGroupID = this.state.currentGroup?.id || 'null'
   console_log(
-    enable_log,
+    this.configuration.debugLog,
     'clearEditElement: svgInProgress=' +
       this.state.svgInProgress +
       ', group=' +
@@ -1101,16 +1126,19 @@ SVGDraw.prototype.clearEditElement = function (group) {
   }
   if (!group) {
     // if we are misassociated just back away . . .
-    console_log(enable_log, 'clearEditElement: group argument null')
+    console_log(
+      this.configuration.debugLog,
+      'clearEditElement: group argument null'
+    )
     return
   }
   if (this.state.waitElement) {
-    console_log(enable_log, 'clearEditElement: waitElement')
+    console_log(this.configuration.debugLog, 'clearEditElement: waitElement')
     return
   }
   if (this.state.currentGroup && thisGroupID != group.id) {
     // collision
-    console_log(enable_log, 'clearEditElement: group conflict')
+    console_log(this.configuration.debugLog, 'clearEditElement: group conflict')
     return
   }
   if (group.childNodes.length > 1) {
@@ -1146,7 +1174,7 @@ SVGDraw.prototype.clearEditElement = function (group) {
 
 function checkElementConflict(
   currentGroup,
-  { group, waitElement, svgInProgress }
+  { group, waitElement, svgInProgress, debugLog }
 ) {
   // only invoked by mouseenter listeners
   /* consider potential values of:
@@ -1156,15 +1184,12 @@ function checkElementConflict(
    thisGroup, nominally the group of the active element
    */
   if (waitElement) {
-    console_log(
-      enable_log,
-      'checkElementConflict1: waitElement = ' + waitElement
-    )
+    console_log(debugLog, 'checkElementConflict1: waitElement = ' + waitElement)
     return true
   }
   if (!svgInProgress) {
     console_log(
-      enable_log,
+      debugLog,
       'checkElementConflict2: svgInProgress=' +
         svgInProgress +
         'thisGroup=' +
@@ -1174,7 +1199,7 @@ function checkElementConflict(
   }
   if (svgInProgress == 'SHIFT') {
     console_log(
-      enable_log,
+      debugLog,
       'checkElementConflict3: svgInProgress=' +
         svgInProgress +
         'thisGroup=' +
@@ -1197,7 +1222,7 @@ function checkElementConflict(
   }
   if (currentGroup != group) {
     console_log(
-      enable_log,
+      debugLog,
       'checkElementConflict5: svgInProgress=' +
         svgInProgress +
         ', thisGroup=' +
@@ -1240,7 +1265,7 @@ SVGDraw.prototype.setShiftElement = function (bubble) {
   )
   this.state.svgInProgress = 'SHIFT'
   console_log(
-    enable_log,
+    this.configuration.debugLog,
     'svgInProgress = SHIFT, this.cursorMode = ' + this.cursorMode
   )
 }
@@ -1268,7 +1293,7 @@ SVGDraw.prototype.setSizeElement = function (bubble) {
   this.state.svgInProgress = 'SIZE'
 
   console_log(
-    enable_log,
+    this.configuration.debugLog,
     'svgInProgress = SIZE, this.cursorMode = ' +
       this.cursorMode +
       ' ' +
@@ -1584,7 +1609,7 @@ SVGDraw.prototype.createBubbleForText = function (bubbleGroup, { x, y }) {
 SVGDraw.prototype.createBubbleGroup = function (group) {
   if (!group) {
     console_log(
-      enable_log,
+      this.configuration.debugLog,
       'group arg null, thisGroup=' + this.state.currentGroup
     )
   }
@@ -2013,7 +2038,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       if (event.type == 'mousedown' || this.state.svgInProgress == false) {
         // extra condition for line
         console_log(
-          enable_log,
+          this.configuration.debugLog,
           'this.cursorMode=line abort event:' +
             event.type +
             ' svgInProgress= ' +
@@ -2072,7 +2097,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         this.state.currentElement.attributes[linePoints[1]].value =
           this.currentMouseY.toFixed(4)
         console_log(
-          enable_log,
+          this.configuration.debugLog,
           'x: ' +
             this.currentMouseX.toString() +
             ' / y: ' +
@@ -2377,7 +2402,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         let thisX2 = parseFloat(this.state.currentBubble.attributes['cx'].value)
         let thisY2 = parseFloat(this.state.currentBubble.attributes['cy'].value)
         console_log(
-          enable_log,
+          this.configuration.debugLog,
           'endpoints: [' +
             thisX +
             ', ' +
@@ -2395,8 +2420,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         let theseCoords = getCurveCoords(thisDvalue)
         //#TODO: fix incremental mistracking of shift point, bubble no longer present
         if (this.state.currentBubble.id == 'shift') {
-          console_log(enable_log, thisDvalue)
-          console_log(enable_log, 'dx: ' + dx + ', dy: ' + dy)
+          console_log(this.configuration.debugLog, thisDvalue)
+          console_log(this.configuration.debugLog, 'dx: ' + dx + ', dy: ' + dy)
           // tranlate each coordinate (array contains x, y, x, y, ... x, y
           for (let k = 0; k < theseCoords.length; k++) {
             theseCoords[k] = (dx + parseFloat(theseCoords[k])).toFixed(4)
@@ -2421,7 +2446,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
             theseCoords[7]
           ) // responds to both C and Q curves
           console_log(
-            enable_log,
+            this.configuration.debugLog,
             this.state.currentElement.attributes['d'].value
           )
         }
@@ -2535,9 +2560,12 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
             curvePoint(theseControlPoints[0], theseControlPoints[1])
           thisD += curvePoint(theseControlPoints[2], theseControlPoints[3])
           thisD += curvePoint(thisX2, thisY2)
-          console_log(enable_log, 'p1: ' + thisP1[0] + ', ' + thisP1[1])
           console_log(
-            enable_log,
+            this.configuration.debugLog,
+            'p1: ' + thisP1[0] + ', ' + thisP1[1]
+          )
+          console_log(
+            this.configuration.debugLog,
             'control points: ' +
               theseControlPoints[0] +
               ', ' +
@@ -2547,7 +2575,10 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
               ', ' +
               theseControlPoints[3]
           )
-          console_log(enable_log, 'p2: ' + thisX2 + ', ' + thisY2)
+          console_log(
+            this.configuration.debugLog,
+            'p2: ' + thisX2 + ', ' + thisY2
+          )
         }
         thisD += pathPoint(thisX2, thisY2)
         this.state.currentElement.attributes['d'].value = thisD
@@ -2673,7 +2704,7 @@ SVGDraw.prototype.onSvgMouseUp = function (event) {
 SVGDraw.prototype.keyUpHandler = function () {
   return function (event) {
     if (event.keyCode == 0x14) {
-      capsLock = !capsLock
+      this.state.capsLock = !this.state.capsLock
     }
   }
 }
@@ -2688,7 +2719,7 @@ SVGDraw.prototype.keyHandler = function (event) {
       this.state.currentKey = 'Shift'
       return
     case KeyboardCode.CAPS_LOCK:
-      capsLock = !capsLock
+      this.state.capsLock = !this.state.capsLock
       return
     case KeyboardCode.META_LEFT:
     case KeyboardCode.META_RIGHT:
@@ -2701,9 +2732,9 @@ SVGDraw.prototype.keyHandler = function (event) {
           let cloneGroup = this.state.currentGroup.cloneNode(true)
           this.state.currentGroup.remove()
           this.clearEditElement(cloneGroup)
-          svgLayer.firstChild.insertBefore(
+          this.state.svgLayer.firstChild.insertBefore(
             cloneGroup,
-            svgLayer.firstChild.childNodes[1]
+            this.state.svgLayer.firstChild.childNodes[1]
           )
         }
       }
@@ -2715,7 +2746,7 @@ SVGDraw.prototype.keyHandler = function (event) {
           let cloneGroup = this.state.currentGroup.cloneNode(true)
           this.state.currentGroup.remove()
           this.clearEditElement(cloneGroup)
-          svgLayer.firstChild.appendChild(cloneGroup)
+          this.state.svgLayer.firstChild.appendChild(cloneGroup)
         }
       }
       break
@@ -2751,13 +2782,16 @@ SVGDraw.prototype.keyHandler = function (event) {
         let cloneGroup = this.state.currentGroup.cloneNode(true)
         this.state.currentGroup.remove()
         this.clearEditElement(cloneGroup)
-        svgLayer.firstChild.appendChild(cloneGroup)
+        this.state.svgLayer.firstChild.appendChild(cloneGroup)
         this.clearLastGroup()
       }
       return
     }
 
-    if (inFocus.tagName == 'BODY' || inFocus.id == svgLayer.parentElement.id) {
+    if (
+      inFocus.tagName == 'BODY' ||
+      inFocus.id == this.state.svgLayer.parentElement.id
+    ) {
       return
     }
   }
@@ -2774,7 +2808,7 @@ SVGDraw.prototype.keyHandler = function (event) {
   }
 }
 
-function lookUpKey(event) {
+function lookUpKey(event, { capsLock }) {
   // sort out the keyboard mess and return the key
   let eventKey = event.key
   let thisKeyCode = event.keyCode
@@ -3027,7 +3061,7 @@ SVGDraw.prototype.clearThisGroup = function (group) {
 SVGDraw.prototype.updateSvgText = function (event) {
   let thisKeyCode = event.keyCode
   //if (thisKey == undefined) {                   // undefined if not FireFox
-  this.state.currentKey = lookUpKey(event) // consolidate
+  this.state.currentKey = lookUpKey(event, { capsLock: this.state.capsLock }) // consolidate
 
   if (this.state.currentElement == null) {
     // this can occur if <text> element just completed and no new one started
@@ -3151,7 +3185,7 @@ SVGDraw.prototype.closeSvgText = function () {
   this.state.svgInProgress = false
 }
 
-function collectSVG(isVerbatim) {
+function collectSVG(isVerbatim, { svgLayer }) {
   // verbatim true includes all markup, false means stripped
   let clonedSVG = svgLayer.cloneNode(true)
   let thisXLT = clonedSVG.firstChild
@@ -3179,7 +3213,7 @@ function collectSVG(isVerbatim) {
   return clonedSVG //  oops, this was too easy
 }
 
-function getBareSVG(noGroups) {
+function getBareSVG(noGroups, { svgLayer }) {
   //  stripped
   const clonedSVG = svgLayer.cloneNode(true)
 
