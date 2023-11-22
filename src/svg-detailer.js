@@ -1,102 +1,21 @@
-import { drawMode, SVGType, KeyboardCode } from './constants/index.js'
+import {
+  drawMode,
+  SVGType,
+  KeyboardCode,
+  _KEYCODE_MAP,
+  _SHIFTMAP,
+  BoardOptions
+} from './constants/index.js'
 import { EventEmitter, getModel, isMac } from './utils/index.js'
 import { buildSVGMenu } from './utils/createToolbar.js'
 import { drawLine } from './utils/shapes/index.js'
-
-var stroke = '#000000' // init to black
-var zoom // set on initialization from baseZoom @ full image
-var baseBubbleRadius = 6
-// transform below to functions?
-var strokeWidth = 1 //= (baseStrokeWidth / zoom).toString();    // NOT dynamically recomputed with zoom (not this one)
-var strokeOpacity = 0.9
-var fill = ''
-var fillOpacity = 0.0
-var strokeLinecap = 'round'
-var bubbleRadius //= (baseBubbleRadius / zoom).toString(); // and transcoded from/to string (may not be required)
-var svgLayer
-var svgImage
-var thisSVGpoints = [] // collect points as [x,y]
-
-var capsLock = false
-var thisKey
-// converted to thisElement: var thisSvgText;            // pointer to svg text element currently being populated
-var text4svg = '_' // buffer replacing HTML input control previously used for text, prime with underscore cursor
-var fontSize = 50
-var fontFamily = 'Verdana'
-var arrowPercent = 10 // default arrow head size 10 percent of arrow length in pixels
-var arrowheadLength = 50 // or 50 pixels
-var waitElement = false // interlock flag to prevent mouseenter mode change after selecting a create mode
-
-var thisGroup // should be the parent of the current element
-
-var thisElement // should be the current element
-
-var thisBubble // the bubble mousedown-ed in the currently edited element
-
-var svgInProgress = false
-
-var enable_log = true // default to NOT log debug output
-
-// var logMouse = false;       // debug
-// var logStatus = false;      // flags
-// var logIndex = 0;           // limit counter for above
-/*
- * mapping for special characters
- */
-var _KEYCODE_MAP = {
-  61: '=',
-  106: '*',
-  107: '+',
-  109: '-',
-  110: '.',
-  111: '/',
-  173: '-',
-  186: ';',
-  187: '=',
-  188: ',',
-  189: '-',
-  190: '.',
-  191: '/',
-  192: '`',
-  219: '[',
-  220: '\\',
-  221: ']',
-  222: "'"
-}
-var _SHIFTMAP = {
-  '`': '~',
-  1: '!',
-  2: '@',
-  3: '#',
-  4: '$',
-  5: '%',
-  6: '^',
-  7: '&',
-  8: '*',
-  9: '(',
-  0: ')',
-  '-': '_',
-  '=': '+',
-  ';': ':',
-  "'": '"',
-  '[': '{',
-  ']': '}',
-  ',': '<',
-  '.': '>',
-  '/': '?',
-  '\\': '|'
-}
 
 class SVGDraw extends EventEmitter {
   constructor(containerID, opts = {}) {
     // container:<svgLayer>:<xlt>:<svgImage>
     super()
-    this.cWidth = parseInt(
-      opts.width || containerID.attributes['data-width'].value
-    ) // this seems too explicit
-    this.cHeight = parseInt(
-      opts.height || containerID.attributes['data-height'].value
-    ) // shouldn't this be inherited from parent?
+    this.text4svg = '_'
+
     this.containerElement = containerID
     this.configuration = {
       arrowClosed: false,
@@ -114,10 +33,9 @@ class SVGDraw extends EventEmitter {
       baseZoom: 0, // calculated from svg and image attributes
       maxZoom: 4,
       zoomDelta: 0.02, // this can be altered to discriminate legacy firefox dommousescroll event
-      cursorMode: drawMode.MOVE
+      cursorMode: drawMode.MOVE,
+      debugLog: opts.debugLog || false
     }
-
-    this.idCount = 0
 
     this.state = {
       mousePosition: {
@@ -125,25 +43,51 @@ class SVGDraw extends EventEmitter {
         y: 0
       },
       xC: 0,
-      yC: 0
+      yC: 0,
+      zoom: 0,
+      currentKey: undefined,
+      currentGroup: undefined,
+      currentElement: undefined,
+      currentSVGPoints: [],
+      currentBubble: undefined,
+      bubbleRadius: undefined,
+      baseBubbleRadius: 6,
+      waitElement: false,
+      svgInProgress: false,
+      svgLayer: undefined,
+      svgImage: undefined,
+      cWidth: 0,
+      cHeight: 0,
+      groupIdCount: 0,
+      capsLock: false
     }
+
+    this.state.cWidth = parseInt(
+      opts.width || containerID.attributes['data-width'].value
+    )
+    this.state.cHeight = parseInt(
+      opts.height || containerID.attributes['data-height'].value
+    )
 
     this.handleMouseEnterFunction = this.mouseEnterFunction.bind(this)
     this.handleMouseLeaveFunction = this.mouseLeaveFunction.bind(this)
     this.handleKeyHandler = this.keyHandler.bind(this)
     this.handleKeyUpHandler = this.keyUpHandler.bind(this)
 
-    svgLayer = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+    const svgLayer = document.createElementNS(
+      'http://www.w3.org/2000/svg',
+      'svg'
+    )
     svgLayer.setAttributeNS(null, 'id', 'svgLayer')
     svgLayer.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
     svgLayer.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink')
     svgLayer.setAttributeNS(null, 'version', '1.1')
     svgLayer.setAttributeNS(null, 'style', 'position: inherit;')
-    svgLayer.setAttributeNS(null, 'width', this.cWidth)
-    svgLayer.setAttributeNS(null, 'height', this.cHeight)
+    svgLayer.setAttributeNS(null, 'width', this.state.cWidth)
+    svgLayer.setAttributeNS(null, 'height', this.state.cHeight)
 
     this.containerElement.appendChild(svgLayer)
-    this.svgLayer = svgLayer
+    this.state.svgLayer = svgLayer
 
     let xlt = document.createElementNS(
       'http://www.w3.org/2000/svg',
@@ -154,10 +98,7 @@ class SVGDraw extends EventEmitter {
 
     svgLayer.appendChild(xlt)
 
-    thisSVGpoints = [] // collect points as [x,y]
-
-    this.fontSize = 50
-    fontFamily = 'Verdana'
+    this.state.currentSVGPoints = [] // collect points as [x,y]
 
     const imageSrc = opts.imageSrc || containerID.attributes['data-image'].value
 
@@ -185,23 +126,35 @@ class SVGDraw extends EventEmitter {
     this.state.mousePosition = { x: 0, y: 0 }
 
     if (!this.touchSupported) {
-      svgLayer.addEventListener('dblclick', this.doubleClickHandler.bind(this))
+      this.state.svgLayer.addEventListener(
+        'dblclick',
+        this.doubleClickHandler.bind(this)
+      )
     }
 
-    this.svgLayer.addEventListener('mousedown', this.onSvgMouseDown.bind(this))
-    this.svgLayer.addEventListener('mouseup', this.onSvgMouseUp.bind(this))
-    this.svgLayer.addEventListener('mousemove', this.onSvgMouseMove.bind(this))
+    this.state.svgLayer.addEventListener(
+      'mousedown',
+      this.onSvgMouseDown.bind(this)
+    )
+    this.state.svgLayer.addEventListener(
+      'mouseup',
+      this.onSvgMouseUp.bind(this)
+    )
+    this.state.svgLayer.addEventListener(
+      'mousemove',
+      this.onSvgMouseMove.bind(this)
+    )
   }
 
   loadImage(src) {
-    svgImage = new Image()
-    svgImage.src = src
-    svgImage.onload = () => {
+    this.state.svgImage = new Image()
+    this.state.svgImage.src = src
+    this.state.svgImage.onload = () => {
       this.state.xC = 0
       this.state.yC = 0
 
-      var cAR = this.cWidth / this.cHeight
-      var iAR = svgImage.width / svgImage.height
+      var cAR = this.state.cWidth / this.state.cHeight
+      var iAR = this.state.svgImage.width / this.state.svgImage.height
 
       // scale to height if (similar aspect ratios AND image aspect ratio less than container's)
       // OR the image is tall and the container is wide)
@@ -210,19 +163,21 @@ class SVGDraw extends EventEmitter {
         (iAR <= 1 && cAR >= 1)
       ) {
         this.configuration.baseZoom =
-          svgLayer.height.baseVal.value / svgImage.height // scale to height on condition desc in comment
+          this.state.svgLayer.height.baseVal.value / this.state.svgImage.height // scale to height on condition desc in comment
       } else {
         this.configuration.baseZoom =
-          svgLayer.width.baseVal.value / svgImage.width // otherwise scale to width
+          this.state.svgLayer.width.baseVal.value / this.state.svgImage.width // otherwise scale to width
       }
 
       // strokeWidth = baseStrokeWidth.toString();    // NOT dynamically recomputed with zoom (not this one)
-      bubbleRadius = (baseBubbleRadius / this.configuration.baseZoom).toString() // and transcoded from/to string (may not be required)
+      this.state.bubbleRadius = (
+        this.state.baseBubbleRadius / this.configuration.baseZoom
+      ).toString() // and transcoded from/to string (may not be required)
 
       this.state.mousePosition.x =
-        (this.configuration.baseZoom * svgImage.width) / 2 // center of image
+        (this.configuration.baseZoom * this.state.svgImage.width) / 2 // center of image
       this.state.mousePosition.y =
-        (this.configuration.baseZoom * svgImage.height) / 2
+        (this.configuration.baseZoom * this.state.svgImage.height) / 2
       // insert the svg base image into the transformable group <g id='xlt'>
 
       this.xlt.setAttributeNS(null, 'id', 'xlt')
@@ -239,13 +194,21 @@ class SVGDraw extends EventEmitter {
       xltImage.setAttributeNS(null, 'id', 'xltImage')
       xltImage.setAttributeNS(null, 'x', '0')
       xltImage.setAttributeNS(null, 'y', '0')
-      xltImage.setAttributeNS(null, 'width', svgImage.width.toString())
-      xltImage.setAttributeNS(null, 'height', svgImage.height.toString())
+      xltImage.setAttributeNS(
+        null,
+        'width',
+        this.state.svgImage.width.toString()
+      )
+      xltImage.setAttributeNS(
+        null,
+        'height',
+        this.state.svgImage.height.toString()
+      )
       xltImage.setAttributeNS(null, 'preserveAspectRatio', 'none')
       xltImage.setAttributeNS(
         'http://www.w3.org/1999/xlink',
         'href',
-        svgImage.src
+        this.state.svgImage.src
       )
 
       this.zoom_trans(0, 0, this.configuration.baseZoom) //////////// IMPORTANT !!!!!!!!!!!
@@ -256,11 +219,11 @@ class SVGDraw extends EventEmitter {
   }
 
   get currentMouseX() {
-    return (this.state.mousePosition.x - this.state.xC) / zoom
+    return (this.state.mousePosition.x - this.state.xC) / this.state.zoom
   }
 
   get currentMouseY() {
-    return (this.state.mousePosition.y - this.state.yC) / zoom
+    return (this.state.mousePosition.y - this.state.yC) / this.state.zoom
   }
 
   setCursorMode(mode) {
@@ -271,9 +234,9 @@ class SVGDraw extends EventEmitter {
   }
 
   updateCursorMode(mode) {
-    if (thisElement) {
+    if (this.state.currentElement) {
       this.checkLeftoverElement() // look for dangling element, most likely off of svg image element ( - Y coord)
-      this.clearEditElement(thisGroup) //  TODO: make sure all cases complete
+      this.clearEditElement(this.state.currentGroup) //  TODO: make sure all cases complete
     }
 
     this.setCursorMode(mode)
@@ -289,15 +252,15 @@ class SVGDraw extends EventEmitter {
         this.cursorMode = drawMode.MOVE
       }
 
-      if (mode == 'reset') {
-        this.zoom_trans(0, 0, this.configuration.baseZoom)
+      if (mode == BoardOptions.RESET) {
+        this.setZoom(this.configuration.baseZoom)
         this.cursorMode = drawMode.MOVE
       }
 
-      waitElement = true
+      this.state.waitElement = true
     }
 
-    svgInProgress = false
+    this.state.svgInProgress = false
   }
 
   exitEditPoint(group) {
@@ -309,22 +272,24 @@ class SVGDraw extends EventEmitter {
       // changed from group.childElementCount > 1
       group.lastChild.remove() // eliminates all bubbles
     }
-    svgInProgress = false
-    thisBubble = null
+
+    this.state.svgInProgress = false
+    this.state.currentBubble = null
 
     this.updateCursorMode(drawMode.MOVE)
     this.setElementMouseEnterLeave(group)
   }
 
   getIDcount() {
-    this.idCount += 1
-    return this.idCount
+    this.state.groupIdCount += 1
+
+    return this.state.groupIdCount
   }
 
   zoom_trans(x, y, scale) {
     const transform = `translate(${x.toString()}, ${y.toString()}) scale(${scale.toString()})`
 
-    zoom = scale
+    this.state.zoom = scale
     this.state.xC = x
     this.state.yC = y
 
@@ -334,64 +299,53 @@ class SVGDraw extends EventEmitter {
   zoomIn() {
     const { zoomDelta, maxZoom } = this.configuration
 
-    if (zoom < maxZoom) {
+    if (this.state.zoom < maxZoom) {
       // zoom of 1 is pixel-per-pixel on svgLayer
-      let newZoom = zoom * (1.0 + zoomDelta)
+      let newZoom = this.state.zoom * (1.0 + zoomDelta)
 
       if (newZoom > maxZoom) {
         newZoom = maxZoom
       }
 
-      this.state.xC =
-        this.state.mousePosition.x -
-        ((this.state.mousePosition.x - this.state.xC) * newZoom) / zoom
-      this.state.yC =
-        this.state.mousePosition.y -
-        ((this.state.mousePosition.y - this.state.yC) * newZoom) / zoom
-      this.zoom_trans(this.state.xC, this.state.yC, newZoom)
-      zoom = newZoom
-      bubbleRadius = (baseBubbleRadius / zoom).toString()
+      this.setZoom(newZoom)
     }
   }
 
   zoomOut() {
-    if (zoom > this.configuration.baseZoom / 3) {
-      let newZoom = zoom / (1.0 + this.configuration.zoomDelta)
-      this.state.xC =
-        this.state.mousePosition.x -
-        ((this.state.mousePosition.x - this.state.xC) * newZoom) / zoom
-      this.state.yC =
-        this.state.mousePosition.y -
-        ((this.state.mousePosition.y - this.state.yC) * newZoom) / zoom
-      this.zoom_trans(this.state.xC, this.state.yC, newZoom)
-      zoom = newZoom
-      bubbleRadius = (baseBubbleRadius / zoom).toString()
+    if (this.state.zoom > this.configuration.baseZoom / 3) {
+      const scale = this.state.zoom / (1.0 + this.configuration.zoomDelta)
+
+      this.setZoom(scale)
     }
   }
 
   setZoom(scale) {
     this.state.xC =
       this.state.mousePosition.x -
-      ((this.state.mousePosition.x - this.state.xC) * scale) / zoom
+      ((this.state.mousePosition.x - this.state.xC) * scale) / this.state.zoom
     this.state.yC =
       this.state.mousePosition.y -
-      ((this.state.mousePosition.y - this.state.yC) * scale) / zoom
+      ((this.state.mousePosition.y - this.state.yC) * scale) / this.state.zoom
 
     this.zoom_trans(this.state.xC, this.state.yC, scale)
-    zoom = scale
+    this.state.zoom = scale
+    this.state.bubbleRadius = (
+      this.state.baseBubbleRadius / this.state.zoom
+    ).toString()
   }
 
   setStroke(color) {
-    stroke = color
     this.configuration.stroke = color
   }
 
   apiFontSize(fontsize) {
-    if (isNumeric(fontsize)) fontSize = fontsize
+    if (isNumeric(fontsize)) {
+      this.configuration.fontSize = fontsize
+    }
   }
 
   apiFontFamily(font) {
-    fontFamily = font
+    this.configuration.fontFamily = font
   }
 
   apiArrowClosed(checked) {
@@ -404,13 +358,13 @@ class SVGDraw extends EventEmitter {
 
   apiArrowLength(length) {
     if (isNumeric(length)) {
-      arrowheadLength = length
+      this.configuration.arrowheadLength = length
     }
   }
 
   apiArrowPercent(percent) {
     if (isNumeric(percent)) {
-      arrowPercent = percent
+      this.configuration.arrowPercent = percent
     }
   }
 
@@ -419,26 +373,28 @@ class SVGDraw extends EventEmitter {
   }
 
   apiStrokeWidth(pixels) {
-    if (isNumeric(pixels)) strokeWidth = pixels
+    if (isNumeric(pixels)) {
+      this.configuration.strokeWidth = pixels
+    }
   }
 
   apiStrokeOpacity(opacity) {
     if (opacity >= 0 && opacity <= 1) {
-      strokeOpacity = opacity
+      this.configuration.strokeOpacity = opacity
     }
   }
 
   apiStrokeLinecap(style) {
-    strokeLinecap = style
+    this.configuration.strokeLinecap = style
   }
 
   apiFill(color) {
-    fill = color
+    this.configuration.fill = color
   }
 
   apiFillOpacity(opacity) {
     if (opacity >= 0 && opacity <= 1) {
-      fillOpacity = opacity.toString()
+      this.configuration.fillOpacity = opacity.toString()
     }
   }
 
@@ -465,11 +421,11 @@ class SVGDraw extends EventEmitter {
   }
 
   apiShowSVG(verbatim) {
-    return collectSVG(verbatim).outerHTML
+    return collectSVG(verbatim, { svgLayer: this.state.svgLayer }).outerHTML
   }
 
   apiBareSVG(noGroups = true) {
-    return getBareSVG(noGroups).outerHTML
+    return getBareSVG(noGroups, { svgLayer: this.state.svgLayer }).outerHTML
   }
 
   apiJsonSVG() {
@@ -488,7 +444,7 @@ class SVGDraw extends EventEmitter {
     return JSONsvg
   }
 
-  apiLoadSVG = function (svg, opts = { clearPrevious: true }) {
+  apiLoadSVG = function (svg, opts = { clearPrevious: true, editable: true }) {
     const svgElement = document.createElementNS(
       'http://www.w3.org/2000/svg',
       SVGType.SVG
@@ -505,148 +461,178 @@ class SVGDraw extends EventEmitter {
     }
 
     g.forEach((el) => {
+      const shapeElement = el.firstChild
       el.setAttribute('id', `g${this.getIDcount()}`)
-      this.setElementMouseEnterLeave(el)
+
+      if (opts.shapeClass) {
+        shapeElement.classList.add(opts.shapeClass)
+      }
+
+      if (opts.fill) {
+        shapeElement.setAttribute('fill', opts.fill)
+        shapeElement.setAttribute('fill-opacity', 1)
+      }
+
+      if (opts.editable) {
+        this.setElementMouseEnterLeave(el)
+      }
+
       this.xlt.appendChild(el)
     })
   }
+}
+
+function setPointsToElement(element, points) {
+  element.setAttributeNS(
+    null,
+    'points',
+    points[0][0].toFixed(4).toString() +
+      ',' +
+      points[0][1].toFixed(4).toString() +
+      ' ' +
+      points[0][0].toFixed(4).toString() +
+      ',' +
+      points[0][1].toFixed(4).toString() +
+      ' '
+  )
 }
 
 SVGDraw.prototype.onSvgMouseDown = function () {
   // in general, start or stop element generation on mouseDOWN (true?)
   this.updateMousePosition(event)
 
-  if (svgInProgress != false && svgInProgress !== this.cursorMode) {
+  if (
+    this.state.svgInProgress &&
+    this.state.svgInProgress !== this.cursorMode
+  ) {
     // terminate in progress svg before continuing
-    if (svgInProgress !== 'SHIFT') {
-      svgInProgress = this.cursorMode //  ??
+    if (this.state.svgInProgress !== 'SHIFT') {
+      this.state.svgInProgress = this.cursorMode //  ??
     }
     return
   }
 
-  if (thisGroup) {
-    if (thisGroup.childElementCount > 1 && this.cursorMode != drawMode.TEXT) {
-      // this is the case where there is a click on a mousentered
-      this.clearEditElement(thisGroup)
-      return false
-    }
+  if (
+    this.state.currentGroup?.childElementCount > 1 &&
+    this.cursorMode != drawMode.TEXT
+  ) {
+    // this is the case where there is a click on a mousentered
+    this.clearEditElement(this.state.currentGroup)
+    return false
   }
 
   const [x, y] = [this.currentMouseX, this.currentMouseY]
-  thisSVGpoints[0] = [x, y]
+  this.state.currentSVGPoints[0] = [x, y]
 
   if (this.cursorMode == drawMode.POLYGON) {
     // mouseDown sets initial point, subsequent points set by mouseDown after mouseUp
-    if (svgInProgress == false) {
+    if (this.state.svgInProgress == false) {
       // this is a new instance of this svg type (currently by definition)
 
-      thisSVGpoints[0] = [this.currentMouseX, this.currentMouseY]
+      this.state.currentSVGPoints[0] = [this.currentMouseX, this.currentMouseY]
       let group = document.createElementNS('http://www.w3.org/2000/svg', 'g')
       let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
-      thisGroup = group
+      this.state.currentGroup = group
       document.getElementById('xlt').appendChild(group)
-      let element = newElement(drawMode.POLYLINE) //YES, I KNOW... polyline behavior mimics google maps better
+      let element = newElement({
+        tag: drawMode.POLYLINE,
+        attributes: this.getSVGAttributes()
+      }) //YES, I KNOW... polyline behavior mimics google maps better
 
       group.appendChild(element)
-      thisElement = group.children[0]
-      element.setAttributeNS(
-        null,
-        'points',
-        thisSVGpoints[0][0].toFixed(4).toString() +
-          ',' +
-          thisSVGpoints[0][1].toFixed(4).toString() +
-          ' ' +
-          thisSVGpoints[0][0].toFixed(4).toString() +
-          ',' +
-          thisSVGpoints[0][1].toFixed(4).toString() +
-          ' '
-      ) // start x,y for both points initially
-      svgInProgress = this.cursorMode // mark in progress
+      this.state.currentElement = group.children[0]
+      setPointsToElement(element, this.state.currentSVGPoints)
+      this.state.svgInProgress = this.cursorMode // mark in progress
     } else {
       // this is the fixation of this last point, so DON'T dissociate mouse move handler
       this.updateMousePosition(event)
-      let thesePoints = thisElement.attributes['points'].value // to trim or not to trim?  if so, multiple implications here
+      let thesePoints = this.state.currentElement.attributes['points'].value // to trim or not to trim?  if so, multiple implications here
       let thisPoint =
         this.currentMouseX.toFixed(4).toString() +
         ',' +
         this.currentMouseY.toFixed(4).toString() +
         ' '
-      thisElement.attributes['points'].value = thesePoints.concat(thisPoint)
+      this.state.currentElement.attributes['points'].value =
+        thesePoints.concat(thisPoint)
     }
   }
   if (this.cursorMode == drawMode.POLYLINE) {
     // mouseDown sets initial point, subsequent points set by mouseDown after mouseUp
-    if (svgInProgress == false) {
+    if (this.state.svgInProgress == false) {
       // this is a new instance of this svg type (currently by definition)
-      thisSVGpoints[0] = [this.currentMouseX, this.currentMouseY]
+      this.state.currentSVGPoints[0] = [this.currentMouseX, this.currentMouseY]
       let group = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-      thisGroup = group
+      this.state.currentGroup = group
       let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
       document.getElementById('xlt').appendChild(group)
-      let element = newElement(drawMode.POLYLINE)
+      let element = newElement({
+        tag: drawMode.POLYLINE,
+        attributes: this.getSVGAttributes()
+      })
 
       group.appendChild(element)
-      thisElement = group.children[0]
+      this.state.currentElement = group.children[0]
       element.setAttributeNS(null, 'stroke-linecap', 'round')
-      element.setAttributeNS(
-        null,
-        'points',
-        thisSVGpoints[0][0].toFixed(4).toString() +
-          ',' +
-          thisSVGpoints[0][1].toFixed(4).toString() +
-          ' ' +
-          thisSVGpoints[0][0].toFixed(4).toString() +
-          ',' +
-          thisSVGpoints[0][1].toFixed(4).toString() +
-          ' '
-      ) // start x,y for both points initially
-      svgInProgress = this.cursorMode // mark in progress
+      setPointsToElement(element, this.state.currentSVGPoints)
+      this.state.svgInProgress = this.cursorMode // mark in progress
     } else {
       // this is the fixation of this last point, so DON'T dissociate mouse move handler
       this.updateMousePosition(event)
-      let thesePoints = thisElement.attributes['points'].value
+      let thesePoints = this.state.currentElement.attributes['points'].value
       let thisPoint =
         this.currentMouseX.toFixed(4).toString() +
         ',' +
         this.currentMouseY.toFixed(4).toString() +
         ' '
-      thisElement.attributes['points'].value = thesePoints.concat(thisPoint)
+      this.state.currentElement.attributes['points'].value =
+        thesePoints.concat(thisPoint)
     }
   }
   if (this.cursorMode == drawMode.RECTANGLE) {
     // mouseDown starts creation, after drag, mouseUp ends
-    if (svgInProgress == false) {
+    if (this.state.svgInProgress == false) {
       // this is a new instance of this svg type (currently by definition)
-      thisSVGpoints[0] = [this.currentMouseX, this.currentMouseY]
+      this.state.currentSVGPoints[0] = [this.currentMouseX, this.currentMouseY]
 
       let group = document.createElementNS('http://www.w3.org/2000/svg', 'g')
       let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
       document.getElementById('xlt').appendChild(group)
-      let element = newElement(SVGType.RECT)
+      let element = newElement({
+        tag: SVGType.RECT,
+        attributes: this.getSVGAttributes()
+      })
 
       group.appendChild(element)
-      thisGroup = group
-      thisElement = group.children[0]
-      element.setAttributeNS(null, 'x', thisSVGpoints[0][0].toFixed(4)) // start x
-      element.setAttributeNS(null, 'y', thisSVGpoints[0][1].toFixed(4)) // start y
+      this.state.currentGroup = group
+      this.state.currentElement = group.children[0]
+      element.setAttributeNS(
+        null,
+        'x',
+        this.state.currentSVGPoints[0][0].toFixed(4)
+      ) // start x
+      element.setAttributeNS(
+        null,
+        'y',
+        this.state.currentSVGPoints[0][1].toFixed(4)
+      ) // start y
       element.setAttributeNS(null, 'width', 1) // width x
       element.setAttributeNS(null, 'height', 1) // height y
-      svgInProgress = this.cursorMode // mark in progress
+      this.state.svgInProgress = this.cursorMode // mark in progress
     }
     // now using mouseUp event to terminate rect
   }
   if (this.cursorMode == drawMode.LINE) {
     //  mouseDown starts creation, after, drag mouseUp ends
-    if (svgInProgress == false) {
+    if (this.state.svgInProgress == false) {
       // this is a new instance of this svg type (currently by definition)
 
-      svgInProgress = this.cursorMode // mark in progress
+      this.state.svgInProgress = this.cursorMode // mark in progress
 
       const { element, group } = drawLine({
         x,
@@ -656,18 +642,18 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       })
       group.setAttributeNS(null, 'id', 'g' + this.getIDcount().toString())
       document.getElementById('xlt').appendChild(group)
-      thisElement = element
-      thisGroup = group
+      this.state.currentElement = element
+      this.state.currentGroup = group
     } else {
       // this is the terminus of this instance, so dissociate mouse move handler
-      svgInProgress = false
-      this.setElementMouseEnterLeave(thisElement)
+      this.state.svgInProgress = false
+      this.setElementMouseEnterLeave(this.state.currentElement)
       // unbindMouseHandlers(self);
     }
   }
   if (this.cursorMode == drawMode.ARROW) {
     //  mouseDown starts creation, after, drag mouseUp ends
-    if (svgInProgress == false) {
+    if (this.state.svgInProgress == false) {
       // this is a new instance of this svg type (currently by definition)
       const { element, group } = drawLine({
         x,
@@ -676,101 +662,128 @@ SVGDraw.prototype.onSvgMouseDown = function () {
         attributes: this.configuration
       })
 
-      svgInProgress = this.cursorMode
+      this.state.svgInProgress = this.cursorMode
       group.setAttributeNS(null, 'id', 'g' + this.getIDcount().toString())
       document.getElementById('xlt').appendChild(group)
-      thisElement = element
-      thisGroup = group
+      this.state.currentElement = element
+      this.state.currentGroup = group
     } else {
       // this is the terminus of this instance, so dissociate mouse move handler
-      svgInProgress = false
-      this.setElementMouseEnterLeave(thisElement)
+      this.state.svgInProgress = false
+      this.setElementMouseEnterLeave(this.state.currentElement)
       // unbindMouseHandlers(self);
     }
   }
   if (this.cursorMode == drawMode.CIRCLE) {
     // mouseDown    // modified to use common element for handlers
-    if (svgInProgress == false) {
+    if (this.state.svgInProgress == false) {
       // this is a new instance of this svg type (currently by definition)
-      if (thisGroup != null) {
+      if (this.state.currentGroup != null) {
         //  ////////////// ???
-        this.clearEditElement(thisGroup) // this group is the one with bubbles, to be obviated
+        this.clearEditElement(this.state.currentGroup) // this group is the one with bubbles, to be obviated
       }
-      thisSVGpoints[0] = [this.currentMouseX, this.currentMouseY]
+      this.state.currentSVGPoints[0] = [this.currentMouseX, this.currentMouseY]
       let group = document.createElementNS('http://www.w3.org/2000/svg', 'g')
       let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
       document.getElementById('xlt').appendChild(group)
-      let element = newElement(SVGType.CIRCLE) // new generalized method
+      let element = newElement({
+        tag: SVGType.CIRCLE,
+        attributes: this.getSVGAttributes()
+      }) // new generalized method
 
       group.appendChild(element)
-      thisGroup = group
-      thisElement = group.children[0] // this var is used to dynamically create the element
-      element.setAttributeNS(null, 'cx', thisSVGpoints[0][0].toFixed(4)) // start x
-      element.setAttributeNS(null, 'cy', thisSVGpoints[0][1].toFixed(4)) // start y
+      this.state.currentGroup = group
+      this.state.currentElement = group.children[0] // this var is used to dynamically create the element
+      element.setAttributeNS(
+        null,
+        'cx',
+        this.state.currentSVGPoints[0][0].toFixed(4)
+      ) // start x
+      element.setAttributeNS(
+        null,
+        'cy',
+        this.state.currentSVGPoints[0][1].toFixed(4)
+      ) // start y
       element.setAttributeNS(null, 'r', 1) // width x
-      svgInProgress = this.cursorMode // mark in progress
+      this.state.svgInProgress = this.cursorMode // mark in progress
     }
     // now using mouseup event exclusively to terminate circle
   }
   if (this.cursorMode == drawMode.ELLIPSE) {
     // mouseDown
-    if (svgInProgress == false) {
+    if (this.state.svgInProgress == false) {
       // this is a new instance of this svg type (currently by definition)
-      thisSVGpoints[0] = [this.currentMouseX, this.currentMouseY]
+      this.state.currentSVGPoints[0] = [this.currentMouseX, this.currentMouseY]
       let group = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-      thisGroup = group
+      this.state.currentGroup = group
       let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
       document.getElementById('xlt').appendChild(group)
-      let element = newElement(drawMode.ELLIPSE)
+      let element = newElement({
+        tag: drawMode.ELLIPSE,
+        attributes: this.getSVGAttributes()
+      })
 
       group.appendChild(element)
-      thisElement = group.children[0]
-      element.setAttributeNS(null, 'cx', thisSVGpoints[0][0].toFixed(4)) // start x
-      element.setAttributeNS(null, 'cy', thisSVGpoints[0][1].toFixed(4)) // start y
+      this.state.currentElement = group.children[0]
+      element.setAttributeNS(
+        null,
+        'cx',
+        this.state.currentSVGPoints[0][0].toFixed(4)
+      ) // start x
+      element.setAttributeNS(
+        null,
+        'cy',
+        this.state.currentSVGPoints[0][1].toFixed(4)
+      ) // start y
       element.setAttributeNS(null, 'rx', 1) // radius x
       element.setAttributeNS(null, 'ry', 1) // radius y
-      svgInProgress = this.cursorMode // mark in progress
+      this.state.svgInProgress = this.cursorMode // mark in progress
     } else {
       // this is the terminus of this instance, so dissociate mouse move handler
-      svgInProgress = false
-      this.setElementMouseEnterLeave(thisElement)
+      this.state.svgInProgress = false
+      this.setElementMouseEnterLeave(this.state.currentElement)
       // unbindMouseHandlers(self);
     }
   }
   if (this.cursorMode == drawMode.DRAW) {
     // mouseDown
-    if (svgInProgress == false) {
+    if (this.state.svgInProgress == false) {
       // this is a new instance of this svg type (currently by definition)
-      thisSVGpoints[0] = [this.currentMouseX, this.currentMouseY]
+      this.state.currentSVGPoints[0] = [this.currentMouseX, this.currentMouseY]
       let group = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-      thisGroup = group
+      this.state.currentGroup = group
       let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
       document.getElementById('xlt').appendChild(group)
       //for (j = 0; j < thisSVGpoints.length; j++) {              // for text mode there is only one
-      let element = newElement(drawMode.POLYLINE)
+      let element = newElement({
+        tag: drawMode.POLYLINE,
+        attributes: this.getSVGAttributes()
+      })
 
       group.appendChild(element)
-      thisElement = group.children[0]
+      this.state.currentElement = group.children[0]
       element.setAttributeNS(
         null,
         'points',
-        thisSVGpoints[0][0].toFixed(4).toString() +
+        this.state.currentSVGPoints[0][0].toFixed(4).toString() +
           ',' +
-          thisSVGpoints[0][1].toFixed(4).toString() +
+          this.state.currentSVGPoints[0][1].toFixed(4).toString() +
           ' '
       ) // start x,y
       //}
-      svgInProgress = this.cursorMode // mark in progress
+      this.state.svgInProgress = this.cursorMode // mark in progress
     } else {
       // this is the terminus of this instance, so dissociate mouse move handler
-      svgInProgress = false
-      setMouseoverOut(thisElement)
+      this.state.svgInProgress = false
+      setMouseoverOut(this.state.currentElement, {
+        strokeWidth: this.configuration.strokeWidth
+      })
       // unbindMouseHandlers(self);
     }
   }
@@ -784,21 +797,24 @@ SVGDraw.prototype.onSvgMouseDown = function () {
     // on each value.  The edit sister group will have 4 bubbles, ids: p1, c1, c2, p2 to decode
     // the control points' mousemove action.  Make control points the same as the endpoints initially,
     // then annotate with bubbles to shape the curve.  This is an extra step more than other elements.
-    if (svgInProgress == false) {
+    if (this.state.svgInProgress == false) {
       // this is a new instance of this svg type (currently by definition)
-      thisSVGpoints[0] = [this.currentMouseX, this.currentMouseY]
+      this.state.currentSVGPoints[0] = [this.currentMouseX, this.currentMouseY]
       let group = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-      thisGroup = group
+      this.state.currentGroup = group
       let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
       document.getElementById('xlt').appendChild(group)
-      let element = newElement(SVGType.PATH)
+      let element = newElement({
+        tag: SVGType.PATH,
+        attributes: this.getSVGAttributes()
+      })
 
       group.appendChild(element)
-      thisElement = group.children[0]
-      let thisX = thisSVGpoints[0][0]
-      let thisY = thisSVGpoints[0][1]
+      this.state.currentElement = group.children[0]
+      let thisX = this.state.currentSVGPoints[0][0]
+      let thisY = this.state.currentSVGPoints[0][1]
       element.setAttributeNS(
         null,
         'd',
@@ -813,24 +829,24 @@ SVGDraw.prototype.onSvgMouseDown = function () {
           thisY
         )
       )
-      svgInProgress = this.cursorMode // mark in progress
+      this.state.svgInProgress = this.cursorMode // mark in progress
     } else {
       // this is the terminus of this instance, so dissociate mouse move handler
-      svgInProgress = false
-      this.setElementMouseEnterLeave(thisElement)
+      this.state.svgInProgress = false
+      this.setElementMouseEnterLeave(this.state.currentElement)
       // unbindMouseHandlers(self);
     }
   }
   if (this.cursorMode == drawMode.TEXT) {
     // mouseDown - could be initial click, revised position click, or preemie
     let group
-    if (thisElement) {
+    if (this.state.currentElement) {
       this.finishTextGroup()
     }
-    if (svgInProgress == false) {
-      thisSVGpoints[0] = [this.currentMouseX, this.currentMouseY]
+    if (this.state.svgInProgress == false) {
+      this.state.currentSVGPoints[0] = [this.currentMouseX, this.currentMouseY]
       group = document.createElementNS('http://www.w3.org/2000/svg', 'g')
-      thisGroup = group
+      this.state.currentGroup = group
       let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
       group.setAttributeNS(null, 'class', this.cursorMode)
@@ -839,29 +855,41 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       let element
       element = document.createElementNS('http://www.w3.org/2000/svg', 'text')
       group.appendChild(element)
-      thisElement = group.children[0]
-      element.setAttributeNS(null, 'stroke', stroke)
+      this.state.currentElement = group.children[0]
+      element.setAttributeNS(null, 'stroke', this.configuration.stroke)
       element.setAttributeNS(null, 'stroke-width', '1')
       element.setAttributeNS(null, 'stroke-opacity', '1.0')
-      element.setAttributeNS(null, 'x', thisSVGpoints[0][0].toFixed(4)) // start x
-      element.setAttributeNS(null, 'y', thisSVGpoints[0][1].toFixed(4)) // start y
+      element.setAttributeNS(
+        null,
+        'x',
+        this.state.currentSVGPoints[0][0].toFixed(4)
+      ) // start x
+      element.setAttributeNS(
+        null,
+        'y',
+        this.state.currentSVGPoints[0][1].toFixed(4)
+      ) // start y
       element.setAttributeNS(
         null,
         'style',
-        'font-family: ' + fontFamily + '; fill: ' + stroke.toString() + ';'
+        'font-family: ' +
+          this.configuration.fontFamily +
+          '; fill: ' +
+          this.configuration.stroke.toString() +
+          ';'
       )
-      element.setAttributeNS(null, 'font-size', fontSize)
+      element.setAttributeNS(null, 'font-size', this.configuration.fontSize)
       element.innerHTML = '_' // plant the text cursor   /////////////////
-      svgInProgress = 'text' // mark in progress
+      this.state.svgInProgress = 'text' // mark in progress
     }
   }
   if (this.cursorMode == drawMode.MOVE) {
     // mouseDown
-    if (svgInProgress == false) {
-      svgInProgress = this.cursorMode
+    if (!this.state.svgInProgress) {
+      this.state.svgInProgress = this.cursorMode
     }
   }
-  waitElement = false //    ///////////   new code to allow creation start within extant element
+  this.state.waitElement = false //    ///////////   new code to allow creation start within extant element
   return event.preventDefault() && false
 } //// end of onSvgMouseDown
 
@@ -871,6 +899,17 @@ function pathPoint(x, y) {
 
 function curvePoint(x, y) {
   return pathPoint(x, y) + ' '
+}
+
+SVGDraw.prototype.getSVGAttributes = function () {
+  return {
+    stroke: this.configuration.stroke,
+    'stroke-width': this.configuration.strokeWidth,
+    'stroke-opacity': this.configuration.strokeOpacity,
+    fill: this.configuration.fill,
+    'fill-opacity': this.configuration.fillOpacity,
+    'stroke-linecap': this.configuration.strokeLinecap
+  }
 }
 
 SVGDraw.prototype.getCurvePath = function (x1, y1, cx1, cy1, cx2, cy2, x2, y2) {
@@ -917,18 +956,17 @@ function getCurvePoints(coords) {
   )
 }
 
-function newElement(klass) {
-  let element = document.createElementNS('http://www.w3.org/2000/svg', klass)
-  element.setAttributeNS(null, 'stroke', stroke)
-  element.setAttributeNS(null, 'stroke-width', strokeWidth)
-  element.setAttributeNS(null, 'stroke-opacity', strokeOpacity.toString())
-  element.setAttributeNS(null, 'fill', fill)
-  element.setAttributeNS(null, 'fill-opacity', fillOpacity.toString())
-  element.setAttributeNS(null, 'stroke-linecap', strokeLinecap)
+function newElement({ tag, attributes }) {
+  const element = document.createElementNS('http://www.w3.org/2000/svg', tag)
+
+  Object.entries(attributes).forEach(([attr, value]) => {
+    element.setAttributeNS(null, attr, value)
+  })
+
   return element
 }
 
-function setMouseoverOut(element) {
+function setMouseoverOut(element, { strokeWidth }) {
   element.setAttributeNS(
     null,
     'onmouseover',
@@ -943,11 +981,12 @@ function setMouseoverOut(element) {
 }
 
 SVGDraw.prototype.mouseEnterFunction = function (event) {
-  let thisGroupID = thisGroup ? thisGroup.id : 'null'
-  let thisElementTagName = thisElement ? thisElement.tagName : 'null'
-  let thisElementParent = thisElement ? thisElement.parentElement.id : 'null'
+  let thisGroupID = this.state.currentGroup?.id || 'null'
+  let thisElementTagName = this.state.currentElement?.tagName || 'null'
+  let thisElementParent = this.state.currentElement?.parentElement.id || 'null'
+
   console_log(
-    enable_log,
+    this.configuration.debugLog,
     'mouseenter' +
       ' eventTarget=' +
       event.target.id +
@@ -965,11 +1004,12 @@ SVGDraw.prototype.mouseEnterFunction = function (event) {
 }
 
 SVGDraw.prototype.mouseLeaveFunction = function (event) {
-  let thisGroupID = thisGroup ? thisGroup.id : 'null'
-  let thisElementTagName = thisElement ? thisElement.tagName : 'null'
-  let thisElementParent = thisElement ? thisElement.parentElement.id : 'null'
+  let thisGroupID = this.state.currentGroup?.id || 'null'
+  let thisElementTagName = this.state.currentElement?.tagName || 'null'
+  let thisElementParent = this.state.currentElement?.parentElement.id || 'null'
+
   console_log(
-    enable_log,
+    this.configuration.debugLog,
     'mouseleave' +
       ' eventTarget=' +
       event.target.id +
@@ -1003,21 +1043,33 @@ SVGDraw.prototype.setElementMouseEnterLeave = function (group) {
 
 SVGDraw.prototype.setEditElement = function (group) {
   // add bubble elements to the group containing this element
-  if (checkElementConflict(group)) {
+  if (
+    checkElementConflict(this.state.currentGroup, {
+      group,
+      waitElement: this.state.waitElement,
+      svgInProgress: this.state.svgInProgress
+    })
+  ) {
     // returns true if conflict
-    console_log(enable_log, 'Element conflict: ' + group.attributes.class.value)
+    console_log(
+      this.configuration.debugLog,
+      'Element conflict: ' + group.attributes.class.value
+    )
     return
   }
-  console_log(enable_log, 'setEditElement no conflict')
-  if (thisGroup == null) {
+  console_log(this.configuration.debugLog, 'setEditElement no conflict')
+  if (this.state.currentGroup == null) {
     // no conflicts detected, so if thisGroup is null,
     let msg = 'thisGroup is NULL'
-    if (thisElement) {
-      msg += ', thisElement = ' + thisElement.toString()
+    if (this.state.currentElement) {
+      msg += ', thisElement = ' + this.state.currentElement.toString()
     }
 
-    console_log(enable_log, group.attributes.class.value + ' ' + msg)
-    thisGroup = group // there is probably no creation activity
+    console_log(
+      this.configuration.debugLog,
+      group.attributes.class.value + ' ' + msg
+    )
+    this.state.currentGroup = group // there is probably no creation activity
   }
   //if (group.firstChild.tagName != this.cursorMode) {    // start editing an element not in the current mode
   if (group.firstChild) {
@@ -1037,7 +1089,7 @@ SVGDraw.prototype.setEditElement = function (group) {
       }
     }
   }
-  svgInProgress = false //  ////////// we have set bubbles but no action taken yet
+  this.state.svgInProgress = false //  ////////// we have set bubbles but no action taken yet
 
   //}
   if (group.childNodes.length > 1) {
@@ -1050,7 +1102,7 @@ SVGDraw.prototype.setEditElement = function (group) {
   const bubbleGroup = this.createBubbleGroup(group) // since bubble groups are heterogeneous in structure
   group.appendChild(bubbleGroup) // make the new bubble group in a no-id <g>
   console_log(
-    enable_log,
+    this.configuration.debugLog,
     'setEditElement ' + group.id + ' ' + group.attributes.class.value
   )
   // group.removeEventListener('mouseleave', mouseLeaveFunction)
@@ -1058,32 +1110,35 @@ SVGDraw.prototype.setEditElement = function (group) {
 
 SVGDraw.prototype.clearEditElement = function (group) {
   // given containing group; invoked by mouseleave, so order of statements reordered
-  let thisGroupID = thisGroup ? thisGroup.id : 'null'
+  let thisGroupID = this.state.currentGroup?.id || 'null'
   console_log(
-    enable_log,
+    this.configuration.debugLog,
     'clearEditElement: svgInProgress=' +
-      svgInProgress +
+      this.state.svgInProgress +
       ', group=' +
       group?.id +
       ', thisGroup=' +
       thisGroupID
   )
-  if (svgInProgress == 'SHIFT') {
+  if (this.state.svgInProgress == 'SHIFT') {
     // if we are shifting an element, do nothing
     return
   }
   if (!group) {
     // if we are misassociated just back away . . .
-    console_log(enable_log, 'clearEditElement: group argument null')
+    console_log(
+      this.configuration.debugLog,
+      'clearEditElement: group argument null'
+    )
     return
   }
-  if (waitElement) {
-    console_log(enable_log, 'clearEditElement: waitElement')
+  if (this.state.waitElement) {
+    console_log(this.configuration.debugLog, 'clearEditElement: waitElement')
     return
   }
-  if (thisGroup && thisGroupID != group.id) {
+  if (this.state.currentGroup && thisGroupID != group.id) {
     // collision
-    console_log(enable_log, 'clearEditElement: group conflict')
+    console_log(this.configuration.debugLog, 'clearEditElement: group conflict')
     return
   }
   if (group.childNodes.length > 1) {
@@ -1094,14 +1149,14 @@ SVGDraw.prototype.clearEditElement = function (group) {
     ) {
       // poly- bubbles have a child group
       group.lastChild.remove() // this is the group of bubbles (and maybe nested ones) if not just a SHIFT bubble
-      thisBubble = null
+      this.state.currentBubble = null
       this.cursorMode = drawMode.MOVE // was savedthis.cursorMode;   // on exit of edit mode, restore
-      svgInProgress = false
-      thisElement = null
-      thisGroup = null
+      this.state.svgInProgress = false
+      this.state.currentElement = null
+      this.state.currentGroup = null
     } else {
       if (group.firstChild.tagName == SVGType.TEXT) {
-        if (svgInProgress == drawMode.TEXT) {
+        if (this.state.svgInProgress == drawMode.TEXT) {
           this.finishTextGroup()
         }
       }
@@ -1111,13 +1166,16 @@ SVGDraw.prototype.clearEditElement = function (group) {
   this.setElementMouseEnterLeave(group)
   this.setCursorMode(drawMode.MOVE) // was savedthis.cursorMode;   // on exit of edit mode, restore
 
-  svgInProgress = false
-  thisElement = null
-  thisGroup = null
+  this.state.svgInProgress = false
+  this.state.currentElement = null
+  this.state.currentGroup = null
   //  eliminated savedthis.cursorMode = drawMode.MOVE;
 }
 
-function checkElementConflict(group) {
+function checkElementConflict(
+  currentGroup,
+  { group, waitElement, svgInProgress, debugLog }
+) {
   // only invoked by mouseenter listeners
   /* consider potential values of:
    svgInProgress, one of the svg modes, plus move, shift, and size
@@ -1126,15 +1184,12 @@ function checkElementConflict(group) {
    thisGroup, nominally the group of the active element
    */
   if (waitElement) {
-    console_log(
-      enable_log,
-      'checkElementConflict1: waitElement = ' + waitElement
-    )
+    console_log(debugLog, 'checkElementConflict1: waitElement = ' + waitElement)
     return true
   }
   if (!svgInProgress) {
     console_log(
-      enable_log,
+      debugLog,
       'checkElementConflict2: svgInProgress=' +
         svgInProgress +
         'thisGroup=' +
@@ -1144,20 +1199,17 @@ function checkElementConflict(group) {
   }
   if (svgInProgress == 'SHIFT') {
     console_log(
-      enable_log,
+      debugLog,
       'checkElementConflict3: svgInProgress=' +
         svgInProgress +
         'thisGroup=' +
         group.id
     )
-    if (thisGroup.id != group.id) {
-      return true
-    } else {
-      return false
-    }
+
+    return currentGroup.id != group.id
   }
   if (svgInProgress != group.firstChild.tagName) {
-    console_log(
+    /*     console_log(
       enable_log,
       'checkElementConflict4: svgInProgress=' +
         svgInProgress +
@@ -1165,16 +1217,16 @@ function checkElementConflict(group) {
         thisElement +
         ', group element=' +
         group.firstChild.tagName
-    )
+    ) */
     return true //  if we crossed another element
   }
-  if (thisGroup != group) {
+  if (currentGroup != group) {
     console_log(
-      enable_log,
+      debugLog,
       'checkElementConflict5: svgInProgress=' +
         svgInProgress +
         ', thisGroup=' +
-        thisGroup.id +
+        currentGroup.id +
         ', group=' +
         group.id +
         ', group element=' +
@@ -1187,26 +1239,33 @@ function checkElementConflict(group) {
 SVGDraw.prototype.setShiftElement = function (bubble) {
   // end of SHIFT leaves single bubble; should be removed on mouseleave of group
   //thisParent = element;                           // group containing real element and the bubbles group
-  if (!thisGroup) {
-    thisGroup = bubble.parentNode.parentNode // set group for mousemove
+  if (!this.state.currentGroup) {
+    this.state.currentGroup = bubble.parentNode.parentNode // set group for mousemove
   }
-  thisElement = thisGroup.firstChild
+  this.state.currentElement = this.state.currentGroup.firstChild
   // thisBubble = group.lastChild.firstChild;      // this is the center/first bubble
-  thisBubble = thisGroup.children[1].children['shift'] // this is the center/first bubble
-  this.cursorMode = thisElement.tagName
-  if (thisGroup.attributes.class) {
-    this.cursorMode = thisGroup.attributes.class.value
+  this.state.currentBubble =
+    this.state.currentGroup.children[1].children['shift'] // this is the center/first bubble
+  this.cursorMode = this.state.currentElement.tagName
+  if (this.state.currentGroup.attributes.class) {
+    this.cursorMode = this.state.currentGroup.attributes.class.value
   }
   //// presumption of ordering of shift bubble vs other bubbles: FIRST bubble is shift -- modified other code so TRUE
-  let endK = thisGroup.lastChild.childElementCount // total bubbles, leave the first one
+  let endK = this.state.currentGroup.lastChild.childElementCount // total bubbles, leave the first one
   for (let k = endK; k > 1; k--) {
-    thisGroup.lastChild.lastChild.remove() // remove resize bubbles from the end
+    this.state.currentGroup.lastChild.lastChild.remove() // remove resize bubbles from the end
   }
-  thisGroup.removeEventListener('mouseenter', this.handleMouseEnterFunction)
-  thisGroup.removeEventListener('mouseleave', this.handleMouseLeaveFunction)
-  svgInProgress = 'SHIFT'
+  this.state.currentGroup.removeEventListener(
+    'mouseenter',
+    this.handleMouseEnterFunction
+  )
+  this.state.currentGroup.removeEventListener(
+    'mouseleave',
+    this.handleMouseLeaveFunction
+  )
+  this.state.svgInProgress = 'SHIFT'
   console_log(
-    enable_log,
+    this.configuration.debugLog,
     'svgInProgress = SHIFT, this.cursorMode = ' + this.cursorMode
   )
 }
@@ -1215,10 +1274,10 @@ SVGDraw.prototype.setSizeElement = function (bubble) {
   // end of SHIFT leaves single bubble; should be removed on mouseleave of group
   const group = bubble.parentNode.parentNode // set group for mousemove
 
-  thisGroup = group // set group for mousemove
-  thisElement = group.firstChild
-  thisBubble = group.lastChild.firstChild // this is the center/first bubble
-  this.cursorMode = thisElement.tagName
+  this.state.currentGroup = group // set group for mousemove
+  this.state.currentElement = group.firstChild
+  this.state.currentBubble = group.lastChild.firstChild // this is the center/first bubble
+  this.cursorMode = this.state.currentElement.tagName
 
   if (
     this.cursorMode === drawMode.CIRCLE ||
@@ -1231,14 +1290,14 @@ SVGDraw.prototype.setSizeElement = function (bubble) {
     }
   }
 
-  svgInProgress = 'SIZE'
+  this.state.svgInProgress = 'SIZE'
 
   console_log(
-    enable_log,
+    this.configuration.debugLog,
     'svgInProgress = SIZE, this.cursorMode = ' +
       this.cursorMode +
       ' ' +
-      thisElement.tagName
+      this.state.currentElement.tagName
   )
 
   group.removeEventListener('mouseenter', this.handleMouseEnterFunction)
@@ -1249,27 +1308,27 @@ SVGDraw.prototype.setPointElement = function (bubble) {
   // this performs the inline substitution of the selected bubble coordinates
   const group = bubble.parentNode.parentNode // set group for mousemove
 
-  thisBubble = bubble
-  thisGroup = group
-  thisElement = group.firstChild // this is the real element
+  this.state.currentBubble = bubble
+  this.state.currentGroup = group
+  this.state.currentElement = group.firstChild // this is the real element
 
   if (parseInt(bubble.id) == bubble.parentNode.childElementCount - 1) {
     // last point/bubble?
-    thisBubble = bubble
+    this.state.currentBubble = bubble
   }
   if (bubble.parentNode.lastChild.tagName == SVGType.GROUP) {
     bubble.parentNode.lastChild.remove() // /////////// this is the right place: remove insert point bubbles
   }
-  if (thisGroup.attributes.class) {
-    this.cursorMode = thisGroup.attributes.class.value
+  if (this.state.currentGroup.attributes.class) {
+    this.cursorMode = this.state.currentGroup.attributes.class.value
   } else {
-    this.cursorMode = thisElement.tagName
+    this.cursorMode = this.state.currentElement.tagName
   }
 
   group.removeEventListener('mouseenter', this.handleMouseEnterFunction)
   group.removeEventListener('mouseleave', this.handleMouseLeaveFunction)
 
-  svgInProgress = 'POINT' // so we have an active element, and it has been marked in progress
+  this.state.svgInProgress = 'POINT' // so we have an active element, and it has been marked in progress
   // look for mousedown in handler for circle to transition to rubber band mode
 } // use mouseup or mousedown to terminate radius drag
 
@@ -1277,24 +1336,26 @@ SVGDraw.prototype.setNewPointElement = function (bubble) {
   // this inserts the new point into the <poly.. element
   const group = bubble.parentNode.parentNode.parentNode // set group for mousemove handler
 
-  thisBubble = bubble
-  thisGroup = group
-  thisElement = group.firstChild // this is the real element
+  this.state.currentBubble = bubble
+  this.state.currentGroup = group
+  this.state.currentElement = group.firstChild // this is the real element
 
   if (parseInt(bubble.id) == bubble.parentNode.childElementCount - 1) {
-    thisBubble = bubble
+    this.state.currentBubble = bubble
   }
 
-  this.cursorMode = thisElement.tagName
+  this.cursorMode = this.state.currentElement.tagName
   group.removeEventListener('mouseenter', this.handleMouseEnterFunction) // disable mousenter on real element's containing group
   group.removeEventListener('mouseleave', this.handleMouseLeaveFunction) // disable mouseleaver on real element's containing group
   // bubble.attributes['onmousedown'].value = '';  // cascade to onSvgMouseDown
-  thisElement.attributes['points'].value = insertNewPoint(
-    thisElement,
-    thisBubble
+  this.state.currentElement.attributes['points'].value = insertNewPoint(
+    this.state.currentElement,
+    this.state.currentBubble
   )
-  thisBubble.id = (parseInt(thisBubble.id) + 1).toString() // ///////// seems to work, but...
-  svgInProgress = 'NEW' // so we have an active element, and it has been marked in progress
+  this.state.currentBubble.id = (
+    parseInt(this.state.currentBubble.id) + 1
+  ).toString() // ///////// seems to work, but...
+  this.state.svgInProgress = 'NEW' // so we have an active element, and it has been marked in progress
   // look for mousedown in handler for circle to transition to rubber band mode
 } // use mouseup or mousedown to terminate radius drag
 
@@ -1414,26 +1475,33 @@ SVGDraw.prototype.createBubbleForPath = function (bubbleGroup, element) {
     yn = (yn / 4).toFixed(4)
   }
   // create the "bounding" polygon  'poly'
-  bubbleGroup.appendChild(createBoundsPoly(theseCoords))
+  bubbleGroup.appendChild(
+    createBoundsPoly({
+      coords: theseCoords,
+      attributes: this.getSVGAttributes()
+    })
+  )
   bubbleGroup.appendChild(this.createShiftBubble(xn, yn, 'shift')) // this is the move element bubble
   // create the lines between the control point(s) and the endpoints
   bubbleGroup.appendChild(
-    createControlLine(
-      theseCoords[0],
-      theseCoords[1],
-      theseCoords[2],
-      theseCoords[3],
-      'l1'
-    )
+    createControlLine({
+      x1: theseCoords[0],
+      y1: theseCoords[1],
+      x2: theseCoords[2],
+      y2: theseCoords[3],
+      id: 'l1',
+      attributes: this.getSVGAttributes()
+    })
   )
   bubbleGroup.appendChild(
-    createControlLine(
-      theseCoords[4],
-      theseCoords[5],
-      theseCoords[6],
-      theseCoords[7],
-      'l2'
-    )
+    createControlLine({
+      x1: theseCoords[4],
+      y1: theseCoords[5],
+      x2: theseCoords[6],
+      y2: theseCoords[7],
+      id: 'l2',
+      attributes: this.getSVGAttributes()
+    })
   )
   bubbleGroup.appendChild(
     this.createCurveBubble(theseCoords[0], theseCoords[1], 'p1')
@@ -1540,7 +1608,10 @@ SVGDraw.prototype.createBubbleForText = function (bubbleGroup, { x, y }) {
 
 SVGDraw.prototype.createBubbleGroup = function (group) {
   if (!group) {
-    console_log(enable_log, 'group arg null, thisGroup=' + thisGroup)
+    console_log(
+      this.configuration.debugLog,
+      'group arg null, thisGroup=' + this.state.currentGroup
+    )
   }
 
   const element = group.firstChild
@@ -1580,7 +1651,7 @@ SVGDraw.prototype.createBubbleGroup = function (group) {
 SVGDraw.prototype.createShiftBubble = function (cx, cy, id) {
   const bubble = this.createBubbleStub(cx, cy)
 
-  bubble.setAttributeNS(null, 'r', bubbleRadius * 1.25) // radius override for SHIFT point
+  bubble.setAttributeNS(null, 'r', this.state.bubbleRadius * 1.25) // radius override for SHIFT point
   bubble.setAttributeNS(null, 'stroke', '#004477') // override scaffold attrs
   bubble.setAttributeNS(null, 'fill-opacity', '1.0') // SHIFT bubble is slightly more opaque
   bubble.addEventListener('mousedown', () => {
@@ -1627,7 +1698,7 @@ SVGDraw.prototype.createNewPointBubble = function (cx, cy, id) {
   // used for <poly...> inter-vertex insert new point
   const bubble = this.createBubbleStub(cx, cy)
 
-  bubble.setAttributeNS(null, 'r', bubbleRadius * 0.8) // radius override for insertion point
+  bubble.setAttributeNS(null, 'r', this.state.bubbleRadius * 0.8) // radius override for insertion point
   bubble.setAttributeNS(null, 'stroke', '#555555') // not that great, use below
   bubble.setAttributeNS(null, 'stroke-opacity', '0.6') // not that great, use below
   bubble.setAttributeNS(null, 'fill-opacity', '0.4') // SIZE/POINT bubble is even less opaque
@@ -1660,8 +1731,8 @@ SVGDraw.prototype.createCurveBubble = function (cx, cy, id) {
   return bubble
 }
 
-function createControlLine(x1, y1, x2, y2, id) {
-  const line = newElement(drawMode.LINE)
+function createControlLine({ x1, y1, x2, y2, id, attributes }) {
+  const line = newElement({ tag: drawMode.LINE, attributes })
 
   line.setAttributeNS(null, 'x1', x1)
   line.setAttributeNS(null, 'y1', y1)
@@ -1673,9 +1744,9 @@ function createControlLine(x1, y1, x2, y2, id) {
   return line
 }
 
-function createBoundsPoly(coords) {
+function createBoundsPoly({ coords, attributes }) {
   // used by createBubbleGroup.path
-  const poly = newElement(drawMode.POLYLINE)
+  const poly = newElement({ tag: drawMode.POLYLINE, attributes })
 
   poly.setAttributeNS(null, 'id', 'poly')
   poly.setAttributeNS(null, 'points', getCurvePoints(coords))
@@ -1686,7 +1757,10 @@ function createBoundsPoly(coords) {
 
 SVGDraw.prototype.createBubbleStub = function (offsetX, offsetY) {
   // create same-size bubble
-  const bubble = newElement(drawMode.CIRCLE) // this is constant, since it is a bubble
+  const bubble = newElement({
+    tag: drawMode.CIRCLE,
+    attributes: this.getSVGAttributes()
+  }) // this is constant, since it is a bubble
 
   if (isNaN(offsetX)) {
     alert('offsetX: ' + offsetX.toString())
@@ -1696,10 +1770,10 @@ SVGDraw.prototype.createBubbleStub = function (offsetX, offsetY) {
   }
   bubble.setAttributeNS(null, 'cx', offsetX) // start x
   bubble.setAttributeNS(null, 'cy', offsetY) // start y
-  bubble.setAttributeNS(null, 'r', bubbleRadius) // radius
+  bubble.setAttributeNS(null, 'r', this.state.bubbleRadius) // radius
   bubble.setAttributeNS(null, 'fill', '#FFFFFF')
   bubble.setAttributeNS(null, 'stroke', '#222222') // set scaffold attrs
-  bubble.setAttributeNS(null, 'stroke-width', bubbleRadius * 0.25)
+  bubble.setAttributeNS(null, 'stroke-width', this.state.bubbleRadius * 0.25)
 
   return bubble
 }
@@ -1782,25 +1856,26 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
     if (
       this.cursorMode === drawMode.POLYGON ||
       (this.cursorMode === drawMode.POLYLINE &&
-        svgInProgress === drawMode.POLYGON)
+        this.state.svgInProgress === drawMode.POLYGON)
     ) {
-      if (svgInProgress == false) {
+      if (this.state.svgInProgress == false) {
         return
       } // could be POINT or NEW or polygon
       this.updateMousePosition(event)
-      if (svgInProgress == 'SHIFT') {
-        let shiftingPoints = thisElement.attributes['points'].value.trim()
+      if (this.state.svgInProgress == 'SHIFT') {
+        let shiftingPoints =
+          this.state.currentElement.attributes['points'].value.trim()
         let splitShiftPoints = shiftingPoints.split(' ')
-        if (thisBubble != null) {
+        if (this.state.currentBubble != null) {
           // thisBubble set on mousedown
-          let cx = parseFloat(thisBubble.attributes['cx'].value) // old
-          let cy = parseFloat(thisBubble.attributes['cy'].value) // x, y
+          let cx = parseFloat(this.state.currentBubble.attributes['cx'].value) // old
+          let cy = parseFloat(this.state.currentBubble.attributes['cy'].value) // x, y
           let cx2 = this.currentMouseX // new x
           let cy2 = this.currentMouseY // , y
           let dx = cx2 - cx
           let dy = cy2 - cy
-          thisBubble.attributes['cx'].value = this.currentMouseX // translate the bubble
-          thisBubble.attributes['cy'].value = this.currentMouseY
+          this.state.currentBubble.attributes['cx'].value = this.currentMouseX // translate the bubble
+          this.state.currentBubble.attributes['cy'].value = this.currentMouseY
 
           // splitShiftPoints all need to be shifted by the deltas
           // so iterate over all points, in initially a very pedantic way
@@ -1817,27 +1892,28 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           for (let k = 0; k < splitShiftPoints.length; k++) {
             shiftingPoints += splitShiftPoints[k] + ' '
           }
-          thisElement.attributes['points'].value = shiftedPoints
+          this.state.currentElement.attributes['points'].value = shiftedPoints
         }
       } else {
         let thisPoint =
           this.currentMouseX.toFixed(4).toString() +
           ',' +
           this.currentMouseY.toFixed(4).toString()
-        let thesePoints = thisElement.attributes['points'].value.trim()
+        let thesePoints =
+          this.state.currentElement.attributes['points'].value.trim()
         let splitPoints = thesePoints.split(' ')
-        if (thisBubble != null) {
+        if (this.state.currentBubble != null) {
           // look for bubble to denote just move THIS point only
-          thisBubble.attributes['cx'].value = this.currentMouseX // translate the bubble
-          thisBubble.attributes['cy'].value = this.currentMouseY
-          if (isNumeric(thisBubble.id)) {
+          this.state.currentBubble.attributes['cx'].value = this.currentMouseX // translate the bubble
+          this.state.currentBubble.attributes['cy'].value = this.currentMouseY
+          if (isNumeric(this.state.currentBubble.id)) {
             // presume integer for now
-            splitPoints[parseInt(thisBubble.id)] = thisPoint
+            splitPoints[parseInt(this.state.currentBubble.id)] = thisPoint
             thesePoints = ''
             for (let k = 0; k < splitPoints.length; k++) {
               thesePoints += splitPoints[k] + ' '
             }
-            thisElement.attributes['points'].value = thesePoints
+            this.state.currentElement.attributes['points'].value = thesePoints
           }
         } else {
           // svgInProgress = 'poly--', so normal creation of element adding new point to end
@@ -1847,27 +1923,29 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
             thesePoints += splitPoints[k] + ' ' // space delimiter at the end of each coordinate
           }
           thisPoint += ' '
-          thisElement.attributes['points'].value = thesePoints.concat(thisPoint)
+          this.state.currentElement.attributes['points'].value =
+            thesePoints.concat(thisPoint)
         }
       }
     } else if (this.cursorMode == drawMode.POLYLINE) {
-      if (svgInProgress == false) {
+      if (this.state.svgInProgress == false) {
         return
       }
       this.updateMousePosition(event)
-      if (svgInProgress == 'SHIFT') {
-        let shiftingPoints = thisElement.attributes['points'].value.trim()
+      if (this.state.svgInProgress == 'SHIFT') {
+        let shiftingPoints =
+          this.state.currentElement.attributes['points'].value.trim()
         let splitShiftPoints = shiftingPoints.split(' ')
-        if (thisBubble != null) {
+        if (this.state.currentBubble != null) {
           // thisBubble set on mousedown
-          let cx = parseFloat(thisBubble.attributes['cx'].value) // old
-          let cy = parseFloat(thisBubble.attributes['cy'].value) // x, y
+          let cx = parseFloat(this.state.currentBubble.attributes['cx'].value) // old
+          let cy = parseFloat(this.state.currentBubble.attributes['cy'].value) // x, y
           let cx2 = this.currentMouseX // new x
           let cy2 = this.currentMouseY // , y
           let dx = cx2 - cx
           let dy = cy2 - cy
-          thisBubble.attributes['cx'].value = this.currentMouseX // translate the bubble
-          thisBubble.attributes['cy'].value = this.currentMouseY
+          this.state.currentBubble.attributes['cx'].value = this.currentMouseX // translate the bubble
+          this.state.currentBubble.attributes['cy'].value = this.currentMouseY
 
           // splitShiftPoints all need to be shifted by the deltas
           // so iterate over all points, in initially a very pedantic way
@@ -1884,27 +1962,28 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           for (let k = 0; k < splitShiftPoints.length; k++) {
             shiftingPoints += splitShiftPoints[k] + ' '
           }
-          thisElement.attributes['points'].value = shiftedPoints
+          this.state.currentElement.attributes['points'].value = shiftedPoints
         }
       } else {
         let thisPoint =
           this.currentMouseX.toFixed(4).toString() +
           ',' +
           this.currentMouseY.toFixed(4).toString()
-        let thesePoints = thisElement.attributes['points'].value.trim()
+        let thesePoints =
+          this.state.currentElement.attributes['points'].value.trim()
         let splitPoints = thesePoints.split(' ')
-        if (thisBubble != null) {
+        if (this.state.currentBubble != null) {
           // look for bubble to denote just move THIS point only
-          thisBubble.attributes['cx'].value = this.currentMouseX // translate the bubble
-          thisBubble.attributes['cy'].value = this.currentMouseY
-          if (isNumeric(thisBubble.id)) {
+          this.state.currentBubble.attributes['cx'].value = this.currentMouseX // translate the bubble
+          this.state.currentBubble.attributes['cy'].value = this.currentMouseY
+          if (isNumeric(this.state.currentBubble.id)) {
             // presume integer for now
-            splitPoints[parseInt(thisBubble.id)] = thisPoint // replace this point
+            splitPoints[parseInt(this.state.currentBubble.id)] = thisPoint // replace this point
             thesePoints = ''
             for (let k = 0; k < splitPoints.length; k++) {
               thesePoints += splitPoints[k] + ' '
             }
-            thisElement.attributes['points'].value = thesePoints
+            this.state.currentElement.attributes['points'].value = thesePoints
           }
         } else {
           // svgInProgress = 'poly--', so normal creation of element adding new point to end
@@ -1914,107 +1993,111 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
             thesePoints += splitPoints[k] + ' ' // space delimiter at the end of each coordinate
           }
           thisPoint += ' '
-          thisElement.attributes['points'].value = thesePoints.concat(thisPoint)
+          this.state.currentElement.attributes['points'].value =
+            thesePoints.concat(thisPoint)
         }
       }
     } else if (this.cursorMode == drawMode.RECTANGLE) {
-      if (svgInProgress == false) {
+      if (this.state.svgInProgress == false) {
         return
       }
-      if (svgInProgress == 'SHIFT') {
+      if (this.state.svgInProgress == 'SHIFT') {
         this.updateMousePosition(event)
-        thisBubble.attributes['cx'].value = this.currentMouseX // translate the bubble
-        thisBubble.attributes['cy'].value = this.currentMouseY
-        thisElement.attributes['x'].value = (
-          (this.state.mousePosition.x - this.state.xC) /
-          zoom
-        ).toFixed(4) // correspondingly translate thisElement
-        thisElement.attributes['y'].value = (
-          (this.state.mousePosition.y - this.state.yC) /
-          zoom
-        ).toFixed(4)
+        this.state.currentBubble.attributes['cx'].value = this.currentMouseX // translate the bubble
+        this.state.currentBubble.attributes['cy'].value = this.currentMouseY
+        this.state.currentElement.attributes['x'].value =
+          this.currentMouseX.toFixed(4) // correspondingly translate thisElement
+        this.state.currentElement.attributes['y'].value =
+          this.currentMouseY.toFixed(4)
       } else {
-        let thisRectX = thisElement.attributes['x'].value
-        let thisRectY = thisElement.attributes['y'].value
+        let thisRectX = this.state.currentElement.attributes['x'].value
+        let thisRectY = this.state.currentElement.attributes['y'].value
 
         this.updateMousePosition(event)
-        thisElement.attributes['width'].value = Math.max(
+        this.state.currentElement.attributes['width'].value = Math.max(
           1,
           (this.currentMouseX - thisRectX).toFixed(4)
         )
-        thisElement.attributes['height'].value = Math.max(
+        this.state.currentElement.attributes['height'].value = Math.max(
           1,
           (this.currentMouseY - thisRectY).toFixed(4)
         )
-        if (thisBubble) {
-          thisBubble = event.target
-          if ('cx' in thisBubble.attributes && 'cy' in thisBubble.attributes) {
-            thisBubble.attributes['cx'].value = this.currentMouseX // translate the bubble
-            thisBubble.attributes['cy'].value = this.currentMouseY
+        if (this.state.currentBubble) {
+          this.state.currentBubble = event.target
+          if (
+            'cx' in this.state.currentBubble.attributes &&
+            'cy' in this.state.currentBubble.attributes
+          ) {
+            this.state.currentBubble.attributes['cx'].value = this.currentMouseX // translate the bubble
+            this.state.currentBubble.attributes['cy'].value = this.currentMouseY
           }
         }
       }
     } else if (this.cursorMode == drawMode.LINE) {
       let linePoints
-      if (event.type == 'mousedown' || svgInProgress == false) {
+      if (event.type == 'mousedown' || this.state.svgInProgress == false) {
         // extra condition for line
         console_log(
-          enable_log,
+          this.configuration.debugLog,
           'this.cursorMode=line abort event:' +
             event.type +
             ' svgInProgress= ' +
-            svgInProgress
+            this.state.svgInProgress
         )
         return
       }
-      if (svgInProgress == 'SHIFT') {
+      if (this.state.svgInProgress == 'SHIFT') {
         this.updateMousePosition(event)
-        let x1 = parseFloat(thisElement.attributes['x1'].value)
-        let y1 = parseFloat(thisElement.attributes['y1'].value)
-        let x2 = parseFloat(thisElement.attributes['x2'].value)
-        let y2 = parseFloat(thisElement.attributes['y2'].value)
+        let x1 = parseFloat(this.state.currentElement.attributes['x1'].value)
+        let y1 = parseFloat(this.state.currentElement.attributes['y1'].value)
+        let x2 = parseFloat(this.state.currentElement.attributes['x2'].value)
+        let y2 = parseFloat(this.state.currentElement.attributes['y2'].value)
         // thisBubble set on mousedown
-        let cx = parseFloat(thisBubble.attributes['cx'].value)
-        let cy = parseFloat(thisBubble.attributes['cy'].value)
+        let cx = parseFloat(this.state.currentBubble.attributes['cx'].value)
+        let cy = parseFloat(this.state.currentBubble.attributes['cy'].value)
         let cx2 = this.currentMouseX
         let cy2 = this.currentMouseY
         let dx = cx - cx2
         let dy = cy2 - cy
 
-        if (thisBubble) {
-          thisBubble.attributes['cx'].value = cx2 // translate the bubble
-          thisBubble.attributes['cy'].value = cy2
-          thisElement.attributes['x1'].value = (x1 - dx).toFixed(4) // correspondingly translate thisElement
-          thisElement.attributes['y1'].value = (dy + y1).toFixed(4)
-          thisElement.attributes['x2'].value = (x2 - dx).toFixed(4) // correspondingly translate thisElement
-          thisElement.attributes['y2'].value = (dy + y2).toFixed(4)
+        if (this.state.currentBubble) {
+          this.state.currentBubble.attributes['cx'].value = cx2 // translate the bubble
+          this.state.currentBubble.attributes['cy'].value = cy2
+          this.state.currentElement.attributes['x1'].value = (x1 - dx).toFixed(
+            4
+          ) // correspondingly translate thisElement
+          this.state.currentElement.attributes['y1'].value = (dy + y1).toFixed(
+            4
+          )
+          this.state.currentElement.attributes['x2'].value = (x2 - dx).toFixed(
+            4
+          ) // correspondingly translate thisElement
+          this.state.currentElement.attributes['y2'].value = (dy + y2).toFixed(
+            4
+          )
         }
       } else {
         // repositioning either line endpoint
         this.updateMousePosition(event)
         linePoints = ['x2', 'y2'] // preset for normal post-creation mode
-        if (thisBubble != null) {
+        if (this.state.currentBubble != null) {
           // look for bubble to denote just move THIS point only
-          thisBubble.attributes['cx'].value = this.currentMouseX // translate the bubble
-          thisBubble.attributes['cy'].value = this.currentMouseY
-          if (!isNumeric(thisBubble.id)) {
+          this.state.currentBubble.attributes['cx'].value = this.currentMouseX // translate the bubble
+          this.state.currentBubble.attributes['cy'].value = this.currentMouseY
+          if (!isNumeric(this.state.currentBubble.id)) {
             // presume either 'x1-y1' or 'x2-y2'
-            linePoints = thisBubble.id.split('-') // this will result in ['x1', 'y1'] or  ['x2', 'y2'] used below
+            linePoints = this.state.currentBubble.id.split('-') // this will result in ['x1', 'y1'] or  ['x2', 'y2'] used below
           }
-          if (thisGroup.lastChild.firstChild.id == 'shift') {
-            thisGroup.lastChild.firstChild.remove() // kill off the move line bubble
+          if (this.state.currentGroup.lastChild.firstChild.id == 'shift') {
+            this.state.currentGroup.lastChild.firstChild.remove() // kill off the move line bubble
           }
         }
-        thisElement.attributes[linePoints[0]].value = (
-          (this.state.mousePosition.x - this.state.xC) /
-          zoom
-        ).toFixed(4)
-        thisElement.attributes[linePoints[1]].value = (
-          (this.state.mousePosition.y - this.state.yC) /
-          zoom
-        ).toFixed(4)
+        this.state.currentElement.attributes[linePoints[0]].value =
+          this.currentMouseX.toFixed(4)
+        this.state.currentElement.attributes[linePoints[1]].value =
+          this.currentMouseY.toFixed(4)
         console_log(
-          enable_log,
+          this.configuration.debugLog,
           'x: ' +
             this.currentMouseX.toString() +
             ' / y: ' +
@@ -2023,63 +2106,59 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       }
     } else if (this.cursorMode == drawMode.ARROW) {
       let linePoints
-      if (event.type == 'mousedown' || svgInProgress == false) {
+      if (event.type == 'mousedown' || this.state.svgInProgress == false) {
         // extra condition for line
         return
       }
-      let mainLine = thisGroup.children[0]
+      let mainLine = this.state.currentGroup.children[0]
       this.updateMousePosition(event)
-      if (svgInProgress == 'SHIFT') {
+      if (this.state.svgInProgress == 'SHIFT') {
         let x1 = parseFloat(mainLine.attributes['x1'].value)
         let y1 = parseFloat(mainLine.attributes['y1'].value)
         let x2 = parseFloat(mainLine.attributes['x2'].value)
         let y2 = parseFloat(mainLine.attributes['y2'].value)
         // thisBubble set on mousedown -- except not here for some reason TBD
-        if (!thisBubble) {
-          thisBubble = mainLine.parentElement.lastChild.children['shift']
+        if (!this.state.currentBubble) {
+          this.state.currentBubble =
+            mainLine.parentElement.lastChild.children['shift']
         }
-        let cx = parseFloat(thisBubble.attributes['cx'].value)
-        let cy = parseFloat(thisBubble.attributes['cy'].value)
+        let cx = parseFloat(this.state.currentBubble.attributes['cx'].value)
+        let cy = parseFloat(this.state.currentBubble.attributes['cy'].value)
         let cx2 = this.currentMouseX
         let cy2 = this.currentMouseY
         let dx = cx - cx2
         let dy = cy2 - cy
-        thisBubble.attributes['cx'].value = cx2 // translate the bubble
-        thisBubble.attributes['cy'].value = cy2
+        this.state.currentBubble.attributes['cx'].value = cx2 // translate the bubble
+        this.state.currentBubble.attributes['cy'].value = cy2
         mainLine.attributes['x1'].value = (x1 - dx).toFixed(4) // correspondingly
         mainLine.attributes['y1'].value = (dy + y1).toFixed(4)
         mainLine.attributes['x2'].value = (x2 - dx).toFixed(4) // translate mainLine
         mainLine.attributes['y2'].value = (dy + y2).toFixed(4)
       } else {
         linePoints = ['x2', 'y2'] // preset for normal post-creation mode
-        if (thisBubble != null) {
+        if (this.state.currentBubble != null) {
           // look for bubble to denote just move THIS point only
-          thisBubble.attributes['cx'].value = this.currentMouseX // translate the bubble
-          thisBubble.attributes['cy'].value = this.currentMouseY
-          if (!isNumeric(thisBubble.id)) {
+          this.state.currentBubble.attributes['cx'].value = this.currentMouseX // translate the bubble
+          this.state.currentBubble.attributes['cy'].value = this.currentMouseY
+          if (!isNumeric(this.state.currentBubble.id)) {
             // presume either 'x1-y1' or 'x2-y2'
-            linePoints = thisBubble.id.split('-') // this will result in ['x1', 'y1'] or  ['x2', 'y2'] used below
+            linePoints = this.state.currentBubble.id.split('-') // this will result in ['x1', 'y1'] or  ['x2', 'y2'] used below
           }
         }
-        mainLine.attributes[linePoints[0]].value = (
-          (this.state.mousePosition.x - this.state.xC) /
-          zoom
-        ).toFixed(4)
-        mainLine.attributes[linePoints[1]].value = (
-          (this.state.mousePosition.y - this.state.yC) /
-          zoom
-        ).toFixed(4)
+        mainLine.attributes[linePoints[0]].value = this.currentMouseX.toFixed(4)
+        mainLine.attributes[linePoints[1]].value = this.currentMouseY.toFixed(4)
       }
-      while (thisGroup.childElementCount > 1) {
+      while (this.state.currentGroup.childElementCount > 1) {
         // remove everything except the main line
-        thisGroup.lastChild.remove() // ///////////////////  VERY TEMPORARY METHOD
+        this.state.currentGroup.lastChild.remove() // ///////////////////  VERY TEMPORARY METHOD
       }
-      let thisX1 = thisElement.attributes['x1'].value // shorter references to original line's values
-      let thisY1 = thisElement.attributes['y1'].value
-      let thisX2 = thisElement.attributes['x2'].value
-      let thisY2 = thisElement.attributes['y2'].value
-      let thisColor = thisElement.attributes['stroke'].value
-      let thisStrokeWidth = thisElement.attributes['stroke-width'].value // save mainLine attributes since NEW barbs
+      let thisX1 = this.state.currentElement.attributes['x1'].value // shorter references to original line's values
+      let thisY1 = this.state.currentElement.attributes['y1'].value
+      let thisX2 = this.state.currentElement.attributes['x2'].value
+      let thisY2 = this.state.currentElement.attributes['y2'].value
+      let thisColor = this.state.currentElement.attributes['stroke'].value
+      let currentStrokeWidth =
+        this.state.currentElement.attributes['stroke-width'].value // save mainLine attributes since NEW barbs
       let deltaX = thisX2 - thisX1
       let deltaY = thisY2 - thisY1
       let lineLength = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
@@ -2090,10 +2169,10 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       let dy = deltaY / lineLength
       let barbLength
       if (this.arrowFixed) {
-        barbLength = arrowheadLength
+        barbLength = this.configuration.arrowheadLength
       } else {
         // either fixed pixel length or percentage
-        barbLength = (lineLength * arrowPercent) / 100
+        barbLength = (lineLength * this.configuration.arrowPercent) / 100
       }
       let pctX = parseFloat(thisX2) - dx * barbLength //  baseline for barb trailing end
       let pctY = parseFloat(thisY2) - dy * barbLength
@@ -2102,60 +2181,65 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       let x4 = (pctX - (barbLength * dy) / 2).toFixed(4)
       let y4 = (pctY + (barbLength * dx) / 2).toFixed(4)
 
-      let leftBarb = newElement(drawMode.LINE)
+      let leftBarb = newElement({
+        tag: drawMode.LINE,
+        attributes: this.getSVGAttributes()
+      })
       leftBarb.setAttributeNS(null, 'x1', thisX2) // start x of barbs
       leftBarb.setAttributeNS(null, 'y1', thisY2) // start y of barbs
       leftBarb.setAttributeNS(null, 'x2', x3) // end x
       leftBarb.setAttributeNS(null, 'y2', y3) // end y
       leftBarb.setAttributeNS(null, 'stroke', thisColor)
-      leftBarb.setAttributeNS(null, 'stroke-width', thisStrokeWidth)
+      leftBarb.setAttributeNS(null, 'stroke-width', currentStrokeWidth)
       // thisGroup.appendChild(leftBarb);
-      let rightBarb = newElement(drawMode.LINE)
+      let rightBarb = newElement({
+        tag: drawMode.LINE,
+        attributes: this.getSVGAttributes()
+      })
       rightBarb.setAttributeNS(null, 'x1', thisX2) // start x of barbs
       rightBarb.setAttributeNS(null, 'y1', thisY2) // start y of barbs
       rightBarb.setAttributeNS(null, 'x2', x4) // end x
       rightBarb.setAttributeNS(null, 'y2', y4) // end y
       rightBarb.setAttributeNS(null, 'stroke', thisColor)
-      rightBarb.setAttributeNS(null, 'stroke-width', thisStrokeWidth)
+      rightBarb.setAttributeNS(null, 'stroke-width', currentStrokeWidth)
       // thisGroup.appendChild(rightBarb);
 
       if (this.arrowClosed) {
-        let baseBarb = newElement(drawMode.POLYGON)
+        let baseBarb = newElement({
+          tag: drawMode.POLYGON,
+          attributes: this.getSVGAttributes()
+        })
         let barbPoints =
           thisX2 + ',' + thisY2 + ' ' + x3 + ',' + y3 + ' ' + x4 + ',' + y4
         baseBarb.setAttributeNS(null, 'points', barbPoints)
         baseBarb.setAttributeNS(null, 'stroke', thisColor)
-        baseBarb.setAttributeNS(null, 'stroke-width', thisStrokeWidth)
-        thisGroup.appendChild(baseBarb)
+        baseBarb.setAttributeNS(null, 'stroke-width', currentStrokeWidth)
+        this.state.currentGroup.appendChild(baseBarb)
       } else {
-        thisGroup.appendChild(leftBarb)
-        thisGroup.appendChild(rightBarb)
+        this.state.currentGroup.appendChild(leftBarb)
+        this.state.currentGroup.appendChild(rightBarb)
       }
     } else if (
       this.cursorMode === drawMode.CIRCLE /*|| (this.cursorMode == 'bubble')*/
     ) {
       //thisCircle = thisElement;             // first step toward generalizing SHIFT/SIZE handlers
-      if (event.type == 'mousedown' || svgInProgress == false) {
+      if (event.type == 'mousedown' || this.state.svgInProgress == false) {
         return // //// this has been verified to actually occur
       }
-      if (svgInProgress == 'SHIFT') {
+      if (this.state.svgInProgress == 'SHIFT') {
         // changing position of this element
         this.updateMousePosition(event)
-        thisBubble.attributes['cx'].value = this.currentMouseX // translate the bubble
-        thisBubble.attributes['cy'].value = this.currentMouseY
-        thisElement.attributes['cx'].value = (
-          (this.state.mousePosition.x - this.state.xC) /
-          zoom
-        ).toFixed(4) // correspondingly translate thisElement
-        thisElement.attributes['cy'].value = (
-          (this.state.mousePosition.y - this.state.yC) /
-          zoom
-        ).toFixed(4)
+        this.state.currentBubble.attributes['cx'].value = this.currentMouseX // translate the bubble
+        this.state.currentBubble.attributes['cy'].value = this.currentMouseY
+        this.state.currentElement.attributes['cx'].value =
+          this.currentMouseX.toFixed(4) // correspondingly translate thisElement
+        this.state.currentElement.attributes['cy'].value =
+          this.currentMouseY.toFixed(4)
       } else {
         // either resizing or originally sizing
         //this.context.moveTo(this.state.mousePosition.x, this.state.mousePosition.y);
-        let thisCircX = thisElement.attributes['cx'].value
-        let thisCircY = thisElement.attributes['cy'].value
+        let thisCircX = this.state.currentElement.attributes['cx'].value
+        let thisCircY = this.state.currentElement.attributes['cy'].value
         this.updateMousePosition(event)
 
         let radius = length2points(
@@ -2164,21 +2248,25 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           this.currentMouseX,
           this.currentMouseY
         )
-        thisElement.attributes['r'].value = radius.toFixed(4)
-        if (thisBubble) {
-          thisBubble = event.target
-          switch (thisBubble.id) {
+        this.state.currentElement.attributes['r'].value = radius.toFixed(4)
+        if (this.state.currentBubble) {
+          this.state.currentBubble = event.target
+          switch (this.state.currentBubble.id) {
             case 'E':
-              thisBubble.attributes['cx'].value = parseFloat(thisCircX) + radius
+              this.state.currentBubble.attributes['cx'].value =
+                parseFloat(thisCircX) + radius
               break
             case 'S':
-              thisBubble.attributes['cy'].value = parseFloat(thisCircY) + radius
+              this.state.currentBubble.attributes['cy'].value =
+                parseFloat(thisCircY) + radius
               break
             case 'W':
-              thisBubble.attributes['cx'].value = parseFloat(thisCircX) - radius
+              this.state.currentBubble.attributes['cx'].value =
+                parseFloat(thisCircX) - radius
               break
             case 'N':
-              thisBubble.attributes['cy'].value = parseFloat(thisCircY) - radius
+              this.state.currentBubble.attributes['cy'].value =
+                parseFloat(thisCircY) - radius
               break
           }
         }
@@ -2192,54 +2280,51 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         }
       }
     } else if (this.cursorMode == drawMode.ELLIPSE) {
-      if (event.type == 'mousedown' || svgInProgress == false) {
+      if (event.type == 'mousedown' || this.state.svgInProgress == false) {
         return
       }
-      if (svgInProgress == 'SHIFT') {
+      if (this.state.svgInProgress == 'SHIFT') {
         // changing position of this element
         this.updateMousePosition(event)
-        thisBubble.attributes['cx'].value = this.currentMouseX // translate the bubble
-        thisBubble.attributes['cy'].value = this.currentMouseY
-        thisElement.attributes['cx'].value = (
-          (this.state.mousePosition.x - this.state.xC) /
-          zoom
-        ).toFixed(4) // correspondingly translate thisElement
-        thisElement.attributes['cy'].value = (
-          (this.state.mousePosition.y - this.state.yC) /
-          zoom
-        ).toFixed(4)
+        this.state.currentBubble.attributes['cx'].value = this.currentMouseX // translate the bubble
+        this.state.currentBubble.attributes['cy'].value = this.currentMouseY
+        this.state.currentElement.attributes['cx'].value =
+          this.currentMouseX.toFixed(4) // correspondingly translate thisElement
+        this.state.currentElement.attributes['cy'].value =
+          this.currentMouseY.toFixed(4)
       } else {
         // resizing: cursor NOW osculates ellipse as in circle, diagonally positioned
-        let thisEllipseX = thisElement.attributes['cx'].value
-        let thisEllipseY = thisElement.attributes['cy'].value
+        let thisEllipseX = this.state.currentElement.attributes['cx'].value
+        let thisEllipseY = this.state.currentElement.attributes['cy'].value
 
         this.updateMousePosition(event)
 
-        thisElement.attributes['rx'].value = (
+        this.state.currentElement.attributes['rx'].value = (
           Math.abs(thisEllipseX - this.currentMouseX) * 1.414
         ).toFixed(4)
-        thisElement.attributes['ry'].value = (
+        this.state.currentElement.attributes['ry'].value = (
           Math.abs(thisEllipseY - this.currentMouseY) * 1.414
         ).toFixed(4)
       }
     } else if (this.cursorMode == drawMode.DRAW) {
-      if (svgInProgress == false) {
+      if (this.state.svgInProgress == false) {
         return
       }
       this.updateMousePosition(event)
-      if (svgInProgress == 'SHIFT') {
-        let shiftingPoints = thisElement.attributes['points'].value.trim()
+      if (this.state.svgInProgress == 'SHIFT') {
+        let shiftingPoints =
+          this.state.currentElement.attributes['points'].value.trim()
         let splitShiftPoints = shiftingPoints.split(' ')
-        if (thisBubble != null) {
+        if (this.state.currentBubble != null) {
           // thisBubble set on mousedown
-          let cx = parseFloat(thisBubble.attributes['cx'].value) // old
-          let cy = parseFloat(thisBubble.attributes['cy'].value) // x, y
+          let cx = parseFloat(this.state.currentBubble.attributes['cx'].value) // old
+          let cy = parseFloat(this.state.currentBubble.attributes['cy'].value) // x, y
           let cx2 = this.currentMouseX // new x
           let cy2 = this.currentMouseY // , y
           let dx = cx2 - cx
           let dy = cy2 - cy
-          thisBubble.attributes['cx'].value = this.currentMouseX // translate the bubble
-          thisBubble.attributes['cy'].value = this.currentMouseY
+          this.state.currentBubble.attributes['cx'].value = this.currentMouseX // translate the bubble
+          this.state.currentBubble.attributes['cy'].value = this.currentMouseY
 
           // splitShiftPoints all need to be shifted by the deltas
           // so iterate over all points, in initially a very pedantic way
@@ -2256,7 +2341,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           for (let k = 0; k < splitShiftPoints.length; k++) {
             shiftingPoints += splitShiftPoints[k] + ' '
           }
-          thisElement.attributes['points'].value = shiftedPoints
+          this.state.currentElement.attributes['points'].value = shiftedPoints
         }
       } // end of SHIFT draw case
       else {
@@ -2265,33 +2350,35 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           this.currentMouseX.toFixed(4).toString() +
           ',' +
           this.currentMouseY.toFixed(4).toString()
-        let thesePoints = thisElement.attributes['points'].value.trim()
+        let thesePoints =
+          this.state.currentElement.attributes['points'].value.trim()
         let splitPoints = thesePoints.split(' ')
-        if (thisBubble != null) {
+        if (this.state.currentBubble != null) {
           // look for bubble to denote just move THIS point only
           // currently, no distinction is made between existing vertex and new point
           // however, this may change in the future JRF 23NOV15
-          thisBubble.attributes['cx'].value = this.currentMouseX // translate the bubble
-          thisBubble.attributes['cy'].value = this.currentMouseY
-          if (isNumeric(thisBubble.id)) {
+          this.state.currentBubble.attributes['cx'].value = this.currentMouseX // translate the bubble
+          this.state.currentBubble.attributes['cy'].value = this.currentMouseY
+          if (isNumeric(this.state.currentBubble.id)) {
             // presume integer for now
-            splitPoints[parseInt(thisBubble.id)] = thisPoint // replace this point
+            splitPoints[parseInt(this.state.currentBubble.id)] = thisPoint // replace this point
             thesePoints = ''
             for (let k = 0; k < splitPoints.length; k++) {
               thesePoints += splitPoints[k] + ' '
             }
-            thisElement.attributes['points'].value = thesePoints
+            this.state.currentElement.attributes['points'].value = thesePoints
           }
         } // end of edit point case
         else {
           // add new point at end during creation case
-          let thesePoints = thisElement.attributes['points'].value
+          let thesePoints = this.state.currentElement.attributes['points'].value
           let thisPoint =
             this.currentMouseX.toFixed(4).toString() +
             ',' +
             this.currentMouseY.toFixed(4).toString() +
             ' '
-          thisElement.attributes['points'].value = thesePoints.concat(thisPoint)
+          this.state.currentElement.attributes['points'].value =
+            thesePoints.concat(thisPoint)
         } // end of new point at end case
       }
     } // end of Draw case
@@ -2299,23 +2386,23 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       this.cursorMode == drawMode.CUBIC ||
       this.cursorMode == drawMode.QUADRATIC
     ) {
-      if (event.type == 'mousedown' || svgInProgress == false) {
+      if (event.type == 'mousedown' || this.state.svgInProgress == false) {
         // extra condition for line
         return
       }
       this.updateMousePosition(event)
-      let thisDvalue = thisElement.attributes['d'].value
+      let thisDvalue = this.state.currentElement.attributes['d'].value
       let thisCurveQuadratic = thisDvalue.indexOf('Q ') > 0
-      if (thisBubble != null) {
+      if (this.state.currentBubble != null) {
         // look for bubble to denote just move THIS point only
         // currently, no distinction is made between existing vertex and new point
         // however, this may change in the future JRF 23NOV15
         let thisX = this.currentMouseX
         let thisY = this.currentMouseY
-        let thisX2 = parseFloat(thisBubble.attributes['cx'].value)
-        let thisY2 = parseFloat(thisBubble.attributes['cy'].value)
+        let thisX2 = parseFloat(this.state.currentBubble.attributes['cx'].value)
+        let thisY2 = parseFloat(this.state.currentBubble.attributes['cy'].value)
         console_log(
-          enable_log,
+          this.configuration.debugLog,
           'endpoints: [' +
             thisX +
             ', ' +
@@ -2328,13 +2415,13 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         )
         let dx = thisX - thisX2
         let dy = thisY - thisY2
-        thisBubble.attributes['cx'].value = thisX // translate the bubble
-        thisBubble.attributes['cy'].value = thisY
+        this.state.currentBubble.attributes['cx'].value = thisX // translate the bubble
+        this.state.currentBubble.attributes['cy'].value = thisY
         let theseCoords = getCurveCoords(thisDvalue)
         //#TODO: fix incremental mistracking of shift point, bubble no longer present
-        if (thisBubble.id == 'shift') {
-          console_log(enable_log, thisDvalue)
-          console_log(enable_log, 'dx: ' + dx + ', dy: ' + dy)
+        if (this.state.currentBubble.id == 'shift') {
+          console_log(this.configuration.debugLog, thisDvalue)
+          console_log(this.configuration.debugLog, 'dx: ' + dx + ', dy: ' + dy)
           // tranlate each coordinate (array contains x, y, x, y, ... x, y
           for (let k = 0; k < theseCoords.length; k++) {
             theseCoords[k] = (dx + parseFloat(theseCoords[k])).toFixed(4)
@@ -2348,7 +2435,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
             theseCoords[6] = theseCoords[4] // populate template curve p2
             theseCoords[7] = theseCoords[5] // coordinates from quadratic p2 values
           }
-          thisElement.attributes['d'].value = this.getCurvePath(
+          this.state.currentElement.attributes['d'].value = this.getCurvePath(
             theseCoords[0],
             theseCoords[1],
             theseCoords[2],
@@ -2358,7 +2445,10 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
             theseCoords[6],
             theseCoords[7]
           ) // responds to both C and Q curves
-          console_log(enable_log, thisElement.attributes['d'].value)
+          console_log(
+            this.configuration.debugLog,
+            this.state.currentElement.attributes['d'].value
+          )
         }
         //
         // worksheet data for quadratic and cubic curves is conformed to the same model
@@ -2371,7 +2461,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
             theseCoords[6] = theseCoords[4] // populate template curve p2
             theseCoords[7] = theseCoords[5] // coordinates from quadratic p2 values
           }
-          switch (thisBubble.id) {
+          switch (this.state.currentBubble.id) {
             case 'p1':
               theseCoords[0] = thisX.toFixed(4)
               theseCoords[1] = thisY.toFixed(4)
@@ -2394,7 +2484,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
             theseCoords[5] = theseCoords[3] // points to be the same point
           }
           // 'd' is the string containing the path parameters; set it to the updated values
-          thisElement.attributes['d'].value = this.getCurvePath(
+          this.state.currentElement.attributes['d'].value = this.getCurvePath(
             theseCoords[0],
             theseCoords[1],
             theseCoords[2],
@@ -2405,35 +2495,35 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
             theseCoords[7]
           ) // responds to both C and Q curves
           // now set the lines for the control points; two lines (l1 and l2) whether cubic or quadratic
-          thisElement.parentElement.lastChild.children['l1'].attributes[
-            'x1'
-          ].value = theseCoords[0]
-          thisElement.parentElement.lastChild.children['l1'].attributes[
-            'y1'
-          ].value = theseCoords[1]
-          thisElement.parentElement.lastChild.children['l1'].attributes[
-            'x2'
-          ].value = theseCoords[2]
-          thisElement.parentElement.lastChild.children['l1'].attributes[
-            'y2'
-          ].value = theseCoords[3]
+          this.state.currentElement.parentElement.lastChild.children[
+            'l1'
+          ].attributes['x1'].value = theseCoords[0]
+          this.state.currentElement.parentElement.lastChild.children[
+            'l1'
+          ].attributes['y1'].value = theseCoords[1]
+          this.state.currentElement.parentElement.lastChild.children[
+            'l1'
+          ].attributes['x2'].value = theseCoords[2]
+          this.state.currentElement.parentElement.lastChild.children[
+            'l1'
+          ].attributes['y2'].value = theseCoords[3]
 
-          thisElement.parentElement.lastChild.children['l2'].attributes[
-            'x1'
-          ].value = theseCoords[4]
-          thisElement.parentElement.lastChild.children['l2'].attributes[
-            'y1'
-          ].value = theseCoords[5]
-          thisElement.parentElement.lastChild.children['l2'].attributes[
-            'x2'
-          ].value = theseCoords[6]
-          thisElement.parentElement.lastChild.children['l2'].attributes[
-            'y2'
-          ].value = theseCoords[7]
+          this.state.currentElement.parentElement.lastChild.children[
+            'l2'
+          ].attributes['x1'].value = theseCoords[4]
+          this.state.currentElement.parentElement.lastChild.children[
+            'l2'
+          ].attributes['y1'].value = theseCoords[5]
+          this.state.currentElement.parentElement.lastChild.children[
+            'l2'
+          ].attributes['x2'].value = theseCoords[6]
+          this.state.currentElement.parentElement.lastChild.children[
+            'l2'
+          ].attributes['y2'].value = theseCoords[7]
 
-          thisElement.parentElement.lastChild.children['poly'].attributes[
-            'points'
-          ].value =
+          this.state.currentElement.parentElement.lastChild.children[
+            'poly'
+          ].attributes['points'].value =
             getCurvePoints(theseCoords) + theseCoords[0] + ', ' + theseCoords[1] // 'poly' is bounding polygon of endpoints and control points
         }
       } else {
@@ -2470,9 +2560,12 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
             curvePoint(theseControlPoints[0], theseControlPoints[1])
           thisD += curvePoint(theseControlPoints[2], theseControlPoints[3])
           thisD += curvePoint(thisX2, thisY2)
-          console_log(enable_log, 'p1: ' + thisP1[0] + ', ' + thisP1[1])
           console_log(
-            enable_log,
+            this.configuration.debugLog,
+            'p1: ' + thisP1[0] + ', ' + thisP1[1]
+          )
+          console_log(
+            this.configuration.debugLog,
             'control points: ' +
               theseControlPoints[0] +
               ', ' +
@@ -2482,35 +2575,43 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
               ', ' +
               theseControlPoints[3]
           )
-          console_log(enable_log, 'p2: ' + thisX2 + ', ' + thisY2)
+          console_log(
+            this.configuration.debugLog,
+            'p2: ' + thisX2 + ', ' + thisY2
+          )
         }
         thisD += pathPoint(thisX2, thisY2)
-        thisElement.attributes['d'].value = thisD
+        this.state.currentElement.attributes['d'].value = thisD
       }
     } else if (this.cursorMode == 'text') {
       // translate
-      if (svgInProgress == 'SHIFT') {
+      if (this.state.svgInProgress == 'SHIFT') {
         this.updateMousePosition(event)
-        if (!thisBubble) {
-          thisBubble = event.target
+        if (!this.state.currentBubble) {
+          this.state.currentBubble = event.target
         }
         let dx = this.currentMouseX
         let dy = this.currentMouseY
-        thisBubble.attributes['cx'].value = dx // translate the bubble
-        thisBubble.attributes['cy'].value = dy
-        for (let i = 0; i < thisGroup.children.length; i++) {
+        this.state.currentBubble.attributes['cx'].value = dx // translate the bubble
+        this.state.currentBubble.attributes['cy'].value = dy
+        for (let i = 0; i < this.state.currentGroup.children.length; i++) {
           // for any text lines in this group (skip bubble)
-          if (thisGroup.children[i].tagName == 'text') {
+          if (this.state.currentGroup.children[i].tagName == 'text') {
             // only shift text elements, not bubbles
-            thisGroup.children[i].attributes['x'].value = dx.toFixed(4) // translate each <text> element
-            thisGroup.children[i].attributes['y'].value = (
+            this.state.currentGroup.children[i].attributes['x'].value =
+              dx.toFixed(4) // translate each <text> element
+            this.state.currentGroup.children[i].attributes['y'].value = (
               dy +
-              i * fontSize
+              i * this.configuration.fontSize
             ).toFixed(4)
           } else {
             // translate the bubble
-            thisGroup.children[i].children[0].attributes['cx'].value = dx // translate each <text> element
-            thisGroup.children[i].children[0].attributes['cy'].value = dy
+            this.state.currentGroup.children[i].children[0].attributes[
+              'cx'
+            ].value = dx // translate each <text> element
+            this.state.currentGroup.children[i].children[0].attributes[
+              'cy'
+            ].value = dy
           }
         }
       }
@@ -2518,7 +2619,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
   } else if (this.cursorMode == drawMode.MOVE) {
     // Revert to MOVE: this version assumes manipulating the transform <xlt> of the SVG via this.state.xC, this.state.yC
 
-    if (svgInProgress == drawMode.MOVE) {
+    if (this.state.svgInProgress == drawMode.MOVE) {
       let oldX = this.state.mousePosition.x
       let oldY = this.state.mousePosition.y
       this.updateMousePosition(event)
@@ -2526,69 +2627,69 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       //this.state.mousePosition.y = this.state.mousePosition.y;
       this.state.xC = this.state.xC - (oldX - this.state.mousePosition.x)
       this.state.yC = this.state.yC - (oldY - this.state.mousePosition.y)
-      this.zoom_trans(this.state.xC, this.state.yC, zoom) // effects the translation to this.state.xC, this.state.yC in the transform
+      this.zoom_trans(this.state.xC, this.state.yC, this.state.zoom) // effects the translation to this.state.xC, this.state.yC in the transform
     }
   }
   return event.preventDefault() && false
 }
 
 SVGDraw.prototype.onSvgMouseUp = function (event) {
-  if (!svgInProgress) {
+  if (!this.state.svgInProgress) {
     // i.e., if svgInProgress is not false
     event.preventDefault()
     return false
   }
 
-  if (svgInProgress == 'SHIFT') {
+  if (this.state.svgInProgress == 'SHIFT') {
     // this is also catching mouseUp from bubbles!!!
     // mouseup implies end of position shift or resize  ///// HELLO ///// ^^^^^^^
-    svgInProgress = false
-    this.clearEditElement(thisGroup)
-  } else if (svgInProgress == 'SIZE') {
+    this.state.svgInProgress = false
+    this.clearEditElement(this.state.currentGroup)
+  } else if (this.state.svgInProgress == 'SIZE') {
     // mouseup implies end of position shift or resize
-    svgInProgress = false
-    this.setElementMouseEnterLeave(thisElement.parentNode) // this element is a SHIFT bubble
+    this.state.svgInProgress = false
+    this.setElementMouseEnterLeave(this.state.currentElement.parentNode) // this element is a SHIFT bubble
   } else {
     switch (this.cursorMode) {
       case drawMode.DRAW:
       case drawMode.CUBIC:
       case drawMode.QUADRATIC:
-        svgInProgress = false
-        this.setElementMouseEnterLeave(thisGroup)
+        this.state.svgInProgress = false
+        this.setElementMouseEnterLeave(this.state.currentGroup)
         break
       case drawMode.RECTANGLE:
       case drawMode.LINE:
       case drawMode.ARROW:
       case drawMode.CIRCLE:
       case drawMode.ELLIPSE:
-        svgInProgress = false
-        this.setElementMouseEnterLeave(thisGroup)
-        thisBubble = null
-        thisElement = null
-        thisGroup = null
+        this.state.svgInProgress = false
+        this.setElementMouseEnterLeave(this.state.currentGroup)
+        this.state.currentBubble = null
+        this.state.currentElement = null
+        this.state.currentGroup = null
         break
       case drawMode.POLYGON:
       case drawMode.POLYLINE:
-        if (thisBubble) {
-          svgInProgress = false
-          this.setElementMouseEnterLeave(thisGroup)
+        if (this.state.currentBubble) {
+          this.state.svgInProgress = false
+          this.setElementMouseEnterLeave(this.state.currentGroup)
 
-          thisBubble = null
-          thisElement = null
-          thisGroup = null
+          this.state.currentBubble = null
+          this.state.currentElement = null
+          this.state.currentGroup = null
         }
         break
       case drawMode.TEXT:
-        if (svgInProgress == false) {
-          this.setElementMouseEnterLeave(thisGroup)
+        if (this.state.svgInProgress == false) {
+          this.setElementMouseEnterLeave(this.state.currentGroup)
         }
         break
       case drawMode.MOVE:
-        svgInProgress = false
+        this.state.svgInProgress = false
     }
   }
 
-  thisSVGpoints = [] // and clear the collector
+  this.state.currentSVGPoints = [] // and clear the collector
 
   return false
 }
@@ -2603,7 +2704,7 @@ SVGDraw.prototype.onSvgMouseUp = function (event) {
 SVGDraw.prototype.keyUpHandler = function () {
   return function (event) {
     if (event.keyCode == 0x14) {
-      capsLock = !capsLock
+      this.state.capsLock = !this.state.capsLock
     }
   }
 }
@@ -2615,25 +2716,25 @@ SVGDraw.prototype.keyHandler = function (event) {
   switch (keyCode) {
     case KeyboardCode.SHIFT_LEFT:
     case KeyboardCode.SHIFT_RIGHT:
-      thisKey = 'Shift'
+      this.state.currentKey = 'Shift'
       return
     case KeyboardCode.CAPS_LOCK:
-      capsLock = !capsLock
+      this.state.capsLock = !this.state.capsLock
       return
     case KeyboardCode.META_LEFT:
     case KeyboardCode.META_RIGHT:
-      thisKey = 'Meta'
+      this.state.currentKey = 'Meta'
       return
     case KeyboardCode.B: // looking for control-B to move mousentered group to "bottom"
       if (event.ctrlKey) {
         // which is first in the SVG list
-        if (thisGroup) {
-          let cloneGroup = thisGroup.cloneNode(true)
-          thisGroup.remove()
+        if (this.state.currentGroup) {
+          let cloneGroup = this.state.currentGroup.cloneNode(true)
+          this.state.currentGroup.remove()
           this.clearEditElement(cloneGroup)
-          svgLayer.firstChild.insertBefore(
+          this.state.svgLayer.firstChild.insertBefore(
             cloneGroup,
-            svgLayer.firstChild.childNodes[1]
+            this.state.svgLayer.firstChild.childNodes[1]
           )
         }
       }
@@ -2641,11 +2742,11 @@ SVGDraw.prototype.keyHandler = function (event) {
     case KeyboardCode.T: // looking for control-T to move mousentered group to "top"
       if (event.ctrlKey) {
         // which is last in the SVG element list
-        if (thisGroup) {
-          let cloneGroup = thisGroup.cloneNode(true)
-          thisGroup.remove()
+        if (this.state.currentGroup) {
+          let cloneGroup = this.state.currentGroup.cloneNode(true)
+          this.state.currentGroup.remove()
           this.clearEditElement(cloneGroup)
-          svgLayer.firstChild.appendChild(cloneGroup)
+          this.state.svgLayer.firstChild.appendChild(cloneGroup)
         }
       }
       break
@@ -2677,26 +2778,29 @@ SVGDraw.prototype.keyHandler = function (event) {
 
   if (keyCode == KeyboardCode.DELETE || keyCode == KeyboardCode.BACKSPACE) {
     if (event.shiftKey) {
-      if (thisGroup) {
-        let cloneGroup = thisGroup.cloneNode(true)
-        thisGroup.remove()
+      if (this.state.currentGroup) {
+        let cloneGroup = this.state.currentGroup.cloneNode(true)
+        this.state.currentGroup.remove()
         this.clearEditElement(cloneGroup)
-        svgLayer.firstChild.appendChild(cloneGroup)
+        this.state.svgLayer.firstChild.appendChild(cloneGroup)
         this.clearLastGroup()
       }
       return
     }
 
-    if (inFocus.tagName == 'BODY' || inFocus.id == svgLayer.parentElement.id) {
+    if (
+      inFocus.tagName == 'BODY' ||
+      inFocus.id == this.state.svgLayer.parentElement.id
+    ) {
       return
     }
   }
   if (KeyboardCode.ESC) {
     switch (this.cursorMode) {
       case (drawMode.POLYGON, drawMode.POLYLINE):
-        if (svgInProgress == this.cursorMode) {
+        if (this.state.svgInProgress == this.cursorMode) {
           // remove last point and reset previous point to dynamic
-          deleteLastPoint(thisElement)
+          deleteLastPoint(this.state.currentElement)
           return
         }
     }
@@ -2704,7 +2808,7 @@ SVGDraw.prototype.keyHandler = function (event) {
   }
 }
 
-function lookUpKey(event) {
+function lookUpKey(event, { capsLock }) {
   // sort out the keyboard mess and return the key
   let eventKey = event.key
   let thisKeyCode = event.keyCode
@@ -2758,13 +2862,13 @@ function lookUpKey(event) {
 }
 
 SVGDraw.prototype.doMouseUp = function () {
-  svgInProgress = false
-  this.setElementMouseEnterLeave(thisGroup)
+  this.state.svgInProgress = false
+  this.setElementMouseEnterLeave(this.state.currentGroup)
   //this.setCursorMode(drawMode.MOVE);
 
-  thisBubble = null
-  thisElement = null
-  thisGroup = null
+  this.state.currentBubble = null
+  this.state.currentElement = null
+  this.state.currentGroup = null
 }
 
 SVGDraw.prototype.doubleClickHandler = function () {
@@ -2777,25 +2881,25 @@ SVGDraw.prototype.dblClick = function () {
     this.cursorMode == drawMode.POLYLINE ||
     this.cursorMode == drawMode.TEXT
   ) {
-    svgInProgress = false
+    this.state.svgInProgress = false
     switch (this.cursorMode) {
       case drawMode.POLYGON:
-        deleteDuplicatePoints(thisElement)
-        thisGroup.innerHTML = thisGroup.innerHTML
+        deleteDuplicatePoints(this.state.currentElement)
+        this.state.currentGroup.innerHTML = this.state.currentGroup.innerHTML
           .replace(drawMode.POLYLINE, drawMode.POLYGON)
           .replace(drawMode.POLYLINE, drawMode.POLYGON)
-        this.setElementMouseEnterLeave(thisGroup)
+        this.setElementMouseEnterLeave(this.state.currentGroup)
         break
       case drawMode.POLYLINE:
-        deleteDuplicatePoints(thisElement)
-        this.setElementMouseEnterLeave(thisGroup)
+        deleteDuplicatePoints(this.state.currentElement)
+        this.setElementMouseEnterLeave(this.state.currentGroup)
         break
     }
     if (this.cursorMode == drawMode.TEXT) {
-      closeSvgText()
+      this.closeSvgText()
     }
-    thisElement = null
-    thisGroup = null
+    this.state.currentElement = null
+    this.state.currentGroup = null
   }
 }
 
@@ -2837,7 +2941,7 @@ function deleteDuplicatePoints(element) {
       thesePoints += splitPoints[k] + ' ' // if it is "new"
     }
   }
-  thisElement.attributes['points'].value = thesePoints
+  element.attributes['points'].value = thesePoints
 }
 
 function deleteLastPoint(element) {
@@ -2851,7 +2955,7 @@ function deleteLastPoint(element) {
       thesePoints += splitPoints[k] + ' ' // if it is "new"
     }
   }
-  thisElement.attributes['points'].value = thesePoints
+  this.state.currentElement.attributes['points'].value = thesePoints
 }
 
 function checkDuplicatePoints(pxy, qxy) {
@@ -2894,34 +2998,35 @@ SVGDraw.prototype.checkLeftoverElement = function () {
     //                    thisElement.attributes['points'].value = thesePoints;
     //                    break;
     case drawMode.CIRCLE:
-      if (thisElement == null) return
+      if (this.state.currentElement == null) return
       if (
-        thisElement.attributes['cy'].value - thisElement.attributes['r'].value <
+        this.state.currentElement.attributes['cy'].value -
+          this.state.currentElement.attributes['r'].value <
           0 || // off svgLayer
-        thisElement.attributes['r'].value < 2
+        this.state.currentElement.attributes['r'].value < 2
       ) {
         // single click
         this.clearLastGroup()
       }
       break
     case drawMode.ELLIPSE:
-      if (thisElement == null) return
+      if (this.state.currentElement == null) return
       if (
-        thisElement.attributes['cy'].value -
-          thisElement.attributes['ry'].value <
+        this.state.currentElement.attributes['cy'].value -
+          this.state.currentElement.attributes['ry'].value <
         0
       ) {
         this.clearLastGroup()
       }
       break
     case drawMode.RECTANGLE:
-      if (thisElement == null) return
-      if (thisElement.attributes['height'].value < 0) {
+      if (this.state.currentElement == null) return
+      if (this.state.currentElement.attributes['height'].value < 0) {
         this.clearLastGroup()
       }
       break
     case drawMode.LINE:
-      if (thisElement.attributes['y2'].value < 0) {
+      if (this.state.currentElement.attributes['y2'].value < 0) {
         this.clearLastGroup()
       }
       break
@@ -2954,12 +3059,11 @@ SVGDraw.prototype.clearThisGroup = function (group) {
 }
 
 SVGDraw.prototype.updateSvgText = function (event) {
-  // modified to eliminate mousetrap
-  thisKey = event.key // this attribute only works for FireFox
   let thisKeyCode = event.keyCode
   //if (thisKey == undefined) {                   // undefined if not FireFox
-  thisKey = lookUpKey(event) // consolidate
-  if (thisElement == null) {
+  this.state.currentKey = lookUpKey(event, { capsLock: this.state.capsLock }) // consolidate
+
+  if (this.state.currentElement == null) {
     // this can occur if <text> element just completed and no new one started
     if (thisKeyCode == 8) {
       // prevent Backspace from invoking BACK browser function
@@ -2973,38 +3077,46 @@ SVGDraw.prototype.updateSvgText = function (event) {
     return false
   }
   let text4svgValue // text4svg is string
-  text4svgValue = text4svg.slice(0, text4svg.length - 1) // remove text cursor (underscore)
+  text4svgValue = this.text4svg.slice(0, this.text4svg.length - 1) // remove text cursor (underscore)
 
   if (thisKeyCode > 31) {
     // space or other printing character
-    text4svg = text4svgValue + thisKey + '_'
+    this.text4svg = text4svgValue + this.state.currentKey + '_'
   }
   if (thisKeyCode == 8) {
-    text4svg = text4svgValue.slice(0, text4svgValue.length - 1) + '_'
+    this.text4svg = text4svgValue.slice(0, text4svgValue.length - 1) + '_'
     event.preventDefault() // prevent Backspace from invoking BACK browser function
   }
-  if (!thisKey && thisKeyCode != 13 && thisKeyCode != 8) {
+  if (!this.state.currentKey && thisKeyCode != 13 && thisKeyCode != 8) {
     return
   } // only pass printing keys, Delete, and Return/Enter
-  thisElement.innerHTML = parseHTML(text4svg) // this needs to be pair-parsed into ' '&nbsp;
-  thisElement.attributes['stroke'].value = stroke // allow in-line whole line color/font/size over-ride
-  thisElement.attributes['style'].value =
-    'font-family: ' + fontFamily + '; fill: ' + stroke + ';' //  including fill
-  thisElement.attributes['font-size'].value = fontSize
-  let nextX = thisElement.attributes['x'].value
-  let nextY = parseInt(thisElement.attributes['y'].value) + parseInt(fontSize)
-  let nextLine = thisElement.cloneNode()
+  this.state.currentElement.innerHTML = parseHTML(this.text4svg) // this needs to be pair-parsed into ' '&nbsp;
+  this.state.currentElement.attributes['stroke'].value =
+    this.configuration.stroke // allow in-line whole line color/font/size over-ride
+  this.state.currentElement.attributes['style'].value =
+    'font-family: ' +
+    this.configuration.fontFamily +
+    '; fill: ' +
+    this.configuration.stroke +
+    ';' //  including fill
+  this.state.currentElement.attributes['font-size'].value =
+    this.configuration.fontSize
+  let nextX = this.state.currentElement.attributes['x'].value
+  let nextY =
+    parseInt(this.state.currentElement.attributes['y'].value) +
+    parseInt(this.configuration.fontSize)
+  let nextLine = this.state.currentElement.cloneNode()
   if (event.keyCode == 13) {
     // line feed on ENTER/CR -- termination on shift-Enter/Return already picked off
-    thisElement.innerHTML = parseHTML(
+    this.state.currentElement.innerHTML = parseHTML(
       text4svgValue.slice(0, text4svgValue.length)
     ) // remove cursor at end of line
     nextLine.attributes['x'].value = nextX
     nextLine.attributes['y'].value = nextY
-    thisElement.parentElement.appendChild(nextLine)
-    thisElement = nextLine
-    thisElement.innerHTML = '_'
-    text4svg = '_'
+    this.state.currentElement.parentElement.appendChild(nextLine)
+    this.state.currentElement = nextLine
+    this.state.currentElement.innerHTML = '_'
+    this.text4svg = '_'
     event.preventDefault()
   }
 }
@@ -3020,60 +3132,60 @@ SVGDraw.prototype.finishTextGroup = function () {
   // uses global variable thisGroup for <text>.parent
   // line/group is complete except for text cursor
   this.removeCursorFromSvgText() // if thisElement is empty, it will disappear through this call
-  if (!thisGroup) {
+  if (!this.state.currentGroup) {
     return
   }
-  if (thisGroup.hasChildNodes()) {
+  if (this.state.currentGroup.hasChildNodes()) {
     // thisGroup may contain more that one text element, one for each line
-    this.setElementMouseEnterLeave(thisGroup) // if this group is to be persisted, set the mouse listeners for future edit
+    this.setElementMouseEnterLeave(this.state.currentGroup) // if this group is to be persisted, set the mouse listeners for future edit
   } else {
     // if no child nodes, it is empty and should be
-    thisGroup.remove() // removed
+    this.state.currentGroup.remove() // removed
   }
-  closeSvgText()
+  this.closeSvgText()
   // checkLeftoverElement();         // //////////// does not consider <text> === useless
-  thisGroup = null
+  this.state.currentGroup = null
 }
 
 SVGDraw.prototype.removeCursorFromSvgText = function () {
   //   ///////////  does this do enough?
-  if (!thisElement) {
+  if (!this.state.currentElement) {
     return
   } // in case called again after end condition
-  if (thisElement.parentElement) {
+  if (this.state.currentElement.parentElement) {
     // check valid element
-    if (thisElement.parentElement.lastChild.innerHTML == '_') {
+    if (this.state.currentElement.parentElement.lastChild.innerHTML == '_') {
       // if ONLY underscore cursor
-      thisElement.parentElement.lastChild.remove() // remove the <text> element
-      text4svg = '_' // initialize for later
-      thisElement = null // kill the element
+      this.state.currentElement.parentElement.lastChild.remove() // remove the <text> element
+      this.text4svg = '_' // initialize for later
+      this.state.currentElement = null // kill the element
     } else {
-      if (svgInProgress == 'text') {
+      if (this.state.svgInProgress == 'text') {
         //   ///////////////  newly added stronger condition
-        thisElement.innerHTML = parseHTML(
-          text4svg.slice(0, text4svg.length - 1)
+        this.state.currentElement.innerHTML = parseHTML(
+          this.text4svg.slice(0, this.text4svg.length - 1)
         ) // remove cursor at end of line
-        if (thisElement.innerHTML == '') {
-          thisElement.remove()
-          thisElement = null
+        if (this.state.currentElement.innerHTML == '') {
+          this.state.currentElement.remove()
+          this.state.currentElement = null
         }
-        if (thisGroup.lastChild.tagName == SVGType.GROUP) {
+        if (this.state.currentGroup.lastChild.tagName == SVGType.GROUP) {
           // this is to detect a leftover bubble
-          thisGroup.lastChild.remove
+          this.state.currentGroup.lastChild.remove
         }
       }
     }
   }
 }
 
-function closeSvgText() {
-  text4svg = '_'
-  thisSVGpoints = [] // clear the container
-  thisElement = null
-  svgInProgress = false
+SVGDraw.prototype.closeSvgText = function () {
+  this.text4svg = '_'
+  this.state.currentSVGPoints = [] // clear the container
+  this.state.currentElement = null
+  this.state.svgInProgress = false
 }
 
-function collectSVG(isVerbatim) {
+function collectSVG(isVerbatim, { svgLayer }) {
   // verbatim true includes all markup, false means stripped
   let clonedSVG = svgLayer.cloneNode(true)
   let thisXLT = clonedSVG.firstChild
@@ -3101,7 +3213,7 @@ function collectSVG(isVerbatim) {
   return clonedSVG //  oops, this was too easy
 }
 
-function getBareSVG(noGroups) {
+function getBareSVG(noGroups, { svgLayer }) {
   //  stripped
   const clonedSVG = svgLayer.cloneNode(true)
 

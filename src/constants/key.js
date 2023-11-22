@@ -13,11 +13,10 @@ export const KeyboardCode = {
   META_LEFT: 'MetaLeft',
   META_RIGHT: 'MetaRight',
   SHIFT_LEFT: 'ShiftLeft',
-  SHIFT_RIGHT: 'ShiftRiht',
+  SHIFT_RIGHT: 'ShiftRight',
   SPACE: 'Space',
   TAB: 'Tab',
 
   B: 'KeyB',
   T: 'KeyT'
-
-};
+}
