@@ -12,9 +12,7 @@ import { drawLine } from './utils/shapes/index.js'
 
 class SVGDraw extends EventEmitter {
   constructor(containerID, opts = {}) {
-    // container:<svgLayer>:<xlt>:<svgImage>
     super()
-    this.text4svg = '_'
 
     this.containerElement = containerID
     this.configuration = {
@@ -33,7 +31,6 @@ class SVGDraw extends EventEmitter {
       baseZoom: 0, // calculated from svg and image attributes
       maxZoom: 4,
       zoomDelta: 0.02, // this can be altered to discriminate legacy firefox dommousescroll event
-      cursorMode: drawMode.MOVE,
       debugLog: opts.debugLog || false
     }
 
@@ -59,7 +56,9 @@ class SVGDraw extends EventEmitter {
       cWidth: 0,
       cHeight: 0,
       groupIdCount: 0,
-      capsLock: false
+      capsLock: false,
+      text: '_',
+      cursorMode: drawMode.MOVE
     }
 
     this.state.cWidth = parseInt(
@@ -71,6 +70,7 @@ class SVGDraw extends EventEmitter {
 
     this.handleMouseEnterFunction = this.mouseEnterFunction.bind(this)
     this.handleMouseLeaveFunction = this.mouseLeaveFunction.bind(this)
+    this.handleMouseClickFunction = this.mouseClickFunction.bind(this)
     this.handleKeyHandler = this.keyHandler.bind(this)
     this.handleKeyUpHandler = this.keyUpHandler.bind(this)
 
@@ -227,9 +227,9 @@ class SVGDraw extends EventEmitter {
   }
 
   setCursorMode(mode) {
-    this.cursorMode = mode
+    this.state.cursorMode = mode
     this.emit('changemode', {
-      mode: this.cursorMode
+      mode: this.state.cursorMode
     })
   }
 
@@ -241,20 +241,20 @@ class SVGDraw extends EventEmitter {
 
     this.setCursorMode(mode)
 
-    if (this.cursorMode !== drawMode.MOVE) {
-      if (this.cursorMode === drawMode.TEXT) {
+    if (this.state.cursorMode !== drawMode.MOVE) {
+      if (this.state.cursorMode === drawMode.TEXT) {
         //document.getElementById("text4svg").removeAttribute('disabled');
         //document.getElementById("text4svg").focus();        // this control eliminated
       }
 
       if (mode == drawMode.CLEAR) {
         this.clearLastGroup()
-        this.cursorMode = drawMode.MOVE
+        this.state.cursorMode = drawMode.MOVE
       }
 
       if (mode == BoardOptions.RESET) {
         this.setZoom(this.configuration.baseZoom)
-        this.cursorMode = drawMode.MOVE
+        this.state.cursorMode = drawMode.MOVE
       }
 
       this.state.waitElement = true
@@ -428,9 +428,13 @@ class SVGDraw extends EventEmitter {
     return getBareSVG(noGroups, { svgLayer: this.state.svgLayer }).outerHTML
   }
 
-  apiJsonSVG() {
+  apiJsonSVG(opts = { currentLayer: false }) {
     // package SVG into JSON object
-    const clonedSVG = collectSVG(false).firstChild // strip off <svg...> </svg>
+    const clonedSVG = collectSVG(false, {
+      svgLayer: this.state.svgLayer,
+      currentLayer: opts.currentLayer
+    }).firstChild // strip off <svg...> </svg>
+
     clonedSVG.removeAttribute('id')
     clonedSVG.removeAttribute('transform')
 
@@ -444,7 +448,93 @@ class SVGDraw extends EventEmitter {
     return JSONsvg
   }
 
-  apiLoadSVG = function (svg, opts = { clearPrevious: true, editable: true }) {
+  apiRemoveLayer(layerId) {
+    this.xlt.querySelectorAll(`[layer-id="${layerId}"]`)
+  }
+
+  lockShape(el) {
+    const bubble = el.querySelector('.bubbles')
+
+    this.removeGroupEvents(el)
+    bubble?.remove()
+    el.setAttribute('locked', 'true')
+  }
+
+  unlockShape(el) {
+    this.setElementMouseEnterLeave(el)
+
+    if (el.matches(':hover')) {
+      this.handleMouseEnterFunction({ target: el })
+    }
+    el.setAttribute('locked', 'false')
+  }
+
+  unlockLayer(layerId) {
+    const elements = [
+      ...this.xlt.querySelectorAll(`[layer-id="${layerId}"][locked="true"]`)
+    ]
+
+    elements.forEach((el) => this.unlockShape(el))
+  }
+
+  unlockGroup(groupId) {
+    const elements = [
+      ...this.xlt.querySelectorAll(`#${groupId}[locked="true"]`)
+    ]
+
+    elements.forEach((el) => this.unlockShape(el))
+  }
+
+  lockLayer(layerId) {
+    const elements = [
+      ...this.xlt.querySelectorAll(`[layer-id="${layerId}"][locked="false"]`)
+    ]
+
+    elements.forEach((el) => this.lockShape(el))
+  }
+
+  lockGroup(groupId) {
+    const elements = [
+      ...this.xlt.querySelectorAll(`#${groupId}[locked="false"]`)
+    ]
+
+    elements.forEach((el) => this.lockShape(el))
+  }
+
+  apiLockLayer(layerId) {
+    if (layerId) {
+      this.lockLayer(layerId)
+    }
+  }
+
+  apiLockGroup(groupId) {
+    if (groupId) {
+      this.lockGroup(groupId)
+    }
+  }
+
+  apiUnlockGroup(groupId) {
+    if (groupId) {
+      this.unlockGroup(groupId)
+    }
+  }
+
+  apiUnlockLayer(layerId) {
+    if (layerId) {
+      this.unlockLayer(layerId)
+    }
+  }
+
+  apiLoadSVG(
+    svg,
+    {
+      replace = false,
+      layerId = Math.random().toString(36).substring(2, 8),
+      lock = true,
+      shapeClass = undefined,
+      fill = undefined
+    } = {}
+  ) {
     const svgElement = document.createElementNS(
       'http://www.w3.org/2000/svg',
       SVGType.SVG
@@ -454,7 +544,7 @@ class SVGDraw extends EventEmitter {
     const groupElement = svgElement.querySelector(SVGType.GROUP)
     const g = [...groupElement.querySelectorAll(SVGType.GROUP)]
 
-    if (opts.clearPrevious) {
+    if (replace) {
       const previousGroups = this.xlt.querySelectorAll(SVGType.GROUP)
 
       previousGroups.forEach((g) => g.remove())
@@ -462,23 +552,30 @@ class SVGDraw extends EventEmitter {
 
     g.forEach((el) => {
       const shapeElement = el.firstChild
-      el.setAttribute('id', `g${this.getIDcount()}`)
 
-      if (opts.shapeClass) {
-        shapeElement.classList.add(opts.shapeClass)
+      el.setAttribute('id', `g${this.getIDcount()}`)
+      el.setAttribute('layer-id', layerId)
+      el.setAttribute('locked', lock)
+
+      if (shapeClass) {
+        shapeElement.classList.add(shapeClass)
       }
 
-      if (opts.fill) {
-        shapeElement.setAttribute('fill', opts.fill)
+      if (fill) {
+        shapeElement.setAttribute('fill', fill)
         shapeElement.setAttribute('fill-opacity', 1)
       }
 
-      if (opts.editable) {
+      if (!lock) {
         this.setElementMouseEnterLeave(el)
       }
 
       this.xlt.appendChild(el)
     })
+
+    return {
+      layerId
+    }
   }
 }
 
@@ -503,18 +600,18 @@ SVGDraw.prototype.onSvgMouseDown = function () {
 
   if (
     this.state.svgInProgress &&
-    this.state.svgInProgress !== this.cursorMode
+    this.state.svgInProgress !== this.state.cursorMode
   ) {
     // terminate in progress svg before continuing
     if (this.state.svgInProgress !== 'SHIFT') {
-      this.state.svgInProgress = this.cursorMode //  ??
+      this.state.svgInProgress = this.state.cursorMode //  ??
     }
     return
   }
 
   if (
     this.state.currentGroup?.childElementCount > 1 &&
-    this.cursorMode != drawMode.TEXT
+    this.state.cursorMode != drawMode.TEXT
   ) {
     // this is the case where there is a click on a mousentered
     this.clearEditElement(this.state.currentGroup)
@@ -524,7 +621,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
   const [x, y] = [this.currentMouseX, this.currentMouseY]
   this.state.currentSVGPoints[0] = [x, y]
 
-  if (this.cursorMode == drawMode.POLYGON) {
+  if (this.state.cursorMode == drawMode.POLYGON) {
     // mouseDown sets initial point, subsequent points set by mouseDown after mouseUp
     if (this.state.svgInProgress == false) {
       // this is a new instance of this svg type (currently by definition)
@@ -533,7 +630,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       let group = document.createElementNS('http://www.w3.org/2000/svg', 'g')
       let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
-      group.setAttributeNS(null, 'class', this.cursorMode)
+      group.setAttributeNS(null, 'class', this.state.cursorMode)
       this.state.currentGroup = group
       this.xlt.appendChild(group)
       let element = newElement({
@@ -544,7 +641,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       group.appendChild(element)
       this.state.currentElement = group.children[0]
       setPointsToElement(element, this.state.currentSVGPoints)
-      this.state.svgInProgress = this.cursorMode // mark in progress
+      this.state.svgInProgress = this.state.cursorMode // mark in progress
     } else {
       // this is the fixation of this last point, so DON'T dissociate mouse move handler
       this.updateMousePosition(event)
@@ -558,7 +655,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
         thesePoints.concat(thisPoint)
     }
   }
-  if (this.cursorMode == drawMode.POLYLINE) {
+  if (this.state.cursorMode == drawMode.POLYLINE) {
     // mouseDown sets initial point, subsequent points set by mouseDown after mouseUp
     if (this.state.svgInProgress == false) {
       // this is a new instance of this svg type (currently by definition)
@@ -567,7 +664,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       this.state.currentGroup = group
       let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
-      group.setAttributeNS(null, 'class', this.cursorMode)
+      group.setAttributeNS(null, 'class', this.state.cursorMode)
       this.xlt.appendChild(group)
       let element = newElement({
         tag: drawMode.POLYLINE,
@@ -578,7 +675,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       this.state.currentElement = group.children[0]
       element.setAttributeNS(null, 'stroke-linecap', 'round')
       setPointsToElement(element, this.state.currentSVGPoints)
-      this.state.svgInProgress = this.cursorMode // mark in progress
+      this.state.svgInProgress = this.state.cursorMode // mark in progress
     } else {
       // this is the fixation of this last point, so DON'T dissociate mouse move handler
       this.updateMousePosition(event)
@@ -592,7 +689,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
         thesePoints.concat(thisPoint)
     }
   }
-  if (this.cursorMode == drawMode.RECTANGLE) {
+  if (this.state.cursorMode == drawMode.RECTANGLE) {
     // mouseDown starts creation, after drag, mouseUp ends
     if (this.state.svgInProgress == false) {
       // this is a new instance of this svg type (currently by definition)
@@ -601,7 +698,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       let group = document.createElementNS('http://www.w3.org/2000/svg', 'g')
       let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
-      group.setAttributeNS(null, 'class', this.cursorMode)
+      group.setAttributeNS(null, 'class', this.state.cursorMode)
       this.xlt.appendChild(group)
       let element = newElement({
         tag: SVGType.RECT,
@@ -623,21 +720,21 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       ) // start y
       element.setAttributeNS(null, 'width', 1) // width x
       element.setAttributeNS(null, 'height', 1) // height y
-      this.state.svgInProgress = this.cursorMode // mark in progress
+      this.state.svgInProgress = this.state.cursorMode // mark in progress
     }
     // now using mouseUp event to terminate rect
   }
-  if (this.cursorMode == drawMode.LINE) {
+  if (this.state.cursorMode == drawMode.LINE) {
     //  mouseDown starts creation, after, drag mouseUp ends
     if (this.state.svgInProgress == false) {
       // this is a new instance of this svg type (currently by definition)
 
-      this.state.svgInProgress = this.cursorMode // mark in progress
+      this.state.svgInProgress = this.state.cursorMode // mark in progress
 
       const { element, group } = drawLine({
         x,
         y,
-        mode: this.cursorMode,
+        mode: this.state.cursorMode,
         attributes: this.configuration
       })
       group.setAttributeNS(null, 'id', 'g' + this.getIDcount().toString())
@@ -651,18 +748,18 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       // unbindMouseHandlers(self);
     }
   }
-  if (this.cursorMode == drawMode.ARROW) {
+  if (this.state.cursorMode == drawMode.ARROW) {
     //  mouseDown starts creation, after, drag mouseUp ends
     if (this.state.svgInProgress == false) {
       // this is a new instance of this svg type (currently by definition)
       const { element, group } = drawLine({
         x,
         y,
-        mode: this.cursorMode,
+        mode: this.state.cursorMode,
         attributes: this.configuration
       })
 
-      this.state.svgInProgress = this.cursorMode
+      this.state.svgInProgress = this.state.cursorMode
       group.setAttributeNS(null, 'id', 'g' + this.getIDcount().toString())
       this.xlt.appendChild(group)
       this.state.currentElement = element
@@ -674,7 +771,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       // unbindMouseHandlers(self);
     }
   }
-  if (this.cursorMode == drawMode.CIRCLE) {
+  if (this.state.cursorMode == drawMode.CIRCLE) {
     // mouseDown    // modified to use common element for handlers
     if (this.state.svgInProgress == false) {
       // this is a new instance of this svg type (currently by definition)
@@ -686,7 +783,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       let group = document.createElementNS('http://www.w3.org/2000/svg', 'g')
       let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
-      group.setAttributeNS(null, 'class', this.cursorMode)
+      group.setAttributeNS(null, 'class', this.state.cursorMode)
       this.xlt.appendChild(group)
       let element = newElement({
         tag: SVGType.CIRCLE,
@@ -707,11 +804,11 @@ SVGDraw.prototype.onSvgMouseDown = function () {
         this.state.currentSVGPoints[0][1].toFixed(4)
       ) // start y
       element.setAttributeNS(null, 'r', 1) // width x
-      this.state.svgInProgress = this.cursorMode // mark in progress
+      this.state.svgInProgress = this.state.cursorMode // mark in progress
     }
     // now using mouseup event exclusively to terminate circle
   }
-  if (this.cursorMode == drawMode.ELLIPSE) {
+  if (this.state.cursorMode == drawMode.ELLIPSE) {
     // mouseDown
     if (this.state.svgInProgress == false) {
       // this is a new instance of this svg type (currently by definition)
@@ -720,7 +817,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       this.state.currentGroup = group
       let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
-      group.setAttributeNS(null, 'class', this.cursorMode)
+      group.setAttributeNS(null, 'class', this.state.cursorMode)
       this.xlt.appendChild(group)
       let element = newElement({
         tag: drawMode.ELLIPSE,
@@ -741,7 +838,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       ) // start y
       element.setAttributeNS(null, 'rx', 1) // radius x
       element.setAttributeNS(null, 'ry', 1) // radius y
-      this.state.svgInProgress = this.cursorMode // mark in progress
+      this.state.svgInProgress = this.state.cursorMode // mark in progress
     } else {
       // this is the terminus of this instance, so dissociate mouse move handler
       this.state.svgInProgress = false
@@ -749,7 +846,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       // unbindMouseHandlers(self);
     }
   }
-  if (this.cursorMode == drawMode.DRAW) {
+  if (this.state.cursorMode == drawMode.DRAW) {
     // mouseDown
     if (this.state.svgInProgress == false) {
       // this is a new instance of this svg type (currently by definition)
@@ -758,7 +855,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       this.state.currentGroup = group
       let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
-      group.setAttributeNS(null, 'class', this.cursorMode)
+      group.setAttributeNS(null, 'class', this.state.cursorMode)
       this.xlt.appendChild(group)
       //for (j = 0; j < thisSVGpoints.length; j++) {              // for text mode there is only one
       let element = newElement({
@@ -777,7 +874,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
           ' '
       ) // start x,y
       //}
-      this.state.svgInProgress = this.cursorMode // mark in progress
+      this.state.svgInProgress = this.state.cursorMode // mark in progress
     } else {
       // this is the terminus of this instance, so dissociate mouse move handler
       this.state.svgInProgress = false
@@ -788,8 +885,8 @@ SVGDraw.prototype.onSvgMouseDown = function () {
     }
   }
   if (
-    this.cursorMode == drawMode.CUBIC ||
-    this.cursorMode == drawMode.QUADRATIC
+    this.state.cursorMode == drawMode.CUBIC ||
+    this.state.cursorMode == drawMode.QUADRATIC
   ) {
     // mouseDown
     // The cubic Bezier curve requires non-symbolic integer values for its path parameters.
@@ -804,7 +901,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       this.state.currentGroup = group
       let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
-      group.setAttributeNS(null, 'class', this.cursorMode)
+      group.setAttributeNS(null, 'class', this.state.cursorMode)
       this.xlt.appendChild(group)
       let element = newElement({
         tag: SVGType.PATH,
@@ -829,7 +926,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
           thisY
         )
       )
-      this.state.svgInProgress = this.cursorMode // mark in progress
+      this.state.svgInProgress = this.state.cursorMode // mark in progress
     } else {
       // this is the terminus of this instance, so dissociate mouse move handler
       this.state.svgInProgress = false
@@ -837,7 +934,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       // unbindMouseHandlers(self);
     }
   }
-  if (this.cursorMode == drawMode.TEXT) {
+  if (this.state.cursorMode == drawMode.TEXT) {
     // mouseDown - could be initial click, revised position click, or preemie
     let group
     if (this.state.currentElement) {
@@ -849,7 +946,7 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       this.state.currentGroup = group
       let newGroupID = 'g' + this.getIDcount().toString()
       group.setAttributeNS(null, 'id', newGroupID)
-      group.setAttributeNS(null, 'class', this.cursorMode)
+      group.setAttributeNS(null, 'class', this.state.cursorMode)
       this.xlt.appendChild(group)
       //for (j = 0; j < thisSVGpoints.length; j++) {              // for text mode there is only one
       let element
@@ -883,10 +980,10 @@ SVGDraw.prototype.onSvgMouseDown = function () {
       this.state.svgInProgress = 'text' // mark in progress
     }
   }
-  if (this.cursorMode == drawMode.MOVE) {
+  if (this.state.cursorMode == drawMode.MOVE) {
     // mouseDown
     if (!this.state.svgInProgress) {
-      this.state.svgInProgress = this.cursorMode
+      this.state.svgInProgress = this.state.cursorMode
     }
   }
   this.state.waitElement = false //    ///////////   new code to allow creation start within extant element
@@ -913,7 +1010,7 @@ SVGDraw.prototype.getSVGAttributes = function () {
 }
 
 SVGDraw.prototype.getCurvePath = function (x1, y1, cx1, cy1, cx2, cy2, x2, y2) {
-  if (this.cursorMode == drawMode.CUBIC) {
+  if (this.state.cursorMode == drawMode.CUBIC) {
     return (
       'M ' +
       pathPoint(x1, y1) +
@@ -997,7 +1094,7 @@ SVGDraw.prototype.mouseEnterFunction = function (event) {
       ' parent=' +
       thisElementParent +
       ' ' +
-      this.cursorMode +
+      this.state.cursorMode +
       ' '
   )
   this.setEditElement(event.target)
@@ -1020,10 +1117,22 @@ SVGDraw.prototype.mouseLeaveFunction = function (event) {
       ' parent=' +
       thisElementParent +
       ' ' +
-      this.cursorMode +
+      this.state.cursorMode +
       ' '
   )
   this.clearEditElement(event.target)
+}
+
+SVGDraw.prototype.removeGroupEvents = function (group) {
+  group.removeEventListener('mouseenter', this.handleMouseEnterFunction)
+  group.removeEventListener('mouseleave', this.handleMouseLeaveFunction)
+  group.removeEventListener('click', this.handleMouseClickFunction)
+}
+
+SVGDraw.prototype.addGroupEvents = function (group) {
+  group.addEventListener('mouseenter', this.handleMouseEnterFunction)
+  group.addEventListener('mouseleave', this.handleMouseLeaveFunction)
+  group.addEventListener('click', this.handleMouseClickFunction)
 }
 
 SVGDraw.prototype.setElementMouseEnterLeave = function (group) {
@@ -1032,13 +1141,18 @@ SVGDraw.prototype.setElementMouseEnterLeave = function (group) {
     group = null //  debug catch point
   }
 
-  group.removeEventListener('mouseenter', this.handleMouseEnterFunction)
-  group.removeEventListener('mouseleave', this.handleMouseLeaveFunction)
-
-  group.addEventListener('mouseenter', this.handleMouseEnterFunction)
-  group.addEventListener('mouseleave', this.handleMouseLeaveFunction)
+  this.removeGroupEvents(group)
+  this.addGroupEvents(group)
 
   return group
+}
+
+SVGDraw.prototype.mouseClickFunction = function (event) {
+  switch (this.state.cursorMode) {
+    case drawMode.ERASER:
+      this.emit('erase', event.currentTarget)
+      event.currentTarget.remove()
+  }
 }
 
 SVGDraw.prototype.setEditElement = function (group) {
@@ -1071,21 +1185,21 @@ SVGDraw.prototype.setEditElement = function (group) {
     )
     this.state.currentGroup = group // there is probably no creation activity
   }
-  //if (group.firstChild.tagName != this.cursorMode) {    // start editing an element not in the current mode
+  //if (group.firstChild.tagName != this.state.cursorMode) {    // start editing an element not in the current mode
   if (group.firstChild) {
     if (group.firstChild.tagName != SVGType.PATH) {
       if (group.attributes.class) {
         // class atribute existence
-        this.cursorMode = group.attributes.class.value
+        this.state.cursorMode = group.attributes.class.value
       } else {
-        this.cursorMode = group.firstChild.tagName
+        this.state.cursorMode = group.firstChild.tagName
       }
     } else {
       // now that there are both cubic and quadratic curves, we must detect this one's class
-      this.cursorMode = drawMode.CUBIC // ///////// finesse path
+      this.state.cursorMode = drawMode.CUBIC // ///////// finesse path
       if (group.firstChild.attributes.d.value.indexOf('C ') == -1) {
         // is the path quadratic because it's not cubic?
-        this.cursorMode = drawMode.QUADRATIC
+        this.state.cursorMode = drawMode.QUADRATIC
       }
     }
   }
@@ -1150,7 +1264,7 @@ SVGDraw.prototype.clearEditElement = function (group) {
       // poly- bubbles have a child group
       group.lastChild.remove() // this is the group of bubbles (and maybe nested ones) if not just a SHIFT bubble
       this.state.currentBubble = null
-      this.cursorMode = drawMode.MOVE // was savedthis.cursorMode;   // on exit of edit mode, restore
+      this.state.cursorMode = drawMode.MOVE // was savedthis.state.cursorMode;   // on exit of edit mode, restore
       this.state.svgInProgress = false
       this.state.currentElement = null
       this.state.currentGroup = null
@@ -1164,12 +1278,12 @@ SVGDraw.prototype.clearEditElement = function (group) {
   }
   //group./*firstChild.*/attributes['onmouseenter'].value = "this.firstChild.attributes['stroke-width'].value = '" + 1.5 * strokeWidth + "'; setEditElement(this.firstChild);"    // replant the listener in the real element
   this.setElementMouseEnterLeave(group)
-  this.setCursorMode(drawMode.MOVE) // was savedthis.cursorMode;   // on exit of edit mode, restore
+  this.setCursorMode(drawMode.MOVE) // was savedthis.state.cursorMode;   // on exit of edit mode, restore
 
   this.state.svgInProgress = false
   this.state.currentElement = null
   this.state.currentGroup = null
-  //  eliminated savedthis.cursorMode = drawMode.MOVE;
+  //  eliminated savedthis.state.cursorMode = drawMode.MOVE;
 }
 
 function checkElementConflict(
@@ -1179,7 +1293,7 @@ function checkElementConflict(
   // only invoked by mouseenter listeners
   /* consider potential values of:
    svgInProgress, one of the svg modes, plus move, shift, and size
-   this.cursorMode, the selected (if not always indicated) creation / editing mode
+   this.state.cursorMode, the selected (if not always indicated) creation / editing mode
    thisElement, nominally the active element - conflict with bubbles
    thisGroup, nominally the group of the active element
    */
@@ -1246,9 +1360,9 @@ SVGDraw.prototype.setShiftElement = function (bubble) {
   // thisBubble = group.lastChild.firstChild;      // this is the center/first bubble
   this.state.currentBubble =
     this.state.currentGroup.children[1].children['shift'] // this is the center/first bubble
-  this.cursorMode = this.state.currentElement.tagName
+  this.state.cursorMode = this.state.currentElement.tagName
   if (this.state.currentGroup.attributes.class) {
-    this.cursorMode = this.state.currentGroup.attributes.class.value
+    this.state.cursorMode = this.state.currentGroup.attributes.class.value
   }
   //// presumption of ordering of shift bubble vs other bubbles: FIRST bubble is shift -- modified other code so TRUE
   let endK = this.state.currentGroup.lastChild.childElementCount // total bubbles, leave the first one
@@ -1266,7 +1380,7 @@ SVGDraw.prototype.setShiftElement = function (bubble) {
   this.state.svgInProgress = 'SHIFT'
   console_log(
     this.configuration.debugLog,
-    'svgInProgress = SHIFT, this.cursorMode = ' + this.cursorMode
+    'svgInProgress = SHIFT, this.state.cursorMode = ' + this.state.cursorMode
   )
 }
 
@@ -1277,11 +1391,11 @@ SVGDraw.prototype.setSizeElement = function (bubble) {
   this.state.currentGroup = group // set group for mousemove
   this.state.currentElement = group.firstChild
   this.state.currentBubble = group.lastChild.firstChild // this is the center/first bubble
-  this.cursorMode = this.state.currentElement.tagName
+  this.state.cursorMode = this.state.currentElement.tagName
 
   if (
-    this.cursorMode === drawMode.CIRCLE ||
-    this.cursorMode === drawMode.ELLIPSE
+    this.state.cursorMode === drawMode.CIRCLE ||
+    this.state.cursorMode === drawMode.ELLIPSE
   ) {
     const endK = group.lastChild.childElementCount // total bubbles, leave the first one (thisElement)
 
@@ -1294,8 +1408,8 @@ SVGDraw.prototype.setSizeElement = function (bubble) {
 
   console_log(
     this.configuration.debugLog,
-    'svgInProgress = SIZE, this.cursorMode = ' +
-      this.cursorMode +
+    'svgInProgress = SIZE, this.state.cursorMode = ' +
+      this.state.cursorMode +
       ' ' +
       this.state.currentElement.tagName
   )
@@ -1320,9 +1434,9 @@ SVGDraw.prototype.setPointElement = function (bubble) {
     bubble.parentNode.lastChild.remove() // /////////// this is the right place: remove insert point bubbles
   }
   if (this.state.currentGroup.attributes.class) {
-    this.cursorMode = this.state.currentGroup.attributes.class.value
+    this.state.cursorMode = this.state.currentGroup.attributes.class.value
   } else {
-    this.cursorMode = this.state.currentElement.tagName
+    this.state.cursorMode = this.state.currentElement.tagName
   }
 
   group.removeEventListener('mouseenter', this.handleMouseEnterFunction)
@@ -1344,7 +1458,7 @@ SVGDraw.prototype.setNewPointElement = function (bubble) {
     this.state.currentBubble = bubble
   }
 
-  this.cursorMode = this.state.currentElement.tagName
+  this.state.cursorMode = this.state.currentElement.tagName
   group.removeEventListener('mouseenter', this.handleMouseEnterFunction) // disable mousenter on real element's containing group
   group.removeEventListener('mouseleave', this.handleMouseLeaveFunction) // disable mouseleaver on real element's containing group
   // bubble.attributes['onmousedown'].value = '';  // cascade to onSvgMouseDown
@@ -1621,6 +1735,8 @@ SVGDraw.prototype.createBubbleGroup = function (group) {
     SVGType.GROUP
   )
 
+  bubbleGroup.classList.add('bubbles')
+
   if (element.tagName !== SVGType.PATH) {
     // /////// skip this step for path exception
     for (let key in svgAttrs) {
@@ -1836,7 +1952,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
    point (set during onSvgMouseDown) and a final point/datum.
 
    The general scheme up to implementation of editing <line>/<polyline>/<polygon> element types
-   has been to articulate thisElement through the svgInProgress state (SHIFT, SIZE, this.cursorMode)
+   has been to articulate thisElement through the svgInProgress state (SHIFT, SIZE, this.state.cursorMode)
    where SHIFT moves the entire element, typically through the initial point set during
    onSvgMouseDown.For what had been effectively a resizing operation, sleight of hand set up the
    modes and states to resume processing of thisElement AS IF it had just been created and was
@@ -1851,11 +1967,11 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
    proper technique for <poly-...> proceeds.
    */
 
-  if (this.cursorMode != drawMode.MOVE) {
+  if (this.state.cursorMode != drawMode.MOVE) {
     // if we are not moving(dragging) the SVG check the known tags
     if (
-      this.cursorMode === drawMode.POLYGON ||
-      (this.cursorMode === drawMode.POLYLINE &&
+      this.state.cursorMode === drawMode.POLYGON ||
+      (this.state.cursorMode === drawMode.POLYLINE &&
         this.state.svgInProgress === drawMode.POLYGON)
     ) {
       if (this.state.svgInProgress == false) {
@@ -1927,7 +2043,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
             thesePoints.concat(thisPoint)
         }
       }
-    } else if (this.cursorMode == drawMode.POLYLINE) {
+    } else if (this.state.cursorMode == drawMode.POLYLINE) {
       if (this.state.svgInProgress == false) {
         return
       }
@@ -1997,7 +2113,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
             thesePoints.concat(thisPoint)
         }
       }
-    } else if (this.cursorMode == drawMode.RECTANGLE) {
+    } else if (this.state.cursorMode == drawMode.RECTANGLE) {
       if (this.state.svgInProgress == false) {
         return
       }
@@ -2033,13 +2149,13 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           }
         }
       }
-    } else if (this.cursorMode == drawMode.LINE) {
+    } else if (this.state.cursorMode == drawMode.LINE) {
       let linePoints
       if (event.type == 'mousedown' || this.state.svgInProgress == false) {
         // extra condition for line
         console_log(
           this.configuration.debugLog,
-          'this.cursorMode=line abort event:' +
+          'this.state.cursorMode=line abort event:' +
             event.type +
             ' svgInProgress= ' +
             this.state.svgInProgress
@@ -2104,7 +2220,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
             this.currentMouseY.toString()
         )
       }
-    } else if (this.cursorMode == drawMode.ARROW) {
+    } else if (this.state.cursorMode == drawMode.ARROW) {
       let linePoints
       if (event.type == 'mousedown' || this.state.svgInProgress == false) {
         // extra condition for line
@@ -2220,7 +2336,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         this.state.currentGroup.appendChild(rightBarb)
       }
     } else if (
-      this.cursorMode === drawMode.CIRCLE /*|| (this.cursorMode == 'bubble')*/
+      this.state.cursorMode ===
+      drawMode.CIRCLE /*|| (this.state.cursorMode == 'bubble')*/
     ) {
       //thisCircle = thisElement;             // first step toward generalizing SHIFT/SIZE handlers
       if (event.type == 'mousedown' || this.state.svgInProgress == false) {
@@ -2279,7 +2396,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           bubbles['N'].attributes['cy'].value = parseFloat(thisCircY) - radius
         }
       }
-    } else if (this.cursorMode == drawMode.ELLIPSE) {
+    } else if (this.state.cursorMode == drawMode.ELLIPSE) {
       if (event.type == 'mousedown' || this.state.svgInProgress == false) {
         return
       }
@@ -2306,7 +2423,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
           Math.abs(thisEllipseY - this.currentMouseY) * 1.414
         ).toFixed(4)
       }
-    } else if (this.cursorMode == drawMode.DRAW) {
+    } else if (this.state.cursorMode == drawMode.DRAW) {
       if (this.state.svgInProgress == false) {
         return
       }
@@ -2383,8 +2500,8 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
       }
     } // end of Draw case
     else if (
-      this.cursorMode == drawMode.CUBIC ||
-      this.cursorMode == drawMode.QUADRATIC
+      this.state.cursorMode == drawMode.CUBIC ||
+      this.state.cursorMode == drawMode.QUADRATIC
     ) {
       if (event.type == 'mousedown' || this.state.svgInProgress == false) {
         // extra condition for line
@@ -2532,7 +2649,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         let thisY2 = this.currentMouseY
         let thisD
         let thisPathType = ' C ' // set quadratic control point at midpoint, cubic's at 40% and 60% p1:p2
-        if (this.cursorMode == drawMode.QUADRATIC) thisPathType = ' Q '
+        if (this.state.cursorMode == drawMode.QUADRATIC) thisPathType = ' Q '
         let theseCurvePoints = thisDvalue.split(thisPathType) // isolate control point(s) and p2
         let thisP1 = theseCurvePoints[0].split('M ') // isolate p1
         thisP1 = thisP1[1].split(', ')
@@ -2549,7 +2666,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
             thisPathType +
             curvePoint(theseControlPoints[0], theseControlPoints[1])
         } else {
-          // if (this.cursorMode == drawMode.CUBIC)
+          // if (this.state.cursorMode == drawMode.CUBIC)
           theseControlPoints[0] = (thisX1 - 0.4 * dx).toFixed(4)
           theseControlPoints[1] = (thisY1 - 0.4 * dy).toFixed(4)
           theseControlPoints[2] = (thisX1 - 0.6 * dx).toFixed(4)
@@ -2583,7 +2700,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         thisD += pathPoint(thisX2, thisY2)
         this.state.currentElement.attributes['d'].value = thisD
       }
-    } else if (this.cursorMode == 'text') {
+    } else if (this.state.cursorMode == 'text') {
       // translate
       if (this.state.svgInProgress == 'SHIFT') {
         this.updateMousePosition(event)
@@ -2616,7 +2733,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         }
       }
     }
-  } else if (this.cursorMode == drawMode.MOVE) {
+  } else if (this.state.cursorMode == drawMode.MOVE) {
     // Revert to MOVE: this version assumes manipulating the transform <xlt> of the SVG via this.state.xC, this.state.yC
 
     if (this.state.svgInProgress == drawMode.MOVE) {
@@ -2650,7 +2767,7 @@ SVGDraw.prototype.onSvgMouseUp = function (event) {
     this.state.svgInProgress = false
     this.setElementMouseEnterLeave(this.state.currentElement.parentNode) // this element is a SHIFT bubble
   } else {
-    switch (this.cursorMode) {
+    switch (this.state.cursorMode) {
       case drawMode.DRAW:
       case drawMode.CUBIC:
       case drawMode.QUADRATIC:
@@ -2751,7 +2868,7 @@ SVGDraw.prototype.keyHandler = function (event) {
       }
       break
   }
-  if (this.cursorMode == drawMode.TEXT) {
+  if (this.state.cursorMode == drawMode.TEXT) {
     event.preventDefault()
     this.updateSvgText(event) // pass event or key
     return
@@ -2759,7 +2876,7 @@ SVGDraw.prototype.keyHandler = function (event) {
 
   if (keyCode == KeyboardCode.ENTER) {
     // added literal decimal value for chrome/safari
-    switch (this.cursorMode) {
+    switch (this.state.cursorMode) {
       case drawMode.POLYGON:
       case drawMode.POLYLINE:
         this.dblClick()
@@ -2796,9 +2913,9 @@ SVGDraw.prototype.keyHandler = function (event) {
     }
   }
   if (KeyboardCode.ESC) {
-    switch (this.cursorMode) {
+    switch (this.state.cursorMode) {
       case (drawMode.POLYGON, drawMode.POLYLINE):
-        if (this.state.svgInProgress == this.cursorMode) {
+        if (this.state.svgInProgress == this.state.cursorMode) {
           // remove last point and reset previous point to dynamic
           deleteLastPoint(this.state.currentElement)
           return
@@ -2877,12 +2994,12 @@ SVGDraw.prototype.doubleClickHandler = function () {
 
 SVGDraw.prototype.dblClick = function () {
   if (
-    this.cursorMode == drawMode.POLYGON ||
-    this.cursorMode == drawMode.POLYLINE ||
-    this.cursorMode == drawMode.TEXT
+    this.state.cursorMode == drawMode.POLYGON ||
+    this.state.cursorMode == drawMode.POLYLINE ||
+    this.state.cursorMode == drawMode.TEXT
   ) {
     this.state.svgInProgress = false
-    switch (this.cursorMode) {
+    switch (this.state.cursorMode) {
       case drawMode.POLYGON:
         deleteDuplicatePoints(this.state.currentElement)
         this.state.currentGroup.innerHTML = this.state.currentGroup.innerHTML
@@ -2895,7 +3012,7 @@ SVGDraw.prototype.dblClick = function () {
         this.setElementMouseEnterLeave(this.state.currentGroup)
         break
     }
-    if (this.cursorMode == drawMode.TEXT) {
+    if (this.state.cursorMode == drawMode.TEXT) {
       this.closeSvgText()
     }
     this.state.currentElement = null
@@ -2977,7 +3094,7 @@ SVGDraw.prototype.apiSetMode = function (mode) {
 
 SVGDraw.prototype.checkLeftoverElement = function () {
   // this function is only called when svgInProgress is false (?)
-  switch (this.cursorMode) {
+  switch (this.state.cursorMode) {
     case drawMode.POLYLINE:
     case drawMode.POLYGON:
       // this seems to ONLY delete the last point, so disabled pending better treatment
@@ -3045,7 +3162,7 @@ SVGDraw.prototype.clearLastGroup = function () {
     group.removeEventListener('mouseleave', this.handleMouseLeaveFunction) // disable mouseleaver on real element's containing group
     group.remove()
 
-    waitElement = false
+    this.state.waitElement = false
   }
 }
 
@@ -3077,20 +3194,20 @@ SVGDraw.prototype.updateSvgText = function (event) {
     return false
   }
   let text4svgValue // text4svg is string
-  text4svgValue = this.text4svg.slice(0, this.text4svg.length - 1) // remove text cursor (underscore)
+  text4svgValue = this.state.text.slice(0, this.state.text.length - 1) // remove text cursor (underscore)
 
   if (thisKeyCode > 31) {
     // space or other printing character
-    this.text4svg = text4svgValue + this.state.currentKey + '_'
+    this.state.text = text4svgValue + this.state.currentKey + '_'
   }
   if (thisKeyCode == 8) {
-    this.text4svg = text4svgValue.slice(0, text4svgValue.length - 1) + '_'
+    this.state.text = text4svgValue.slice(0, text4svgValue.length - 1) + '_'
     event.preventDefault() // prevent Backspace from invoking BACK browser function
   }
   if (!this.state.currentKey && thisKeyCode != 13 && thisKeyCode != 8) {
     return
   } // only pass printing keys, Delete, and Return/Enter
-  this.state.currentElement.innerHTML = parseHTML(this.text4svg) // this needs to be pair-parsed into ' '&nbsp;
+  this.state.currentElement.innerHTML = parseHTML(this.state.text) // this needs to be pair-parsed into ' '&nbsp;
   this.state.currentElement.attributes['stroke'].value =
     this.configuration.stroke // allow in-line whole line color/font/size over-ride
   this.state.currentElement.attributes['style'].value =
@@ -3116,7 +3233,7 @@ SVGDraw.prototype.updateSvgText = function (event) {
     this.state.currentElement.parentElement.appendChild(nextLine)
     this.state.currentElement = nextLine
     this.state.currentElement.innerHTML = '_'
-    this.text4svg = '_'
+    this.state.text = '_'
     event.preventDefault()
   }
 }
@@ -3157,13 +3274,13 @@ SVGDraw.prototype.removeCursorFromSvgText = function () {
     if (this.state.currentElement.parentElement.lastChild.innerHTML == '_') {
       // if ONLY underscore cursor
       this.state.currentElement.parentElement.lastChild.remove() // remove the <text> element
-      this.text4svg = '_' // initialize for later
+      this.state.text = '_' // initialize for later
       this.state.currentElement = null // kill the element
     } else {
       if (this.state.svgInProgress == 'text') {
         //   ///////////////  newly added stronger condition
         this.state.currentElement.innerHTML = parseHTML(
-          this.text4svg.slice(0, this.text4svg.length - 1)
+          this.state.text.slice(0, this.state.text.length - 1)
         ) // remove cursor at end of line
         if (this.state.currentElement.innerHTML == '') {
           this.state.currentElement.remove()
@@ -3179,54 +3296,58 @@ SVGDraw.prototype.removeCursorFromSvgText = function () {
 }
 
 SVGDraw.prototype.closeSvgText = function () {
-  this.text4svg = '_'
+  this.state.text = '_'
   this.state.currentSVGPoints = [] // clear the container
   this.state.currentElement = null
   this.state.svgInProgress = false
 }
 
-function collectSVG(isVerbatim, { svgLayer }) {
+function collectSVG(isVerbatim, { svgLayer, currentLayer }) {
   // verbatim true includes all markup, false means stripped
   let clonedSVG = svgLayer.cloneNode(true)
-  let thisXLT = clonedSVG.firstChild
+  let xlt = clonedSVG.firstChild
 
   if (!isVerbatim) {
     clonedSVG.removeAttribute('height')
     clonedSVG.removeAttribute('width')
     clonedSVG.firstChild.attributes['transform'].value =
       'translate(0, 0) scale(1)'
-    thisXLT.children['xltImage'].remove()
+    xlt.children['xltImage'].remove()
   }
-  let thisG
-  let terminus = thisXLT.childElementCount
-  let i
-  for (i = 0; i < terminus; i++) {
-    // i will range over the remaining children count
-    thisG = thisXLT.childNodes[i] // probably should be firstChild since iteratively
+
+  if (currentLayer) {
+    const groupLayers = [...xlt.querySelectorAll('[layer-id]')]
+
+    groupLayers.forEach((el) => el.remove())
+  }
+
+  const elements = [...xlt.childNodes]
+
+  elements.forEach((currentGroup) => {
     if (!isVerbatim) {
-      // new wrinkle for arrow and similar groups
-      if (thisG.attributes.class) {
-        thisG.removeAttribute('id')
+      if (currentGroup.attributes.class) {
+        currentGroup.removeAttribute('id')
+        currentGroup.removeAttribute('layer-id')
       }
     }
-  }
-  return clonedSVG //  oops, this was too easy
+  })
+
+  return clonedSVG
 }
 
 function getBareSVG(noGroups, { svgLayer }) {
-  //  stripped
   const clonedSVG = svgLayer.cloneNode(true)
+  const xlt = clonedSVG.firstChild
 
   clonedSVG.removeAttribute('height')
   clonedSVG.removeAttribute('width')
   clonedSVG.removeAttribute('id')
 
-  const thisXLT = clonedSVG.firstChild
-  thisXLT.removeAttribute('id')
-  thisXLT.removeAttribute('transform')
-  thisXLT.children['xltImage'].remove()
+  xlt.removeAttribute('id')
+  xlt.removeAttribute('transform')
+  xlt.children['xltImage'].remove()
 
-  const terminus = thisXLT.childElementCount
+  const elements = [...xlt.childNodes]
   const groups = [
     drawMode.ARROW,
     drawMode.CUBIC,
@@ -3234,16 +3355,14 @@ function getBareSVG(noGroups, { svgLayer }) {
     drawMode.TEXT
   ]
 
-  for (let i = 0; i < terminus; i++) {
-    // i will range over the remaining children count
-    const thisG = thisXLT.childNodes[i] // probably should be firstChild since iteratively
-    if (thisG.attributes.class) {
-      stripElement(thisG)
-      if (noGroups && !groups.includes(thisG.attributes.class.value)) {
-        thisG.outerHTML = thisG.innerHTML
+  elements.forEach((currentGroup) => {
+    if (currentGroup.attributes.class) {
+      stripElement(currentGroup)
+      if (noGroups && !groups.includes(currentGroup.attributes.class.value)) {
+        currentGroup.outerHTML = currentGroup.innerHTML
       }
     }
-  }
+  })
 
   return clonedSVG
 }
