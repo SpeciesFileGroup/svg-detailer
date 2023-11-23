@@ -1,25 +1,27 @@
 import { drawMode, BoardOptions } from '../constants/index.js'
 import { createHTMLElement, createInput } from '../utils/htmlUtils.js'
-import { 
+import {
   createArrowOptionInputs,
   createColorInput,
   createFontSizeInput,
   createSVGButtons
 } from './toolbarOptions/index.js'
 
-export function buildSVGMenu (svgDetailer) {
-  const { containerElement } = svgDetailer 
+export function buildSVGMenu(svgDetailer) {
+  const { containerElement } = svgDetailer
 
   if (containerElement.attributes['data-buttons']) {
-    const buttons = JSON.parse(containerElement.attributes['data-buttons'].value).buttons
+    const buttons = JSON.parse(
+      containerElement.attributes['data-buttons'].value
+    ).buttons
     const toolbar = createHTMLElement('div')
-  
+
     containerElement.parentElement.appendChild(toolbar)
 
     buttons.forEach((button) => {
       const functionName = button.function
       let newElement
-  
+
       switch (functionName) {
         case drawMode.CLEAR:
         case drawMode.POLYGON:
@@ -34,40 +36,45 @@ export function buildSVGMenu (svgDetailer) {
         case drawMode.DRAW:
         case drawMode.TEXT:
         case drawMode.MOVE:
+        case drawMode.ERASER:
         case BoardOptions.RESET:
           newElement = createInput({
             attr: {
               type: 'button',
-              value: button.value || functionName.charAt(0).toUpperCase() + functionName.slice(1),
+              value:
+                button.value ||
+                functionName.charAt(0).toUpperCase() + functionName.slice(1)
             },
             event: {
-              click: () => { svgDetailer.apiSetMode(functionName) }
+              click: () => {
+                svgDetailer.apiSetMode(functionName)
+              }
             }
           })
 
-          break;
+          break
         case BoardOptions.MODE:
-          newElement = createHTMLElement('span', { id: 'mode '})
-          break;
+          newElement = createHTMLElement('span', { id: 'mode ' })
+          break
 
         case BoardOptions.ZOOM:
           newElement = createHTMLElement('span', { id: 'zoom' })
           newElement.innerHTML = 'Zoom: ----'
-          break;
+          break
         case BoardOptions.ZOOM_IN:
           newElement = createInput({
             attr: {
               type: 'button',
-              value: 'Zoom IN',
+              value: 'Zoom IN'
             },
             event: {
-              click: e => {
-                e.target.blur();
+              click: (e) => {
+                e.target.blur()
                 svgDetailer.apiZoomIn()
               }
             }
           })
-          break;
+          break
         case BoardOptions.ZOOM_OUT:
           newElement = createInput({
             attr: {
@@ -75,30 +82,32 @@ export function buildSVGMenu (svgDetailer) {
               value: 'Zoom OUT'
             },
             event: {
-              click: () => { svgDetailer.apiZoomOut() }
+              click: () => {
+                svgDetailer.apiZoomOut()
+              }
             }
           })
 
-          break;
+          break
         case BoardOptions.FONT_SIZE:
           newElement = createFontSizeInput(svgDetailer)
-          break;
+          break
         case BoardOptions.NEWLINE:
           newElement = createHTMLElement('br')
-          break;
+          break
         case BoardOptions.COLOR:
           newElement = createColorInput(svgDetailer)
-          break;
+          break
         case BoardOptions.ARROWS_SPECS:
           newElement = createArrowOptionInputs(svgDetailer)
-          break;
+          break
 
         case BoardOptions.JSON:
           newElement = createSVGButtons(svgDetailer)
-          break;
+          break
       }
 
-      if(newElement) {
+      if (newElement) {
         toolbar.appendChild(newElement)
       }
     })

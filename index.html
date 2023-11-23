@@ -2,20 +2,33 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="/vite.svg"
+    />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
     <title>SVG Detailer</title>
   </head>
   <body>
     <div>
       <label id="choose">Choose file to annotate: </label>
-      <input id="image_file" type="file">
+      <input
+        id="image_file"
+        type="file"
+      />
     </div>
-      <div id="container" style="overflow: hidden; left: 50px; top: 175px; position: inherit;" tabindex="0"
-                          data-height="600"
-                          data-width="600"
-                          data-image="http://placekitten.com/1024/768"
-                          data-buttons='{"buttons": [
+    <div
+      id="container"
+      style="overflow: hidden; left: 50px; top: 175px; position: inherit"
+      tabindex="0"
+      data-height="600"
+      data-width="600"
+      data-image="http://placekitten.com/1024/768"
+      data-buttons='{"buttons": [
                           {"function": "clear", "value": "Clear last element"},
                           {"function": "polygon", "value": ""},
                           {"function": "polyline", "value": ""},
@@ -29,6 +42,7 @@
                           {"function": "draw", "value": ""},
                           {"function": "text", "value": ""},
                           {"function": "move", "value": ""},
+                          {"function": "eraser", "value": "Eraser"},
                           {"function": "reset", "value": "Reset Zoom"},
                           {"function": "mode", "value": ""},
                           {"function": "zoomin", "value": "Zoom IN"},
@@ -40,8 +54,10 @@
                           {"function": "arrowspecs", "value": ""},
                           {"function": "json", "value": ""}
                        ]}'
-      >
-      </div>
-    <script type="module" src="src/main.js"></script>
+    ></div>
+    <script
+      type="module"
+      src="src/main.js"
+    ></script>
   </body>
 </html>
