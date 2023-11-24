@@ -448,8 +448,20 @@ class SVGDraw extends EventEmitter {
     return JSONsvg
   }
 
+  apiRemoveGroup(groupId) {
+    const elements = [...this.xlt.querySelectorAll(`#${groupId}`)]
+
+    elements.forEach((el) => this.removeShape(el))
+  }
+
   apiRemoveLayer(layerId) {
-    this.xlt.querySelectorAll(`[layer-id="${layerId}"]`)
+    const elements = [...this.xlt.querySelectorAll(`[layer-id="${layerId}"]`)]
+
+    elements.forEach((el) => this.removeShape(el))
+  }
+
+  removeShape(element) {
+    element.remove()
   }
 
   lockShape(el) {
@@ -1148,10 +1160,12 @@ SVGDraw.prototype.setElementMouseEnterLeave = function (group) {
 }
 
 SVGDraw.prototype.mouseClickFunction = function (event) {
+  const element = event.target.parentElement
+
   switch (this.state.cursorMode) {
     case drawMode.ERASER:
-      this.emit('erase', event.currentTarget)
-      event.currentTarget.remove()
+      this.emit('erase', element)
+      this.removeShape(element)
   }
 }
 
