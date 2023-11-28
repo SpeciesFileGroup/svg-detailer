@@ -372,6 +372,13 @@ class SVGDraw extends EventEmitter {
     this.setStroke(color)
   }
 
+  apiClearAll() {
+    this.state.groupIdCount = 0
+    const elements = [...this.xlt.querySelectorAll('g')]
+
+    elements.forEach((el) => el.remove())
+  }
+
   apiStrokeWidth(pixels) {
     if (isNumeric(pixels)) {
       this.configuration.strokeWidth = pixels
