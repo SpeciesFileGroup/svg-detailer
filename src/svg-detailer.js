@@ -31,7 +31,8 @@ class SVGDraw extends EventEmitter {
       baseZoom: 0, // calculated from svg and image attributes
       maxZoom: 4,
       zoomDelta: 0.02, // this can be altered to discriminate legacy firefox dommousescroll event
-      debugLog: opts.debugLog || false
+      debugLog: false,
+      ...opts
     }
 
     this.state = {
@@ -296,12 +297,12 @@ class SVGDraw extends EventEmitter {
     this.xlt.attributes['transform'].value = transform
   }
 
-  zoomIn() {
+  zoomIn(zoom) {
     const { zoomDelta, maxZoom } = this.configuration
 
     if (this.state.zoom < maxZoom) {
       // zoom of 1 is pixel-per-pixel on svgLayer
-      let newZoom = this.state.zoom * (1.0 + zoomDelta)
+      let newZoom = this.state.zoom * (1.0 + (zoom || zoomDelta))
 
       if (newZoom > maxZoom) {
         newZoom = maxZoom
@@ -311,9 +312,11 @@ class SVGDraw extends EventEmitter {
     }
   }
 
-  zoomOut() {
-    if (this.state.zoom > this.configuration.baseZoom / 3) {
-      const scale = this.state.zoom / (1.0 + this.configuration.zoomDelta)
+  zoomOut(zoom) {
+    const { baseZoom, zoomDelta } = this.configuration
+
+    if (this.state.zoom > baseZoom / 3) {
+      const scale = this.state.zoom / (1.0 + (zoom || zoomDelta))
 
       this.setZoom(scale)
     }
@@ -405,12 +408,12 @@ class SVGDraw extends EventEmitter {
     }
   }
 
-  apiZoomIn() {
-    this.zoomIn()
+  apiZoomIn(zoom) {
+    this.zoomIn(zoom)
   }
 
-  apiZoomOut() {
-    this.zoomOut()
+  apiZoomOut(zoom) {
+    this.zoomOut(zoom)
   }
 
   apiSetZoom(scale) {
