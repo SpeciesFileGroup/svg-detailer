@@ -40,6 +40,10 @@ class SVGDraw extends EventEmitter {
         x: 0,
         y: 0
       },
+      mousePositionStart: {
+        x: 0,
+        y: 0
+      },
       xC: 0,
       yC: 0,
       zoom: 0,
@@ -716,6 +720,8 @@ SVGDraw.prototype.onSvgMouseDown = function () {
     if (this.state.svgInProgress == false) {
       // this is a new instance of this svg type (currently by definition)
       this.state.currentSVGPoints[0] = [this.currentMouseX, this.currentMouseY]
+      this.state.mousePositionStart.x = this.currentMouseX
+      this.state.mousePositionStart.y = this.currentMouseY
 
       let group = document.createElementNS('http://www.w3.org/2000/svg', 'g')
       let newGroupID = 'g' + this.getIDcount().toString()
@@ -1408,7 +1414,7 @@ SVGDraw.prototype.setShiftElement = function (bubble) {
   )
 }
 
-SVGDraw.prototype.setSizeElement = function (bubble) {
+SVGDraw.prototype.setSizeElement = function (bubble, event) {
   // end of SHIFT leaves single bubble; should be removed on mouseleave of group
   const group = bubble.parentNode.parentNode // set group for mousemove
 
@@ -1416,6 +1422,13 @@ SVGDraw.prototype.setSizeElement = function (bubble) {
   this.state.currentElement = group.firstChild
   this.state.currentBubble = group.lastChild.firstChild // this is the center/first bubble
   this.state.cursorMode = this.state.currentElement.tagName
+
+  if (this.state.currentElement.tagName === SVGType.RECT) {
+    this.state.mousePositionStart.x =
+      this.state.currentElement.attributes['x'].value
+    this.state.mousePositionStart.y =
+      this.state.currentElement.attributes['y'].value
+  }
 
   if (
     this.state.cursorMode === drawMode.CIRCLE ||
@@ -1809,8 +1822,8 @@ SVGDraw.prototype.createShiftBubble = function (cx, cy, id) {
 SVGDraw.prototype.createSizeBubble = function (cx, cy, id) {
   let bubble = this.createBubbleStub(cx, cy)
   bubble.setAttributeNS(null, 'fill-opacity', '0.6') // SIZE/POINT bubble is slightly less opaque
-  bubble.addEventListener('mousedown', () => {
-    this.setSizeElement(bubble)
+  bubble.addEventListener('mousedown', (e) => {
+    this.setSizeElement(bubble, e)
   })
   // bubble.addEventListener('mouseup', (event) => { setElementMouseEnterLeave(bubble) });
   bubble.setAttributeNS(null, 'id', id) // use this identifier to attach cursor in onSvgMouseMove
@@ -2150,22 +2163,24 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         this.state.currentElement.attributes['y'].value =
           this.currentMouseY.toFixed(4)
       } else {
-        const x = this.state.currentElement.attributes['x'].value
-        const y = this.state.currentElement.attributes['y'].value
+        const mouseX = this.currentMouseX.toFixed(4)
+        const mouseY = this.currentMouseY.toFixed(4)
         const element = event.target
         const isBubbleFromGroup =
           this.state.currentGroup.contains(element) &&
           element.tagName === SVGType.CIRCLE
 
+        const width = Math.abs(mouseX - this.state.mousePositionStart.x)
+        const height = Math.abs(mouseY - this.state.mousePositionStart.y)
+
+        const x = Math.min(this.state.mousePositionStart.x, mouseX)
+        const y = Math.min(this.state.mousePositionStart.y, mouseY)
+
         this.updateMousePosition(event)
-        this.state.currentElement.attributes['width'].value = Math.max(
-          1,
-          (this.currentMouseX - x).toFixed(4)
-        )
-        this.state.currentElement.attributes['height'].value = Math.max(
-          1,
-          (this.currentMouseY - y).toFixed(4)
-        )
+        this.state.currentElement.attributes['width'].value = width
+        this.state.currentElement.attributes['height'].value = height
+        this.state.currentElement.attributes['x'].value = x
+        this.state.currentElement.attributes['y'].value = y
 
         if (isBubbleFromGroup) {
           this.state.currentBubble = event.target
