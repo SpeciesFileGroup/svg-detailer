@@ -2150,25 +2150,34 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         this.state.currentElement.attributes['y'].value =
           this.currentMouseY.toFixed(4)
       } else {
-        let thisRectX = this.state.currentElement.attributes['x'].value
-        let thisRectY = this.state.currentElement.attributes['y'].value
+        const x = this.state.currentElement.attributes['x'].value
+        const y = this.state.currentElement.attributes['y'].value
+        const element = event.target
+        const isBubbleFromGroup =
+          this.state.currentGroup.contains(element) &&
+          element.tagName === SVGType.CIRCLE
 
         this.updateMousePosition(event)
         this.state.currentElement.attributes['width'].value = Math.max(
           1,
-          (this.currentMouseX - thisRectX).toFixed(4)
+          (this.currentMouseX - x).toFixed(4)
         )
         this.state.currentElement.attributes['height'].value = Math.max(
           1,
-          (this.currentMouseY - thisRectY).toFixed(4)
+          (this.currentMouseY - y).toFixed(4)
         )
-        if (this.state.currentBubble) {
+
+        if (isBubbleFromGroup) {
           this.state.currentBubble = event.target
+        }
+
+        if (this.state.currentBubble) {
           if (
             'cx' in this.state.currentBubble.attributes &&
             'cy' in this.state.currentBubble.attributes
           ) {
-            this.state.currentBubble.attributes['cx'].value = this.currentMouseX // translate the bubble
+            // IS HERE
+            this.state.currentBubble.attributes['cx'].value = this.currentMouseX
             this.state.currentBubble.attributes['cy'].value = this.currentMouseY
           }
         }
@@ -2724,7 +2733,7 @@ SVGDraw.prototype.updateSvgByElement = function (event) {
         thisD += pathPoint(thisX2, thisY2)
         this.state.currentElement.attributes['d'].value = thisD
       }
-    } else if (this.state.cursorMode == 'text') {
+    } else if (this.state.cursorMode == drawMode.TEXT) {
       // translate
       if (this.state.svgInProgress == 'SHIFT') {
         this.updateMousePosition(event)
