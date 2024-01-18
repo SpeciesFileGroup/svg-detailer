@@ -442,11 +442,11 @@ class SVGDraw extends EventEmitter {
     return getBareSVG(noGroups, { svgLayer: this.state.svgLayer }).outerHTML
   }
 
-  apiJsonSVG(opts = { currentLayer: false }) {
+  apiJsonSVG(opts) {
     // package SVG into JSON object
     const clonedSVG = collectSVG(false, {
       svgLayer: this.state.svgLayer,
-      currentLayer: opts.currentLayer
+      ...opts
     }).firstChild // strip off <svg...> </svg>
 
     clonedSVG.removeAttribute('id')
@@ -3350,7 +3350,7 @@ SVGDraw.prototype.closeSvgText = function () {
   this.state.svgInProgress = false
 }
 
-function collectSVG(isVerbatim, { svgLayer, currentLayer }) {
+function collectSVG(isVerbatim, { svgLayer, currentLayer, override = {} }) {
   // verbatim true includes all markup, false means stripped
   let clonedSVG = svgLayer.cloneNode(true)
   let xlt = clonedSVG.firstChild
@@ -3376,6 +3376,14 @@ function collectSVG(isVerbatim, { svgLayer, currentLayer }) {
       if (currentGroup.attributes.class) {
         currentGroup.removeAttribute('id')
         currentGroup.removeAttribute('layer-id')
+      }
+
+      if (Object.keys(override).length) {
+        const element = currentGroup.firstChild
+
+        Object.entries(override).forEach(([property, value]) => {
+          element.setAttribute(property, value)
+        })
       }
     }
   })
